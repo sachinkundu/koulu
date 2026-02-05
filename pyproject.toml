@@ -139,6 +139,26 @@ filterwarnings = [
 [tool.coverage.run]
 source = ["src"]
 branch = true
+# Exclude infrastructure implementations that are:
+# 1. Framework glue (SQLAlchemy CRUD, FastAPI routes)
+# 2. External integrations (email, avatar APIs)
+# 3. Already tested via BDD integration tests
+# Focus coverage on business logic: domain, application, services
+omit = [
+    # SQLAlchemy repository implementations (CRUD wrappers, tested via BDD)
+    "src/*/infrastructure/persistence/*_repository.py",
+    # External service integrations (email, avatar APIs)
+    "src/*/infrastructure/services/email_service.py",
+    "src/*/infrastructure/services/avatar_generator.py",
+    # FastAPI interface layer (thin wrappers calling handlers, tested via BDD)
+    "src/*/interface/api/*_controller.py",
+    "src/*/interface/api/dependencies.py",
+    # Shared infrastructure (framework boilerplate: DB setup, event bus)
+    "src/shared/infrastructure/database.py",
+    "src/shared/infrastructure/event_bus.py",
+    # FastAPI app setup (framework boilerplate)
+    "src/main.py",
+]
 
 [tool.coverage.report]
 exclude_lines = [

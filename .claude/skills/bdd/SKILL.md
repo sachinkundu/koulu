@@ -5,6 +5,12 @@ description: Write BDD specifications using Gherkin for behavior-driven developm
 
 # Skill: BDD Specifications
 
+## ⛔ CRITICAL: No Stub Implementations
+
+**Before writing ANY step implementation, read the "Anti-Patterns to Avoid" section below.**
+
+A step implementation that contains only `pass` is **NEVER acceptable**. Every `@then` step MUST have at least one assertion.
+
 ## Tools
 - **Python**: `pytest-bdd`
 - **Frontend**: `cucumber-js`
@@ -147,7 +153,35 @@ async def verification_email_sent_to(email: str) -> None:
 Before marking BDD scenarios as complete:
 
 - [ ] **No `pass` statements** in step implementations (except `@given` setup that's truly a no-op)
+- [ ] **Every `@then` has assertions** - not just `pass` or comments
 - [ ] **Side effects are verified** (emails sent, events published, webhooks called)
 - [ ] **Manual smoke test** passes for critical flows
 - [ ] **Infrastructure integrations tested** (e.g., query MailHog, check Redis, verify DB state)
 - [ ] **Mocks are intentional** - if mocking, document WHY and what the mock covers
+
+## Automated Verification
+
+**Run this command to find stub implementations:**
+
+```bash
+# Find all @then steps that only contain 'pass'
+grep -A2 '@then' tests/features/**/*.py | grep -B1 'pass$'
+```
+
+If this returns ANY results, the tests are incomplete. Fix them before marking done.
+
+## Test Fixture Rules
+
+**Fixtures MUST use domain layer, not bypass it:**
+
+```python
+# ❌ WRONG - Bypasses domain layer
+user = UserModel(id=uuid4(), email=email, hashed_password=hash)
+db_session.add(user)
+
+# ✅ CORRECT - Uses domain factory
+user = User.register(EmailAddress(email), hashed_password)
+await user_repository.save(user)
+```
+
+See CLAUDE.md "Test Fixture Standards" for details.
