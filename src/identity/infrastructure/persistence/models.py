@@ -92,6 +92,30 @@ class ProfileModel(Base):
         Text,
         nullable=True,
     )
+    location_city: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+    location_country: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+    )
+    twitter_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+    linkedin_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+    instagram_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
+    website_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+    )
     is_complete: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,

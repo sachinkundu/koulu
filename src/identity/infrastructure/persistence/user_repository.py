@@ -7,9 +7,12 @@ from sqlalchemy.orm import selectinload
 from src.identity.domain.entities import Profile, User
 from src.identity.domain.repositories import IUserRepository
 from src.identity.domain.value_objects import (
+    Bio,
     DisplayName,
     EmailAddress,
     HashedPassword,
+    Location,
+    SocialLinks,
     UserId,
 )
 from src.identity.infrastructure.persistence.models import ProfileModel, UserModel
@@ -52,7 +55,23 @@ class SqlAlchemyUserRepository(IUserRepository):
                         user.profile.display_name.value if user.profile.display_name else None
                     ),
                     avatar_url=user.profile.avatar_url,
-                    bio=user.profile.bio,
+                    bio=user.profile.bio.value if user.profile.bio else None,
+                    location_city=user.profile.location.city if user.profile.location else None,
+                    location_country=user.profile.location.country
+                    if user.profile.location
+                    else None,
+                    twitter_url=user.profile.social_links.twitter_url
+                    if user.profile.social_links
+                    else None,
+                    linkedin_url=user.profile.social_links.linkedin_url
+                    if user.profile.social_links
+                    else None,
+                    instagram_url=user.profile.social_links.instagram_url
+                    if user.profile.social_links
+                    else None,
+                    website_url=user.profile.social_links.website_url
+                    if user.profile.social_links
+                    else None,
                     is_complete=user.profile.is_complete,
                     created_at=user.profile.created_at,
                     updated_at=user.profile.updated_at,
@@ -75,7 +94,23 @@ class SqlAlchemyUserRepository(IUserRepository):
                             user.profile.display_name.value if user.profile.display_name else None
                         ),
                         avatar_url=user.profile.avatar_url,
-                        bio=user.profile.bio,
+                        bio=user.profile.bio.value if user.profile.bio else None,
+                        location_city=user.profile.location.city if user.profile.location else None,
+                        location_country=user.profile.location.country
+                        if user.profile.location
+                        else None,
+                        twitter_url=user.profile.social_links.twitter_url
+                        if user.profile.social_links
+                        else None,
+                        linkedin_url=user.profile.social_links.linkedin_url
+                        if user.profile.social_links
+                        else None,
+                        instagram_url=user.profile.social_links.instagram_url
+                        if user.profile.social_links
+                        else None,
+                        website_url=user.profile.social_links.website_url
+                        if user.profile.social_links
+                        else None,
                         is_complete=user.profile.is_complete,
                     )
                     self._session.add(profile_model)
@@ -84,7 +119,29 @@ class SqlAlchemyUserRepository(IUserRepository):
                         user.profile.display_name.value if user.profile.display_name else None
                     )
                     existing.profile.avatar_url = user.profile.avatar_url
-                    existing.profile.bio = user.profile.bio
+                    existing.profile.bio = user.profile.bio.value if user.profile.bio else None
+                    existing.profile.location_city = (
+                        user.profile.location.city if user.profile.location else None
+                    )
+                    existing.profile.location_country = (
+                        user.profile.location.country if user.profile.location else None
+                    )
+                    existing.profile.twitter_url = (
+                        user.profile.social_links.twitter_url if user.profile.social_links else None
+                    )
+                    existing.profile.linkedin_url = (
+                        user.profile.social_links.linkedin_url
+                        if user.profile.social_links
+                        else None
+                    )
+                    existing.profile.instagram_url = (
+                        user.profile.social_links.instagram_url
+                        if user.profile.social_links
+                        else None
+                    )
+                    existing.profile.website_url = (
+                        user.profile.social_links.website_url if user.profile.social_links else None
+                    )
                     existing.profile.is_complete = user.profile.is_complete
                     existing.profile.updated_at = user.profile.updated_at
 
@@ -140,11 +197,42 @@ class SqlAlchemyUserRepository(IUserRepository):
             if model.profile.display_name is not None:
                 display_name = DisplayName(model.profile.display_name)
 
+            bio = None
+            if model.profile.bio is not None:
+                bio = Bio(model.profile.bio)
+
+            location = None
+            if (
+                model.profile.location_city is not None
+                and model.profile.location_country is not None
+            ):
+                location = Location(
+                    city=model.profile.location_city, country=model.profile.location_country
+                )
+
+            social_links = None
+            if any(
+                [
+                    model.profile.twitter_url,
+                    model.profile.linkedin_url,
+                    model.profile.instagram_url,
+                    model.profile.website_url,
+                ]
+            ):
+                social_links = SocialLinks(
+                    twitter_url=model.profile.twitter_url,
+                    linkedin_url=model.profile.linkedin_url,
+                    instagram_url=model.profile.instagram_url,
+                    website_url=model.profile.website_url,
+                )
+
             profile = Profile(
                 user_id=UserId(value=model.id),
                 display_name=display_name,
                 avatar_url=model.profile.avatar_url,
-                bio=model.profile.bio,
+                bio=bio,
+                location=location,
+                social_links=social_links,
                 is_complete=model.profile.is_complete,
                 created_at=model.profile.created_at,
                 updated_at=model.profile.updated_at,

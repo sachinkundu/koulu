@@ -23,7 +23,10 @@
       "Bash(git branch:*)",
       "Bash(pytest:*)",
       "Bash(pip show:*)",
-      "Bash(./scripts/setup-test-db.sh:*)"
+      "Bash(./scripts/setup-test-db.sh:*)",
+      "Bash(tree:*)",
+      "Bash(docker-compose:*)",
+      "Bash(docker compose:*)"
     ]
   }
 }

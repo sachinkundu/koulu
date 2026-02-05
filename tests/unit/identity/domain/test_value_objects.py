@@ -2,8 +2,21 @@
 
 import pytest
 
-from src.identity.domain.exceptions import InvalidDisplayNameError, InvalidEmailError
-from src.identity.domain.value_objects import DisplayName, EmailAddress, HashedPassword
+from src.identity.domain.exceptions import (
+    InvalidBioError,
+    InvalidDisplayNameError,
+    InvalidEmailError,
+    InvalidLocationError,
+    InvalidSocialLinkError,
+)
+from src.identity.domain.value_objects import (
+    Bio,
+    DisplayName,
+    EmailAddress,
+    HashedPassword,
+    Location,
+    SocialLinks,
+)
 
 
 class TestEmailAddress:
@@ -186,3 +199,190 @@ class TestHashedPassword:
         # Hash should not be revealed in string representation
         assert str(hashed) == "[HASHED]"
         assert "argon2" not in str(hashed)
+
+
+class TestBio:
+    """Tests for Bio value object."""
+
+    def test_valid_bio_creates_instance(self) -> None:
+        """Valid bio should create a Bio instance."""
+        bio = Bio("Software developer passionate about clean code")
+        assert bio.value == "Software developer passionate about clean code"
+
+    def test_bio_sanitizes_html_tags(self) -> None:
+        """Bio should strip HTML tags for XSS prevention."""
+        bio = Bio("<script>alert('xss')</script>Hello")
+        assert bio.value == "Hello"
+        assert "<script>" not in bio.value
+
+    def test_bio_sanitizes_nested_html(self) -> None:
+        """Bio should strip nested HTML tags."""
+        bio = Bio("I love <b>coding</b> and <i>design</i>")
+        assert bio.value == "I love coding and design"
+
+    def test_bio_too_long_raises_error(self) -> None:
+        """Bio over 500 chars should raise InvalidBioError."""
+        long_bio = "a" * 501
+        with pytest.raises(InvalidBioError) as exc_info:
+            Bio(long_bio)
+        assert "500" in str(exc_info.value)
+
+    def test_bio_at_max_length_is_valid(self) -> None:
+        """Bio at exactly 500 chars should be valid."""
+        bio = Bio("a" * 500)
+        assert len(bio.value) == 500
+
+    def test_str_returns_value(self) -> None:
+        """str() should return the bio value."""
+        bio = Bio("Hello world")
+        assert str(bio) == "Hello world"
+
+    def test_bio_with_special_characters_is_valid(self) -> None:
+        """Bio with special characters should be valid."""
+        bio = Bio("Developer @ Company! 🚀 #coding")
+        assert "Developer @ Company!" in bio.value
+
+
+class TestLocation:
+    """Tests for Location value object."""
+
+    def test_valid_location_creates_instance(self) -> None:
+        """Valid location should create a Location instance."""
+        location = Location(city="San Francisco", country="USA")
+        assert location.city == "San Francisco"
+        assert location.country == "USA"
+
+    def test_location_fields_are_trimmed(self) -> None:
+        """Location fields should have whitespace trimmed."""
+        location = Location(city="  Paris  ", country="  France  ")
+        assert location.city == "Paris"
+        assert location.country == "France"
+
+    def test_city_too_short_raises_error(self) -> None:
+        """City under 2 chars should raise InvalidLocationError."""
+        with pytest.raises(InvalidLocationError) as exc_info:
+            Location(city="X", country="USA")
+        assert "City" in str(exc_info.value)
+        assert "2" in str(exc_info.value)
+
+    def test_city_too_long_raises_error(self) -> None:
+        """City over 100 chars should raise InvalidLocationError."""
+        long_city = "a" * 101
+        with pytest.raises(InvalidLocationError) as exc_info:
+            Location(city=long_city, country="USA")
+        assert "City" in str(exc_info.value)
+        assert "100" in str(exc_info.value)
+
+    def test_country_too_short_raises_error(self) -> None:
+        """Country under 2 chars should raise InvalidLocationError."""
+        with pytest.raises(InvalidLocationError) as exc_info:
+            Location(city="Paris", country="F")
+        assert "Country" in str(exc_info.value)
+        assert "2" in str(exc_info.value)
+
+    def test_country_too_long_raises_error(self) -> None:
+        """Country over 100 chars should raise InvalidLocationError."""
+        long_country = "a" * 101
+        with pytest.raises(InvalidLocationError) as exc_info:
+            Location(city="Paris", country=long_country)
+        assert "Country" in str(exc_info.value)
+        assert "100" in str(exc_info.value)
+
+    def test_city_with_html_tags_raises_error(self) -> None:
+        """City with HTML tags should raise InvalidLocationError."""
+        with pytest.raises(InvalidLocationError) as exc_info:
+            Location(city="<script>Paris</script>", country="France")
+        assert "HTML" in str(exc_info.value)
+
+    def test_country_with_html_tags_raises_error(self) -> None:
+        """Country with HTML tags should raise InvalidLocationError."""
+        with pytest.raises(InvalidLocationError) as exc_info:
+            Location(city="Paris", country="<b>France</b>")
+        assert "HTML" in str(exc_info.value)
+
+    def test_format_returns_city_comma_country(self) -> None:
+        """format() should return 'city, country'."""
+        location = Location(city="Tokyo", country="Japan")
+        assert location.format() == "Tokyo, Japan"
+
+    def test_location_at_minimum_length_is_valid(self) -> None:
+        """Location with minimum length fields should be valid."""
+        location = Location(city="LA", country="US")
+        assert location.city == "LA"
+        assert location.country == "US"
+
+    def test_location_at_maximum_length_is_valid(self) -> None:
+        """Location with maximum length fields should be valid."""
+        location = Location(city="a" * 100, country="b" * 100)
+        assert len(location.city) == 100
+        assert len(location.country) == 100
+
+
+class TestSocialLinks:
+    """Tests for SocialLinks value object."""
+
+    def test_valid_social_links_create_instance(self) -> None:
+        """Valid social links should create a SocialLinks instance."""
+        links = SocialLinks(
+            twitter_url="https://twitter.com/user",
+            linkedin_url="https://linkedin.com/in/user",
+        )
+        assert links.twitter_url == "https://twitter.com/user"
+        assert links.linkedin_url == "https://linkedin.com/in/user"
+
+    def test_all_fields_optional(self) -> None:
+        """All social link fields should be optional."""
+        links = SocialLinks()
+        assert links.twitter_url is None
+        assert links.linkedin_url is None
+        assert links.instagram_url is None
+        assert links.website_url is None
+
+    def test_invalid_url_raises_error(self) -> None:
+        """Invalid URL should raise InvalidSocialLinkError."""
+        with pytest.raises(InvalidSocialLinkError):
+            SocialLinks(twitter_url="not-a-url")
+
+    def test_javascript_scheme_blocked(self) -> None:
+        """javascript: URL scheme should be blocked."""
+        with pytest.raises(InvalidSocialLinkError):
+            SocialLinks(twitter_url="javascript:alert('xss')")
+
+    def test_data_scheme_blocked(self) -> None:
+        """data: URL scheme should be blocked."""
+        with pytest.raises(InvalidSocialLinkError):
+            SocialLinks(website_url="data:text/html,<script>alert('xss')</script>")
+
+    def test_has_any_returns_true_when_any_link_set(self) -> None:
+        """has_any() should return True when any link is set."""
+        links = SocialLinks(twitter_url="https://twitter.com/user")
+        assert links.has_any() is True
+
+    def test_has_any_returns_false_when_all_none(self) -> None:
+        """has_any() should return False when all links are None."""
+        links = SocialLinks()
+        assert links.has_any() is False
+
+    def test_multiple_links_can_be_set(self) -> None:
+        """Multiple links can be set at once."""
+        links = SocialLinks(
+            twitter_url="https://twitter.com/user",
+            linkedin_url="https://linkedin.com/in/user",
+            instagram_url="https://instagram.com/user",
+            website_url="https://example.com",
+        )
+        assert links.twitter_url == "https://twitter.com/user"
+        assert links.linkedin_url == "https://linkedin.com/in/user"
+        assert links.instagram_url == "https://instagram.com/user"
+        assert links.website_url == "https://example.com"
+
+    def test_partial_links_are_valid(self) -> None:
+        """Setting only some links should be valid."""
+        links = SocialLinks(
+            linkedin_url="https://linkedin.com/in/user",
+            website_url="https://example.com",
+        )
+        assert links.twitter_url is None
+        assert links.linkedin_url == "https://linkedin.com/in/user"
+        assert links.instagram_url is None
+        assert links.website_url == "https://example.com"

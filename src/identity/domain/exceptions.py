@@ -149,3 +149,51 @@ class RateLimitExceededError(IdentityDomainError):
             code="rate_limited",
         )
         self.retry_after = retry_after
+
+
+class InvalidLocationError(IdentityDomainError):
+    """Raised when a location value is invalid."""
+
+    def __init__(self, reason: str) -> None:
+        """Initialize with the reason for invalidity."""
+        super().__init__(
+            message=f"Invalid location: {reason}",
+            code="invalid_location",
+        )
+        self.reason = reason
+
+
+class InvalidSocialLinkError(IdentityDomainError):
+    """Raised when a social link URL is invalid."""
+
+    def __init__(self, reason: str) -> None:
+        """Initialize with the reason for invalidity."""
+        super().__init__(
+            message=f"Invalid social link: {reason}",
+            code="invalid_social_link",
+        )
+        self.reason = reason
+
+
+class InvalidBioError(IdentityDomainError):
+    """Raised when a bio value is invalid."""
+
+    def __init__(self, reason: str) -> None:
+        """Initialize with the reason for invalidity."""
+        super().__init__(
+            message=f"Invalid bio: {reason}",
+            code="invalid_bio",
+        )
+        self.reason = reason
+
+
+class ProfileNotFoundError(IdentityDomainError):
+    """Raised when a profile is not found."""
+
+    def __init__(self, user_id: str) -> None:
+        """Initialize with the user ID."""
+        super().__init__(
+            message=f"Profile not found for user: {user_id}",
+            code="profile_not_found",
+        )
+        self.user_id = user_id

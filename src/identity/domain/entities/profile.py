@@ -3,7 +3,7 @@
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from src.identity.domain.value_objects import DisplayName, UserId
+from src.identity.domain.value_objects import Bio, DisplayName, Location, SocialLinks, UserId
 
 
 @dataclass
@@ -18,7 +18,9 @@ class Profile:
     user_id: UserId
     display_name: DisplayName | None = None
     avatar_url: str | None = None
-    bio: str | None = None
+    bio: Bio | None = None
+    location: Location | None = None
+    social_links: SocialLinks | None = None
     is_complete: bool = False
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
@@ -44,7 +46,9 @@ class Profile:
         self,
         display_name: DisplayName | None = None,
         avatar_url: str | None = None,
-        bio: str | None = None,
+        bio: Bio | None = None,
+        location: Location | None = None,
+        social_links: SocialLinks | None = None,
     ) -> None:
         """
         Update profile fields.
@@ -53,6 +57,8 @@ class Profile:
             display_name: New display name (if provided)
             avatar_url: New avatar URL (if provided)
             bio: New bio (if provided)
+            location: New location (if provided)
+            social_links: New social links (if provided)
         """
         if display_name is not None:
             self.display_name = display_name
@@ -60,6 +66,10 @@ class Profile:
             self.avatar_url = avatar_url
         if bio is not None:
             self.bio = bio
+        if location is not None:
+            self.location = location
+        if social_links is not None:
+            self.social_links = social_links
         self.updated_at = datetime.now(UTC)
 
     def __eq__(self, other: object) -> bool:
