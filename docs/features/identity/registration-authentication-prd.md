@@ -6,6 +6,9 @@
 **Bounded Context:** Identity
 **PRD Type:** Feature Specification
 
+**Implementation Status:** Complete
+**Summary:** `docs/summaries/registration-authentication-summary.md`
+
 ---
 
 ## 1. Overview

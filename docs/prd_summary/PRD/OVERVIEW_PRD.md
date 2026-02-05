@@ -804,30 +804,29 @@ See `docs/domain/GLOSSARY.md` for the complete ubiquitous language definitions.
 
 Each feature will have a detailed PRD and BDD specification. The index below maps features to their specification documents.
 
-| Feature Area | PRD Document | BDD Spec |
-|--------------|--------------|----------|
-| User Registration | `docs/features/identity/registration-prd.md` | `tests/features/identity/registration.feature` |
-| User Authentication | `docs/features/identity/authentication-prd.md` | `tests/features/identity/authentication.feature` |
-| User Profile | `docs/features/identity/profile-prd.md` | `tests/features/identity/profile.feature` |
-| Community Feed | `docs/features/community/feed-prd.md` | `tests/features/community/feed.feature` |
-| Posts | `docs/features/community/posts-prd.md` | `tests/features/community/posts.feature` |
-| Comments | `docs/features/community/comments-prd.md` | `tests/features/community/comments.feature` |
-| Reactions | `docs/features/community/reactions-prd.md` | `tests/features/community/reactions.feature` |
-| Categories | `docs/features/community/categories-prd.md` | `tests/features/community/categories.feature` |
-| Courses | `docs/features/classroom/courses-prd.md` | `tests/features/classroom/courses.feature` |
-| Modules | `docs/features/classroom/modules-prd.md` | `tests/features/classroom/modules.feature` |
-| Lessons | `docs/features/classroom/lessons-prd.md` | `tests/features/classroom/lessons.feature` |
-| Progress Tracking | `docs/features/classroom/progress-prd.md` | `tests/features/classroom/progress.feature` |
-| Events | `docs/features/calendar/events-prd.md` | `tests/features/calendar/events.feature` |
-| Member Directory | `docs/features/members/directory-prd.md` | `tests/features/members/directory.feature` |
-| Member Map | `docs/features/members/map-prd.md` | `tests/features/members/map.feature` |
-| Leaderboards | `docs/features/gamification/leaderboards-prd.md` | `tests/features/gamification/leaderboards.feature` |
-| Points & Levels | `docs/features/gamification/points-prd.md` | `tests/features/gamification/points.feature` |
-| Direct Messages | `docs/features/messaging/dm-prd.md` | `tests/features/messaging/dm.feature` |
-| Notifications | `docs/features/notifications/notifications-prd.md` | `tests/features/notifications/notifications.feature` |
-| Search | `docs/features/search/search-prd.md` | `tests/features/search/search.feature` |
-| Admin Settings | `docs/features/admin/settings-prd.md` | `tests/features/admin/settings.feature` |
-| Payments | `docs/features/membership/payments-prd.md` | `tests/features/membership/payments.feature` |
+| Feature Area | PRD Document | BDD Spec | Status |
+|--------------|--------------|----------|--------|
+| User Registration & Authentication | `docs/features/identity/registration-authentication-prd.md` | `tests/features/identity/registration_authentication.feature` | ✅ Complete |
+| User Profile | `docs/features/identity/profile-prd.md` | `tests/features/identity/profile.feature` | |
+| Community Feed | `docs/features/community/feed-prd.md` | `tests/features/community/feed.feature` | |
+| Posts | `docs/features/community/posts-prd.md` | `tests/features/community/posts.feature` | |
+| Comments | `docs/features/community/comments-prd.md` | `tests/features/community/comments.feature` | |
+| Reactions | `docs/features/community/reactions-prd.md` | `tests/features/community/reactions.feature` | |
+| Categories | `docs/features/community/categories-prd.md` | `tests/features/community/categories.feature` | |
+| Courses | `docs/features/classroom/courses-prd.md` | `tests/features/classroom/courses.feature` | |
+| Modules | `docs/features/classroom/modules-prd.md` | `tests/features/classroom/modules.feature` | |
+| Lessons | `docs/features/classroom/lessons-prd.md` | `tests/features/classroom/lessons.feature` | |
+| Progress Tracking | `docs/features/classroom/progress-prd.md` | `tests/features/classroom/progress.feature` | |
+| Events | `docs/features/calendar/events-prd.md` | `tests/features/calendar/events.feature` | |
+| Member Directory | `docs/features/members/directory-prd.md` | `tests/features/members/directory.feature` | |
+| Member Map | `docs/features/members/map-prd.md` | `tests/features/members/map.feature` | |
+| Leaderboards | `docs/features/gamification/leaderboards-prd.md` | `tests/features/gamification/leaderboards.feature` | |
+| Points & Levels | `docs/features/gamification/points-prd.md` | `tests/features/gamification/points.feature` | |
+| Direct Messages | `docs/features/messaging/dm-prd.md` | `tests/features/messaging/dm.feature` | |
+| Notifications | `docs/features/notifications/notifications-prd.md` | `tests/features/notifications/notifications.feature` | |
+| Search | `docs/features/search/search-prd.md` | `tests/features/search/search.feature` | |
+| Admin Settings | `docs/features/admin/settings-prd.md` | `tests/features/admin/settings.feature` | |
+| Payments | `docs/features/membership/payments-prd.md` | `tests/features/membership/payments.feature` | |
 
 ### Appendix B: UI Reference
 
