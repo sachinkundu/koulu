@@ -110,9 +110,20 @@ async def create_user(
         password: str = "testpassword123",
         is_verified: bool = False,
         is_active: bool = True,
+        display_name: str | None = None,
+        bio: str | None = None,
+        avatar_url: str | None = None,
+        city: str | None = None,
+        country: str | None = None,
+        twitter_url: str | None = None,
+        linkedin_url: str | None = None,
+        instagram_url: str | None = None,
+        website_url: str | None = None,
+        registered_on: datetime | None = None,
     ) -> UserModel:
         hashed = password_hasher.hash(password)
         user_id = uuid4()
+        created_at = registered_on or datetime.now(UTC)
 
         user = UserModel(
             id=user_id,
@@ -120,12 +131,26 @@ async def create_user(
             hashed_password=hashed.value,
             is_verified=is_verified,
             is_active=is_active,
+            created_at=created_at,
         )
         db_session.add(user)
 
+        # Determine if profile is complete
+        is_complete = display_name is not None
+
         profile = ProfileModel(
             user_id=user_id,
-            is_complete=False,
+            display_name=display_name,
+            bio=bio,
+            avatar_url=avatar_url,
+            location_city=city,
+            location_country=country,
+            twitter_url=twitter_url,
+            linkedin_url=linkedin_url,
+            instagram_url=instagram_url,
+            website_url=website_url,
+            is_complete=is_complete,
+            created_at=created_at,
         )
         db_session.add(profile)
 

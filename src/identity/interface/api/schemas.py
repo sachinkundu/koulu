@@ -107,6 +107,56 @@ class ProfileResponse(BaseModel):
     is_complete: bool
 
 
+class ProfileDetailResponse(BaseModel):
+    """Detailed profile response with all fields."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    display_name: str | None
+    avatar_url: str | None
+    bio: str | None
+    location_city: str | None
+    location_country: str | None
+    twitter_url: str | None
+    linkedin_url: str | None
+    instagram_url: str | None
+    website_url: str | None
+    is_complete: bool
+    is_own_profile: bool  # Whether the requesting user owns this profile
+    created_at: datetime
+    updated_at: datetime
+
+
+class StatsResponse(BaseModel):
+    """Profile statistics response."""
+
+    contribution_count: int
+    joined_at: datetime
+
+
+class ActivityItemResponse(BaseModel):
+    """Single activity item response."""
+
+    id: str
+    type: str
+    content: str
+    created_at: datetime
+
+
+class ActivityResponse(BaseModel):
+    """Profile activity feed response."""
+
+    items: list[ActivityItemResponse]
+    total_count: int
+
+
+class ActivityChartResponse(BaseModel):
+    """30-day activity chart data response."""
+
+    days: list[datetime]
+    counts: list[int]
+
+
 class UserResponse(BaseModel):
     """User response."""
 

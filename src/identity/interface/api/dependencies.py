@@ -21,7 +21,12 @@ from src.identity.application.handlers import (
     ResetPasswordHandler,
     VerifyEmailHandler,
 )
-from src.identity.application.queries import GetCurrentUserHandler
+from src.identity.application.queries import (
+    GetCurrentUserHandler,
+    GetProfileActivityHandler,
+    GetProfileHandler,
+    GetProfileStatsHandler,
+)
 from src.identity.domain.entities import User
 from src.identity.infrastructure.persistence import (
     RedisRefreshTokenRepository,
@@ -280,6 +285,21 @@ def get_complete_profile_handler(
 def get_current_user_handler(user_repo: UserRepositoryDep) -> GetCurrentUserHandler:
     """Get current user handler."""
     return GetCurrentUserHandler(user_repository=user_repo)
+
+
+def get_profile_handler(user_repo: UserRepositoryDep) -> GetProfileHandler:
+    """Get profile handler."""
+    return GetProfileHandler(user_repository=user_repo)
+
+
+def get_profile_activity_handler(user_repo: UserRepositoryDep) -> GetProfileActivityHandler:
+    """Get profile activity handler."""
+    return GetProfileActivityHandler(user_repository=user_repo)
+
+
+def get_profile_stats_handler(user_repo: UserRepositoryDep) -> GetProfileStatsHandler:
+    """Get profile stats handler."""
+    return GetProfileStatsHandler(user_repository=user_repo)
 
 
 # ============================================================================
