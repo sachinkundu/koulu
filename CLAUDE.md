@@ -91,14 +91,14 @@ Continue on the SAME feature branch. New branch only for new features.
 
 ## Verification (Definition of Done)
 
-**⚠️ MANDATORY: A feature is NOT complete until ALL checks pass with ZERO failures.**
+**⚠️ MANDATORY: A feature is NOT complete until ALL checks pass with ZERO failures AND ZERO warnings.**
 
 ### Before Marking ANY Feature Complete:
 
 1. **Infrastructure Running:** `docker-compose up -d` (postgres, redis, mailhog)
 2. **Test Database Exists:** `docker exec koulu-postgres psql -U koulu -c "\l" | grep koulu_test`
 3. **Python Verification:** `./scripts/verify.sh` — ALL checks pass
-4. **BDD Tests:** `pytest tests/features/` — **0 failures** (not "some pass")
+4. **BDD Tests:** `pytest tests/features/` — **0 failures, 0 warnings**
 5. **Frontend Verification:** `./scripts/verify-frontend.sh` — ALL checks pass
 
 ### Red Flags (Feature is NOT Complete):
@@ -106,11 +106,20 @@ Continue on the SAME feature branch. New branch only for new features.
 - ❌ "Tests require infrastructure" used as excuse to skip
 - ❌ Verification scripts not run
 - ❌ Any test failure, even 1 out of 100
+- ❌ Any warnings in test output (fix the root cause, don't ignore)
+
+### Warning Policy:
+- **Fix warnings at the source** — don't suppress them
+- If suppression is truly unavoidable (e.g., library integration issues):
+  1. Use the most targeted filter possible (specific warning type + source module)
+  2. Add a comment explaining WHY suppression is necessary
+  3. **Inform the user** before suppressing — get explicit approval
+- Never silently suppress warnings
 
 ### Evidence Required:
 When documenting completion, include actual test output showing pass count:
 ```
-======================= 36 passed, 0 failed =======================
+======================= 36 passed, 0 warnings =======================
 ```
 
 ---

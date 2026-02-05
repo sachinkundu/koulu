@@ -114,6 +114,27 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-v --cov=src --cov-report=term-missing --cov-fail-under=80"
+markers = [
+    "identity: Identity domain tests",
+    "authentication: Authentication tests",
+    "registration: Registration tests",
+    "login: Login tests",
+    "logout: Logout tests",
+    "tokens: Token management tests",
+    "password_reset: Password reset tests",
+    "profile: Profile tests",
+    "rate_limiting: Rate limiting tests",
+    "security: Security tests",
+    "happy_path: Happy path scenarios",
+    "error: Error scenarios",
+    "edge_case: Edge case scenarios",
+]
+filterwarnings = [
+    # pytest-bdd with async steps: the step function returns a coroutine which triggers
+    # this warning before pytest-asyncio awaits it. This is a known limitation of the
+    # pytest-bdd + pytest-asyncio integration, not a bug in our code.
+    "ignore:coroutine .* was never awaited:RuntimeWarning:pytest_bdd.scenario",
+]
 
 [tool.coverage.run]
 source = ["src"]
