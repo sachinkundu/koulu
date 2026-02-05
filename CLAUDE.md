@@ -91,13 +91,27 @@ Continue on the SAME feature branch. New branch only for new features.
 
 ## Verification (Definition of Done)
 
-**Frontend:** `./scripts/verify-frontend.sh`
-- Lint, typecheck, test, build must all pass
+**⚠️ MANDATORY: A feature is NOT complete until ALL checks pass with ZERO failures.**
 
-**Python:** `./scripts/verify.sh`  
-- ruff, mypy, pytest with >80% coverage
+### Before Marking ANY Feature Complete:
 
-**BDD:** `pytest tests/features/` or `npm run test:bdd`
+1. **Infrastructure Running:** `docker-compose up -d` (postgres, redis, mailhog)
+2. **Test Database Exists:** `docker exec koulu-postgres psql -U koulu -c "\l" | grep koulu_test`
+3. **Python Verification:** `./scripts/verify.sh` — ALL checks pass
+4. **BDD Tests:** `pytest tests/features/` — **0 failures** (not "some pass")
+5. **Frontend Verification:** `./scripts/verify-frontend.sh` — ALL checks pass
+
+### Red Flags (Feature is NOT Complete):
+- ❌ Tests contain `pass` stubs instead of real assertions
+- ❌ "Tests require infrastructure" used as excuse to skip
+- ❌ Verification scripts not run
+- ❌ Any test failure, even 1 out of 100
+
+### Evidence Required:
+When documenting completion, include actual test output showing pass count:
+```
+======================= 36 passed, 0 failed =======================
+```
 
 ---
 

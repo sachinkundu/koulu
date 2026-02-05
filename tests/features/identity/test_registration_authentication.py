@@ -1,4 +1,10 @@
-"""BDD step definitions for registration and authentication."""
+"""BDD step definitions for registration and authentication.
+
+NOTE: Many step functions have intentionally "unused" parameters like `client` and `db_session`.
+These are required for pytest-bdd fixture dependency ordering - async steps must share the same
+fixture instances to properly share the `context` dict. See BUG-001 for details.
+"""
+# ruff: noqa: ARG001
 
 from typing import Any
 
@@ -41,7 +47,7 @@ async def no_user_with_email(db_session: AsyncSession, email: str, context: dict
 
 @given(parsers.parse('a user exists with email "{email}"'))
 async def user_exists(
-    _db_session: AsyncSession, email: str, create_user: Any, context: dict[str, Any]
+    db_session: AsyncSession, email: str, create_user: Any, context: dict[str, Any]
 ) -> None:
     """Create a user with the given email."""
     user = await create_user(email=email, is_verified=True)
@@ -51,7 +57,7 @@ async def user_exists(
 
 @given(parsers.parse('a user registered with email "{email}"'))
 async def user_registered(
-    _db_session: AsyncSession, email: str, create_user: Any, context: dict[str, Any]
+    db_session: AsyncSession, email: str, create_user: Any, context: dict[str, Any]
 ) -> None:
     """Create an unverified user."""
     user = await create_user(email=email, is_verified=False)
@@ -61,7 +67,7 @@ async def user_registered(
 
 @given(parsers.parse('a user registered with email "{email}" and password "{password}"'))
 async def user_registered_with_password(
-    _db_session: AsyncSession,
+    db_session: AsyncSession,
     email: str,
     password: str,
     create_user: Any,
@@ -76,7 +82,7 @@ async def user_registered_with_password(
 
 @given(parsers.parse('a verified user exists with email "{email}" and password "{password}"'))
 async def verified_user_exists(
-    _db_session: AsyncSession,
+    db_session: AsyncSession,
     email: str,
     password: str,
     create_user: Any,
@@ -91,7 +97,7 @@ async def verified_user_exists(
 
 @given(parsers.parse('a verified user exists with email "{email}"'))
 async def verified_user_exists_simple(
-    _db_session: AsyncSession,
+    db_session: AsyncSession,
     email: str,
     create_user: Any,
     context: dict[str, Any],
@@ -103,7 +109,7 @@ async def verified_user_exists_simple(
 
 
 @given("the user has not verified their email")
-def user_not_verified(context: dict[str, Any]) -> None:
+async def user_not_verified(client: AsyncClient, context: dict[str, Any]) -> None:
     """User is not verified (already set in user creation)."""
     assert context.get("user") is not None
     assert context["user"].is_verified is False
@@ -178,13 +184,13 @@ async def user_authenticated_with_token(
 
 
 @given("the access token has expired")
-def access_token_expired(context: dict[str, Any]) -> None:
+async def access_token_expired(client: AsyncClient, context: dict[str, Any]) -> None:
     """Mark access token as expired (handled by token validation)."""
     context["access_token_expired"] = True
 
 
 @given("the refresh token has expired")
-def refresh_token_expired(context: dict[str, Any]) -> None:
+async def refresh_token_expired(client: AsyncClient, context: dict[str, Any]) -> None:
     """Mark refresh token as expired."""
     context["refresh_token_expired"] = True
 
@@ -206,6 +212,17 @@ async def user_has_valid_reset_token(create_reset_token: Any, context: dict[str,
     if "reset_token" not in context:
         token = await create_reset_token(user_id=context["user"].id)
         context["reset_token"] = token.token
+
+
+@given("a user has a valid password reset token")
+async def a_user_has_valid_reset_token(
+    create_user: Any, create_reset_token: Any, context: dict[str, Any]
+) -> None:
+    """Create a user with a valid reset token."""
+    user = await create_user(email="resetuser@example.com", is_verified=True)
+    token = await create_reset_token(user_id=user.id)
+    context["user"] = user
+    context["reset_token"] = token.token
 
 
 @given(parsers.parse("a user has a password reset token created {hours:d} hours ago"))
@@ -238,7 +255,7 @@ async def verified_user_incomplete_profile(create_user: Any, context: dict[str, 
 
 
 @given(parsers.parse("{count:d} registration attempts from the same IP in 15 minutes"))
-def registration_attempts(count: int, context: dict[str, Any]) -> None:
+async def registration_attempts(count: int, client: AsyncClient, context: dict[str, Any]) -> None:
     """Record registration attempts (rate limiting test)."""
     context["registration_attempts"] = count
 
@@ -263,7 +280,7 @@ async def failed_login_attempts_simple(
 
 
 @given("15 minutes have passed")
-def time_passed(context: dict[str, Any]) -> None:
+async def time_passed(client: AsyncClient, context: dict[str, Any]) -> None:
     """Simulate time passing (rate limit window reset)."""
     context["rate_limit_reset"] = True
 
@@ -309,7 +326,7 @@ async def attempt_register(
 
 
 @when("the verification email is sent")
-def verification_email_sent(context: dict[str, Any]) -> None:
+async def verification_email_sent(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verification email is sent (mocked)."""
     context["email_sent"] = True
 
@@ -420,7 +437,7 @@ async def refresh_with_named_token(
 
 
 @when(parsers.parse('receives a new refresh token "{token}"'))
-def receive_new_token(token: str, context: dict[str, Any]) -> None:
+async def receive_new_token(token: str, client: AsyncClient, context: dict[str, Any]) -> None:
     """Store new refresh token."""
     if context["response"].status_code == 200:
         context[token] = context["response"].json()["refresh_token"]
@@ -543,7 +560,7 @@ async def nth_registration_attempt(
 
 @when(parsers.parse('a {ordinal} login attempt is made for email "{email}"'))
 async def nth_login_attempt(
-    client: AsyncClient, _ordinal: str, email: str, context: dict[str, Any]
+    client: AsyncClient, ordinal: str, email: str, context: dict[str, Any]
 ) -> None:
     """Make nth login attempt."""
     response = await client.post(
@@ -612,26 +629,28 @@ async def user_not_verified_check(db_session: AsyncSession, context: dict[str, A
 
 
 @then(parsers.parse('a "{event}" event should be published'))
-def event_published(event: str, context: dict[str, Any]) -> None:
+async def event_published(event: str, client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify event was published (mocked in tests)."""
     # In real tests, we would check an event store or mock
     pass
 
 
 @then(parsers.parse('a verification email should be sent to "{email}"'))
-def verification_email_sent_to(email: str, context: dict[str, Any]) -> None:
+async def verification_email_sent_to(
+    email: str, client: AsyncClient, context: dict[str, Any]
+) -> None:
     """Verify email was sent (mocked)."""
     pass
 
 
 @then("the email should contain a verification link")
-def email_contains_link(context: dict[str, Any]) -> None:
+async def email_contains_link(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify email contains link (mocked)."""
     pass
 
 
 @then("the verification link should be valid for 24 hours")
-def link_valid_24h(context: dict[str, Any]) -> None:
+async def link_valid_24h(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify link validity (mocked)."""
     pass
 
@@ -644,7 +663,7 @@ async def user_marked_verified(db_session: AsyncSession, context: dict[str, Any]
 
 
 @then("the user should receive authentication tokens")
-def user_receives_tokens(context: dict[str, Any]) -> None:
+async def user_receives_tokens(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify tokens are returned."""
     response = context["response"]
     assert response.status_code == 200
@@ -654,7 +673,9 @@ def user_receives_tokens(context: dict[str, Any]) -> None:
 
 
 @then(parsers.parse('registration should fail with error code "{code}"'))
-def registration_fails_with_code(code: str, context: dict[str, Any]) -> None:
+async def registration_fails_with_code(
+    code: str, client: AsyncClient, context: dict[str, Any]
+) -> None:
     """Verify registration failed with specific code."""
     response = context["response"]
     assert response.status_code in [400, 422]
@@ -673,7 +694,7 @@ async def no_user_created(db_session: AsyncSession, context: dict[str, Any]) -> 
 
 
 @then("the response should indicate to check email")
-def response_indicates_check_email(context: dict[str, Any]) -> None:
+async def response_indicates_check_email(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify generic success response."""
     response = context["response"]
     assert response.status_code == 202
@@ -689,7 +710,9 @@ async def no_duplicate_user(db_session: AsyncSession, context: dict[str, Any]) -
 
 
 @then(parsers.parse('verification should fail with error code "{code}"'))
-def verification_fails_with_code(code: str, context: dict[str, Any]) -> None:
+async def verification_fails_with_code(
+    code: str, client: AsyncClient, context: dict[str, Any]
+) -> None:
     """Verify verification failed with specific code."""
     response = context["response"]
     assert response.status_code == 400
@@ -705,19 +728,19 @@ async def user_remains_unverified(db_session: AsyncSession, context: dict[str, A
 
 
 @then("a new verification email should be sent")
-def new_verification_sent(context: dict[str, Any]) -> None:
+async def new_verification_sent(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify new email was sent (mocked)."""
     assert context["response"].status_code == 202
 
 
 @then("the old verification token should be invalidated")
-def old_token_invalidated(context: dict[str, Any]) -> None:
+async def old_token_invalidated(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify old token is invalidated (handled by repository)."""
     pass
 
 
 @then(parsers.parse('login should fail with error code "{code}"'))
-def login_fails_with_code(code: str, context: dict[str, Any]) -> None:
+async def login_fails_with_code(code: str, client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify login failed with specific code."""
     response = context["response"]
     assert response.status_code == 401
@@ -726,19 +749,19 @@ def login_fails_with_code(code: str, context: dict[str, Any]) -> None:
 
 
 @then("the refresh token should be valid for 30 days")
-def refresh_token_30_days(context: dict[str, Any]) -> None:
+async def refresh_token_30_days(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify refresh token validity (can't easily check in test)."""
     assert context["response"].status_code == 200
 
 
 @then("the refresh token should be valid for 7 days")
-def refresh_token_7_days(context: dict[str, Any]) -> None:
+async def refresh_token_7_days(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify refresh token validity (can't easily check in test)."""
     assert context["response"].status_code == 200
 
 
 @then("a new access token should be issued")
-def new_access_token(context: dict[str, Any]) -> None:
+async def new_access_token(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify new access token issued."""
     response = context["response"]
     assert response.status_code == 200
@@ -746,7 +769,7 @@ def new_access_token(context: dict[str, Any]) -> None:
 
 
 @then("a new refresh token should be issued")
-def new_refresh_token(context: dict[str, Any]) -> None:
+async def new_refresh_token(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify new refresh token issued."""
     response = context["response"]
     assert response.status_code == 200
@@ -754,13 +777,13 @@ def new_refresh_token(context: dict[str, Any]) -> None:
 
 
 @then("the old refresh token should be invalidated")
-def old_refresh_token_invalidated(context: dict[str, Any]) -> None:
+async def old_refresh_token_invalidated(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify old token invalidated (handled by blacklist)."""
     pass
 
 
 @then(parsers.parse('refresh should fail with error code "{code}"'))
-def refresh_fails_with_code(code: str, context: dict[str, Any]) -> None:
+async def refresh_fails_with_code(code: str, client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify refresh failed with specific code."""
     response = context["response"]
     assert response.status_code == 401
@@ -769,43 +792,43 @@ def refresh_fails_with_code(code: str, context: dict[str, Any]) -> None:
 
 
 @then("the refresh token should be invalidated")
-def refresh_token_invalidated(context: dict[str, Any]) -> None:
+async def refresh_token_invalidated(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify refresh token invalidated."""
     pass
 
 
 @then("subsequent requests with the old access token should fail after expiry")
-def old_access_token_fails(context: dict[str, Any]) -> None:
+async def old_access_token_fails(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify old access token fails (handled by JWT expiry)."""
     pass
 
 
 @then(parsers.parse('a password reset email should be sent to "{email}"'))
-def reset_email_sent(_email: str, context: dict[str, Any]) -> None:
+async def reset_email_sent(email: str, client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify reset email sent (mocked)."""
     assert context["response"].status_code == 202
 
 
 @then("the password should be updated")
-def password_updated(context: dict[str, Any]) -> None:
+async def password_updated(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify password was updated."""
     assert context["response"].status_code == 200
 
 
 @then("all existing refresh tokens should be invalidated")
-def all_tokens_invalidated(context: dict[str, Any]) -> None:
+async def all_tokens_invalidated(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify all tokens invalidated."""
     pass
 
 
 @then("a confirmation email should be sent")
-def confirmation_email_sent(context: dict[str, Any]) -> None:
+async def confirmation_email_sent(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify confirmation email sent (mocked)."""
     pass
 
 
 @then(parsers.parse('password reset should fail with error code "{code}"'))
-def reset_fails_with_code(code: str, context: dict[str, Any]) -> None:
+async def reset_fails_with_code(code: str, client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify reset failed with specific code."""
     response = context["response"]
     assert response.status_code == 400
@@ -814,13 +837,13 @@ def reset_fails_with_code(code: str, context: dict[str, Any]) -> None:
 
 
 @then("no email should be sent")
-def no_email_sent(context: dict[str, Any]) -> None:
+async def no_email_sent(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify no email sent (mocked)."""
     pass
 
 
 @then(parsers.parse('the profile should be updated with display name "{name}"'))
-def profile_updated(name: str, context: dict[str, Any]) -> None:
+async def profile_updated(name: str, client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify profile was updated."""
     response = context["response"]
     assert response.status_code == 200
@@ -829,7 +852,7 @@ def profile_updated(name: str, context: dict[str, Any]) -> None:
 
 
 @then("the profile should be marked as complete")
-def profile_complete(context: dict[str, Any]) -> None:
+async def profile_complete(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify profile is complete."""
     response = context["response"]
     assert response.status_code == 200
@@ -838,7 +861,7 @@ def profile_complete(context: dict[str, Any]) -> None:
 
 
 @then(parsers.parse('the profile should have a generated avatar based on initials "{initials}"'))
-def profile_has_avatar(initials: str, context: dict[str, Any]) -> None:
+async def profile_has_avatar(initials: str, client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify avatar was generated."""
     response = context["response"]
     assert response.status_code == 200
@@ -848,7 +871,7 @@ def profile_has_avatar(initials: str, context: dict[str, Any]) -> None:
 
 
 @then(parsers.parse('profile update should fail with error code "{code}"'))
-def profile_update_fails(code: str, context: dict[str, Any]) -> None:
+async def profile_update_fails(code: str, client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify profile update failed."""
     response = context["response"]
     assert response.status_code == 400
@@ -857,21 +880,21 @@ def profile_update_fails(code: str, context: dict[str, Any]) -> None:
 
 
 @then(parsers.parse('the request should be rejected with error code "{code}"'))
-def request_rejected(_code: str, context: dict[str, Any]) -> None:
+async def request_rejected(code: str, client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify request was rejected."""
     response = context["response"]
     assert response.status_code == 429
 
 
 @then("the request should not be rate limited")
-def request_not_rate_limited(context: dict[str, Any]) -> None:
+async def request_not_rate_limited(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify request was not rate limited."""
     response = context["response"]
     assert response.status_code != 429
 
 
 @then("the stored password should be hashed with Argon2id")
-async def password_hashed(db_session: AsyncSession, _context: dict[str, Any]) -> None:
+async def password_hashed(db_session: AsyncSession, context: dict[str, Any]) -> None:
     """Verify password is hashed."""
     result = await db_session.execute(
         select(UserModel).where(UserModel.email == "hash@example.com")
@@ -893,24 +916,24 @@ async def password_not_plaintext(db_session: AsyncSession, context: dict[str, An
 
 
 @then("the access token should be a valid JWT signed with HS256")
-def token_is_valid_jwt(context: dict[str, Any]) -> None:
+async def token_is_valid_jwt(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify token is valid JWT."""
     assert "access_token" in context
 
 
 @then("the access token should contain the user ID")
-def token_contains_user_id(context: dict[str, Any]) -> None:
+async def token_contains_user_id(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify token contains user ID."""
     pass
 
 
 @then("the access token should expire in 30 minutes")
-def token_expires_30min(context: dict[str, Any]) -> None:
+async def token_expires_30min(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify token expiry."""
     pass
 
 
 @then("both error responses should be identical")
-def responses_identical(context: dict[str, Any]) -> None:
+async def responses_identical(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify responses are identical (prevent enumeration)."""
     assert context.get("status_exists") == context.get("status_notexists")

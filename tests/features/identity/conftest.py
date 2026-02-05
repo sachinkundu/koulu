@@ -25,11 +25,14 @@ from src.identity.infrastructure.persistence.models import (
     VerificationTokenModel,
 )
 from src.identity.infrastructure.services import Argon2PasswordHasher
+from src.identity.interface.api.dependencies import get_session
 from src.main import app
 from src.shared.infrastructure import Base
 
 # Test database URL (use separate test database)
-TEST_DATABASE_URL = settings.database_url.replace("/koulu", "/koulu_test")
+# Use rsplit to replace only the database name at the end, not the username
+_base_url, _db_name = settings.database_url.rsplit("/", 1)
+TEST_DATABASE_URL = f"{_base_url}/koulu_test"
 
 
 @pytest.fixture(scope="session")
@@ -67,11 +70,17 @@ async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, Non
 
 
 @pytest_asyncio.fixture(scope="function")
-async def client(_db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """Create test HTTP client."""
+async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """Create test HTTP client with overridden database session."""
+
+    async def override_get_session() -> AsyncGenerator[AsyncSession, None]:
+        yield db_session
+
+    app.dependency_overrides[get_session] = override_get_session
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture

@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "🔍 Running Python Verification..."
 
 echo ""
@@ -16,7 +18,11 @@ echo "3️⃣  Type Checking (mypy)..."
 mypy .
 
 echo ""
-echo "4️⃣  Running Tests with Coverage..."
+echo "4️⃣  Setting up test database..."
+"${SCRIPT_DIR}/setup-test-db.sh"
+
+echo ""
+echo "5️⃣  Running Tests with Coverage..."
 pytest --cov=src --cov-fail-under=80
 
 echo ""

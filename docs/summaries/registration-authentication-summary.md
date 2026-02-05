@@ -150,19 +150,20 @@ A complete user registration and authentication system for the Koulu platform. T
    docker-compose up -d
    ```
 
-2. Run database migrations:
+2. Create test database (required for pytest):
+   ```bash
+   docker exec koulu-postgres psql -U koulu -d postgres -c "CREATE DATABASE koulu_test OWNER koulu;"
+   ```
+
+3. Run database migrations:
    ```bash
    alembic upgrade head
    ```
 
-3. Start backend:
+4. **Run BDD tests (MANDATORY - must show 0 failures):**
    ```bash
-   uvicorn src.main:app --reload
-   ```
-
-4. Start frontend (requires Node 18+):
-   ```bash
-   cd frontend && npm run dev
+   pytest tests/features/identity/ --tb=short
+   # Expected: ======================= 36 passed =======================
    ```
 
 5. Run backend verification:
@@ -170,9 +171,18 @@ A complete user registration and authentication system for the Koulu platform. T
    ./scripts/verify.sh
    ```
    - Linting, formatting, and type checking pass
-   - Tests require running Docker services
 
-6. Run frontend verification:
+6. Start backend (for manual testing):
+   ```bash
+   uvicorn src.main:app --reload
+   ```
+
+7. Start frontend (requires Node 18+):
+   ```bash
+   cd frontend && npm run dev
+   ```
+
+8. Run frontend verification:
    ```bash
    ./scripts/verify-frontend.sh
    ```
@@ -191,6 +201,7 @@ A complete user registration and authentication system for the Koulu platform. T
 | Node 16 missing `crypto.getRandomValues` | Updated verify-frontend.sh to skip build/tests on Node < 18, documented requirement |
 | BaseValueObject empty `__post_init__` lint error | Added `_validate()` method pattern for subclass extension |
 | **Email sending never wired up** | BDD tests were stubs (`pass`), hiding that EmailService was never called. Fixed by injecting EmailService into handlers and calling send methods directly. Updated BDD skill and implement-feature prompt to prevent this. |
+| **BUG-001: All 36 tests failing** | Tests never run before marking complete. Multiple issues: DB URL bug corrupted username, missing test database, fixture typos, app using wrong DB session, async/sync context sharing failure. See `docs/bugs/BUG-001-test-infrastructure-failures.md` for full analysis and prevention measures. |
 
 ---
 
