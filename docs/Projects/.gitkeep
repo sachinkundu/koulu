@@ -1,0 +1,16 @@
+# Projects
+
+This folder contains implementation tracking for features being built.
+
+## What Goes Here
+
+- Feature folders containing:
+  - Implementation-Plan.md — Phase-based build plan
+  - Phase-X-Summary.md — Summary of each completed phase
+  - Team-Update.md (optional) — Current status
+
+## Creating a New Project Folder
+
+1. Create a folder with the feature name: `[Feature Name]/`
+2. Add the Implementation-Plan.md after Phase 2
+3. Add Phase-X-Summary.md files as you complete each phase in Phase 3

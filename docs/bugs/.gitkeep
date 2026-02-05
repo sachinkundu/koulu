@@ -1,0 +1,47 @@
+# Bugs and Issues
+
+This folder contains documentation for bugs and issues.
+
+## What Goes Here
+
+- Issue-XXX-[Description].md files documenting bugs
+
+## Creating a New Issue
+
+1. Find the next issue number (check existing files)
+2. Create: `Issue-XXX-Brief-Description.md`
+3. Include:
+   - Description of the issue
+   - Steps to reproduce
+   - Expected vs actual behavior
+   - Screenshots or error messages (if applicable)
+   - Resolution (once fixed)
+
+## Example
+
+```markdown
+# Issue-042: Login Button Unresponsive on iOS
+
+## Description
+The login button on the sign-in screen does not respond to taps on iOS devices.
+
+## Steps to Reproduce
+1. Open the app on an iOS device
+2. Navigate to the sign-in screen
+3. Enter credentials
+4. Tap the "Log In" button
+
+## Expected Behavior
+Button should trigger login flow.
+
+## Actual Behavior
+Nothing happens. No visual feedback, no network request.
+
+## Environment
+- iOS 17.2
+- iPhone 14 Pro
+- App version 1.2.3
+
+## Resolution
+Fixed in commit abc123. The touchable area was too small.
+```
