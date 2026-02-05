@@ -13,7 +13,7 @@ from src.identity.domain.repositories import (
     IResetTokenRepository,
     IUserRepository,
 )
-from src.identity.domain.services import IPasswordHasher, ITokenGenerator
+from src.identity.domain.services import IEmailService, IPasswordHasher, ITokenGenerator
 from src.identity.domain.value_objects import EmailAddress
 from src.shared.infrastructure import event_bus
 
@@ -31,11 +31,13 @@ class RequestPasswordResetHandler:
         user_repository: IUserRepository,
         reset_token_repository: IResetTokenRepository,
         token_generator: ITokenGenerator,
+        email_service: IEmailService,
     ) -> None:
         """Initialize with dependencies."""
         self._user_repository = user_repository
         self._reset_token_repository = reset_token_repository
         self._token_generator = token_generator
+        self._email_service = email_service
 
     async def handle(self, command: RequestPasswordResetCommand) -> None:
         """
@@ -75,7 +77,13 @@ class RequestPasswordResetHandler:
             expires_at=expires_at,
         )
 
-        # Request password reset (publishes event for email)
+        # Send password reset email
+        await self._email_service.send_password_reset_email(
+            email=str(email),
+            token=token,
+        )
+
+        # Publish domain events (for analytics, audit, etc.)
         user.request_password_reset()
         await event_bus.publish_all(user.clear_events())
 

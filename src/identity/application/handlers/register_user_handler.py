@@ -5,7 +5,7 @@ import structlog
 from src.identity.application.commands.register_user import RegisterUserCommand
 from src.identity.domain.entities import User
 from src.identity.domain.repositories import IUserRepository, IVerificationTokenRepository
-from src.identity.domain.services import IPasswordHasher, ITokenGenerator
+from src.identity.domain.services import IEmailService, IPasswordHasher, ITokenGenerator
 from src.identity.domain.value_objects import EmailAddress, UserId
 from src.shared.infrastructure import event_bus
 
@@ -21,12 +21,14 @@ class RegisterUserHandler:
         verification_token_repository: IVerificationTokenRepository,
         password_hasher: IPasswordHasher,
         token_generator: ITokenGenerator,
+        email_service: IEmailService,
     ) -> None:
         """Initialize with dependencies."""
         self._user_repository = user_repository
         self._verification_token_repository = verification_token_repository
         self._password_hasher = password_hasher
         self._token_generator = token_generator
+        self._email_service = email_service
 
     async def handle(self, command: RegisterUserCommand) -> UserId | None:
         """
@@ -75,7 +77,13 @@ class RegisterUserHandler:
             expires_at=expires_at,
         )
 
-        # Publish domain events (triggers email sending)
+        # Send verification email
+        await self._email_service.send_verification_email(
+            email=str(email),
+            token=token,
+        )
+
+        # Publish domain events (for analytics, audit, etc.)
         await event_bus.publish_all(user.clear_events())
 
         logger.info("register_user_success", user_id=str(user.id))

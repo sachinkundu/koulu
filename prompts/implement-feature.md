@@ -126,7 +126,7 @@ After implementation:
    ```bash
    # Python
    pytest tests/features/[context]/[feature].feature
-   
+
    # Frontend
    npm run test:bdd -- --grep "[feature]"
    ```
@@ -138,6 +138,14 @@ After implementation:
    ```
 
 3. **Fix any failures** — Do NOT modify tests unless they were incorrect
+
+4. **Verify side effects manually** — For features with integrations:
+   - **Email sending** → Check MailHog at http://localhost:8025
+   - **Events published** → Check logs for event publication
+   - **External APIs** → Verify calls were made (check logs or mocks)
+   - **Database changes** → Query DB directly if needed
+
+   ⚠️ **WARNING**: If BDD test steps are stubs (just `pass`), the test passes without verifying anything. Check that step implementations have actual assertions!
 
 ---
 
@@ -163,6 +171,8 @@ Before marking done:
 - [ ] Domain layer has no external dependencies
 - [ ] Existing patterns were followed
 - [ ] Code is committed to feature branch
+- [ ] **Side effects verified** — Emails, events, webhooks actually work (not just mocked)
+- [ ] **No stub test steps** — All `@then` steps have actual assertions (not just `pass`)
 ```
 
 ---

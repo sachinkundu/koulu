@@ -31,6 +31,7 @@ from src.identity.infrastructure.persistence import (
 )
 from src.identity.infrastructure.services import (
     Argon2PasswordHasher,
+    EmailService,
     InitialsAvatarGenerator,
     JWTService,
 )
@@ -98,9 +99,15 @@ def get_avatar_generator() -> InitialsAvatarGenerator:
     return InitialsAvatarGenerator()
 
 
+def get_email_service() -> EmailService:
+    """Get email service instance."""
+    return EmailService()
+
+
 PasswordHasherDep = Annotated[Argon2PasswordHasher, Depends(get_password_hasher)]
 TokenGeneratorDep = Annotated[JWTService, Depends(get_token_generator)]
 AvatarGeneratorDep = Annotated[InitialsAvatarGenerator, Depends(get_avatar_generator)]
+EmailServiceDep = Annotated[EmailService, Depends(get_email_service)]
 
 
 # ============================================================================
@@ -152,6 +159,7 @@ def get_register_handler(
     verification_repo: VerificationTokenRepositoryDep,
     password_hasher: PasswordHasherDep,
     token_generator: TokenGeneratorDep,
+    email_service: EmailServiceDep,
 ) -> RegisterUserHandler:
     """Get register user handler."""
     return RegisterUserHandler(
@@ -159,6 +167,7 @@ def get_register_handler(
         verification_token_repository=verification_repo,
         password_hasher=password_hasher,
         token_generator=token_generator,
+        email_service=email_service,
     )
 
 
@@ -179,12 +188,14 @@ def get_resend_verification_handler(
     user_repo: UserRepositoryDep,
     verification_repo: VerificationTokenRepositoryDep,
     token_generator: TokenGeneratorDep,
+    email_service: EmailServiceDep,
 ) -> ResendVerificationHandler:
     """Get resend verification handler."""
     return ResendVerificationHandler(
         user_repository=user_repo,
         verification_token_repository=verification_repo,
         token_generator=token_generator,
+        email_service=email_service,
     )
 
 
@@ -229,12 +240,14 @@ def get_request_password_reset_handler(
     user_repo: UserRepositoryDep,
     reset_repo: ResetTokenRepositoryDep,
     token_generator: TokenGeneratorDep,
+    email_service: EmailServiceDep,
 ) -> RequestPasswordResetHandler:
     """Get request password reset handler."""
     return RequestPasswordResetHandler(
         user_repository=user_repo,
         reset_token_repository=reset_repo,
         token_generator=token_generator,
+        email_service=email_service,
     )
 
 

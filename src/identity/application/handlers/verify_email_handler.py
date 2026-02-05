@@ -8,7 +8,7 @@ from src.identity.application.commands.verify_email import (
 )
 from src.identity.domain.exceptions import InvalidTokenError, UserAlreadyVerifiedError
 from src.identity.domain.repositories import IUserRepository, IVerificationTokenRepository
-from src.identity.domain.services import ITokenGenerator
+from src.identity.domain.services import IEmailService, ITokenGenerator
 from src.identity.domain.value_objects import AuthTokens, EmailAddress
 from src.shared.infrastructure import event_bus
 
@@ -83,11 +83,13 @@ class ResendVerificationHandler:
         user_repository: IUserRepository,
         verification_token_repository: IVerificationTokenRepository,
         token_generator: ITokenGenerator,
+        email_service: IEmailService,
     ) -> None:
         """Initialize with dependencies."""
         self._user_repository = user_repository
         self._verification_token_repository = verification_token_repository
         self._token_generator = token_generator
+        self._email_service = email_service
 
     async def handle(self, command: ResendVerificationCommand) -> None:
         """
@@ -127,7 +129,10 @@ class ResendVerificationHandler:
             expires_at=expires_at,
         )
 
-        # Note: Email sending is triggered by event handler listening to event bus
-        # For resend, we manually trigger the send since UserRegistered was already published
+        # Send verification email
+        await self._email_service.send_verification_email(
+            email=str(email),
+            token=token,
+        )
 
         logger.info("resend_verification_success", user_id=str(user.id))

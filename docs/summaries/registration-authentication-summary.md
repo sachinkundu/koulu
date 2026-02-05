@@ -190,6 +190,7 @@ A complete user registration and authentication system for the Koulu platform. T
 | Redis generic type not subscriptable at runtime | Used string annotation `"Redis[bytes]"` for deferred evaluation |
 | Node 16 missing `crypto.getRandomValues` | Updated verify-frontend.sh to skip build/tests on Node < 18, documented requirement |
 | BaseValueObject empty `__post_init__` lint error | Added `_validate()` method pattern for subclass extension |
+| **Email sending never wired up** | BDD tests were stubs (`pass`), hiding that EmailService was never called. Fixed by injecting EmailService into handlers and calling send methods directly. Updated BDD skill and implement-feature prompt to prevent this. |
 
 ---
 
@@ -211,6 +212,8 @@ A complete user registration and authentication system for the Koulu platform. T
 
 - [ ] Set up CI/CD pipeline for automated verification
 - [ ] Deploy Docker infrastructure for integration testing
-- [ ] Implement email templates for verification and password reset
+- [x] ~~Implement email templates for verification and password reset~~ (Basic HTML templates implemented)
+- [x] ~~Wire up email sending~~ (Fixed: EmailService now injected into handlers)
 - [ ] Add OpenTelemetry tracing for observability
 - [ ] Upgrade to Node 18+ for full frontend build support
+- [ ] Replace stub BDD test steps with real MailHog assertions

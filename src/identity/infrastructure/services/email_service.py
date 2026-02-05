@@ -4,11 +4,12 @@ import structlog
 from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 
 from src.config import settings
+from src.identity.domain.services import IEmailService
 
 logger = structlog.get_logger()
 
 
-class EmailService:
+class EmailService(IEmailService):
     """
     Email service for sending transactional emails.
 

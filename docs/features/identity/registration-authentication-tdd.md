@@ -1614,7 +1614,7 @@ alembic downgrade -1
 |---------|------|--------|---------|
 | 1.0 | 2026-02-05 | Claude | Initial technical design with code samples |
 | 1.1 | 2026-02-05 | Claude | Refactored to architectural level (removed code, added diagrams/flows) |
-
+'
 ---
 
 ## 17. References

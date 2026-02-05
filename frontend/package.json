@@ -3,7 +3,11 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
+    "preinstall": "node -e \"if(+process.version.slice(1).split('.')[0]<18){console.error('\\x1b[31mError: Node.js 18+ required. Found '+process.version+'\\x1b[0m');process.exit(1)}\"",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
