@@ -1,6 +1,18 @@
 import { getVerificationToken } from './email-helpers';
 
 const API_URL = process.env.API_URL ?? 'http://localhost:8000/api/v1';
+/**
+ * Flush Redis to clear all rate limits.
+ * Uses docker exec since Redis doesn't have an HTTP API.
+ */
+export async function flushRateLimits(): Promise<void> {
+  const { execSync } = await import('child_process');
+  try {
+    execSync('docker exec koulu-redis redis-cli FLUSHALL', { stdio: 'pipe' });
+  } catch {
+    // Redis might not be running via docker, ignore
+  }
+}
 
 interface AuthTokens {
   access_token: string;
@@ -23,13 +35,22 @@ export function generateTestEmail(): string {
 
 /**
  * Register a user via the backend API.
+ * Retries once after flushing Redis if rate-limited (429).
  */
 async function registerUser(email: string, password: string): Promise<void> {
-  const response = await fetch(`${API_URL}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
+  const doRegister = async (): Promise<Response> =>
+    fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+  let response = await doRegister();
+
+  if (response.status === 429) {
+    await flushRateLimits();
+    response = await doRegister();
+  }
 
   if (!response.ok && response.status !== 202) {
     throw new Error(`Registration failed: ${response.status}`);

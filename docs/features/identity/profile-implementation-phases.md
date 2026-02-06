@@ -2,7 +2,7 @@
 
 **Feature:** User Profile (Extended)
 **Context:** Identity
-**Status:** Planning
+**Status:** Complete (All 5 Phases)
 
 ---
 
@@ -580,10 +580,10 @@ Phase 5: Frontend UI
 - **Notes:** All 4 security BDD scenarios passing, 83.87% coverage. Rate limiting (10/hour), XSS sanitization (bleach), auth/authz verified.
 
 ### Phase 5: Frontend UI
-- **Status:** Not started (blocked by Phase 4 ✅)
-- **Started:** _____
-- **Completed:** _____
-- **Notes:** _____
+- **Status:** ✅ Complete
+- **Started:** 2026-02-06
+- **Completed:** 2026-02-06
+- **Notes:** ProfileView + ProfileEdit pages, 4 components, API client + React Query hooks, routing, 4 E2E tests (all passing in parallel). Fixed home-page POM to use data-testid. Added Redis flush globalSetup + retry-on-429 for rate limit resilience.
 
 ---
 

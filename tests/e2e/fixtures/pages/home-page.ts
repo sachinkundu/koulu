@@ -3,7 +3,7 @@ import { BasePage } from './base-page';
 
 export class HomePage extends BasePage {
   private readonly welcomeHeading = 'h2:has-text("Welcome")';
-  private readonly headerUserName = 'header span.text-gray-600';
+  private readonly headerUserName = '[data-testid="header-display-name"]';
   private readonly signOutButton = 'header button:has-text("Sign out")';
 
   constructor(page: Page) {

@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
+  globalSetup: './global-setup.ts',
   testDir: './specs',
   fullyParallel: true,
   workers: process.env.CI ? 2 : 4,

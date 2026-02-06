@@ -1,9 +1,11 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/features/identity/hooks';
 import {
   ForgotPasswordPage,
   LoginPage,
+  ProfileEditPage,
   ProfileSetupPage,
+  ProfileViewPage,
   RegisterPage,
   ResetPasswordPage,
   VerifyEmailPage,
@@ -31,9 +33,22 @@ function HomePage(): JSX.Element {
           <h1 className="text-2xl font-bold text-gray-900">Koulu</h1>
           {user !== null && (
             <div className="flex items-center space-x-4">
-              <span className="text-gray-600">
-                {user.profile?.display_name ?? user.email}
-              </span>
+              <Link
+                to={`/profile/${user.id}`}
+                className="text-gray-600 hover:text-gray-900"
+                data-testid="header-profile-link"
+              >
+                <span data-testid="header-display-name">
+                  {user.profile?.display_name ?? user.email}
+                </span>
+              </Link>
+              <Link
+                to="/profile/edit"
+                className="text-sm text-gray-600 hover:text-gray-900"
+                data-testid="header-edit-profile-link"
+              >
+                Edit Profile
+              </Link>
               <button
                 onClick={() => void logout()}
                 className="text-sm text-gray-600 hover:text-gray-900"
@@ -104,6 +119,22 @@ function App(): JSX.Element {
         element={
           <ProtectedRoute>
             <HomePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/edit"
+        element={
+          <ProtectedRoute>
+            <ProfileEditPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/:userId"
+        element={
+          <ProtectedRoute>
+            <ProfileViewPage />
           </ProtectedRoute>
         }
       />
