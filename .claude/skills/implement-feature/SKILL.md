@@ -43,7 +43,29 @@ Example: `/implement-feature identity/profile --phase=2`
 
 ## Workflow
 
-### Step 1: Analyze Complexity
+### Step 1: Check Branch and Create Feature Branch
+
+**Before starting implementation:**
+
+1. **Check current branch:**
+   ```bash
+   git branch --show-current
+   ```
+
+2. **If on `main` or `master`:**
+   - Create a new feature branch following the naming convention: `feature/<context>-<feature-name>`
+   - Example: `feature/identity-profile`
+   ```bash
+   git checkout -b feature/<context>-<feature-name>
+   ```
+
+3. **If already on a feature branch:**
+   - For bug fixes or iterations on the same feature, stay on the current branch
+   - For a completely new feature, create a new branch
+
+**Critical:** NEVER implement features directly on `main` or `master`. Always work on a feature branch.
+
+### Step 2: Analyze Complexity
 
 Read PRD, TDD, and BDD specs to assess feature complexity.
 
@@ -58,7 +80,7 @@ Read PRD, TDD, and BDD specs to assess feature complexity.
 - **Simple feature** (< 20 scenarios, < 10 files): Single-phase implementation
 - **Complex feature** (≥ 20 scenarios, ≥ 10 files): Multi-phase implementation
 
-### Step 2: Create Phase Plan (if complex)
+### Step 3: Create Phase Plan (if complex)
 
 If feature is complex, create implementation phases document:
 
@@ -113,7 +135,7 @@ Phase 4 (Frontend)
 ```
 ```
 
-### Step 3: Get Approval
+### Step 4: Get Approval
 
 **Present phase plan to user:**
 1. Show phase breakdown
@@ -123,7 +145,7 @@ Phase 4 (Frontend)
 
 **Wait for approval before implementing.**
 
-### Step 4: Implement Phase
+### Step 5: Implement Phase
 
 Once approved, implement the current phase:
 
@@ -136,7 +158,7 @@ Once approved, implement the current phase:
    - Linting, type checking
 5. **Verify all pass** before marking complete
 
-### Step 5: Phase Completion
+### Step 6: Phase Completion
 
 **Mark phase complete when:**
 - All files created
