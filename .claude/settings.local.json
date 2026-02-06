@@ -27,7 +27,14 @@
       "Bash(tree:*)",
       "Bash(docker-compose:*)",
       "Bash(docker compose:*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(export NVM_DIR=\"$HOME/.config/nvm\")",
+      "Bash([ -s \"$NVM_DIR/nvm.sh\" ])",
+      "Bash(source:*)",
+      "Bash(nvm use:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(bash -c 'export NVM_DIR=\"\"$HOME/.config/nvm\"\" && source \"\"$NVM_DIR/nvm.sh\"\" && nvm use 20 && BASE_URL=http://localhost:5173 npx playwright test 2>&1')",
+      "Bash(curl:*)"
     ]
   }
 }
