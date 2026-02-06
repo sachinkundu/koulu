@@ -2,15 +2,20 @@
  * Email verification page.
  */
 
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { VerifyEmail } from '@/features/identity/components';
+import { useAuth } from '@/features/identity/hooks';
 
 export function VerifyEmailPage(): JSX.Element {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
-  const handleSuccess = (): void => {
-    navigate('/onboarding/profile');
-  };
+  const handleSuccess = useCallback((): void => {
+    void refreshUser().then(() => {
+      navigate('/onboarding/profile');
+    });
+  }, [navigate, refreshUser]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">

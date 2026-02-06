@@ -61,6 +61,12 @@ Run Playwright end-to-end tests, debug failures, fix flaky tests, and add new E2
    docker exec koulu-postgres psql -U koulu -d postgres -c "CREATE DATABASE koulu_e2e OWNER koulu;" 2>/dev/null || true
    ```
 
+5. **Rate limits cleared (Redis):**
+   ```bash
+   docker exec koulu-redis redis-cli FLUSHALL
+   ```
+   Registration is rate-limited to 5 per 15 minutes per IP. Repeated test runs will hit this limit. Always flush Redis before running E2E tests.
+
 **Verification:**
 - Backend: `curl http://localhost:8000/health` → 200 OK
 - Frontend: `curl http://localhost:3000` → HTML response
@@ -674,6 +680,32 @@ Test passes sometimes, fails sometimes
 2. Use `waitForSelector` with explicit state
 3. Use `waitForURL` for navigation
 4. Use `waitForLoadState('networkidle')` for API calls
+
+### Issue 6: "Rate limit exceeded"
+
+**Symptom:**
+```
+Error: Registration failed
+```
+Page shows `Registration failed` alert instead of success state. API returns `{"error":"Rate limit exceeded: 5 per 15 minute"}`.
+
+**Solution:**
+```bash
+docker exec koulu-redis redis-cli FLUSHALL
+```
+This clears all rate limit counters. Always do this before E2E test runs.
+
+### Issue 7: "MailHog email not found" (multipart parsing)
+
+**Symptom:**
+```
+Error: No verification email found for <email> after 10 retries
+```
+But emails ARE visible in MailHog UI (http://localhost:8025).
+
+**Cause:** `Content.Body` for multipart emails contains raw MIME boundaries with base64-encoded content. The token regex can't match inside base64 text.
+
+**Solution:** In `getEmailBody()`, check `MIME.Parts` first (which decodes base64), then fall back to `Content.Body`.
 
 ---
 

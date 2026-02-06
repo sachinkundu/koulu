@@ -37,6 +37,23 @@ interface ButtonProps {
 - Prefer composition (`children`) over configuration props
 - Follow rules of hooks strictly
 
+### Auth State Synchronization
+
+**When auth tokens are stored outside React context (e.g., localStorage via `setTokens`), every code path that changes auth state MUST also update the AuthContext.**
+
+```typescript
+// ❌ WRONG - stores tokens but AuthContext still has user === null
+await verifyEmail({ token }); // calls setTokens() internally
+navigate('/onboarding/profile'); // ProfileSetupPage sees isAuthenticated === false
+
+// ✅ CORRECT - refresh context so React knows about the new auth state
+await verifyEmail({ token });
+await refreshUser(); // loads user into AuthContext
+navigate('/onboarding/profile'); // ProfileSetupPage sees isAuthenticated === true
+```
+
+This applies to any flow that changes auth state outside the normal `login()` / `logout()` context methods (e.g., email verification, token refresh, OAuth callbacks).
+
 ---
 
 ## TailwindCSS
