@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from src.identity.application.commands import CompleteProfileCommand, UpdateProfileCommand
 from src.identity.application.handlers import CompleteProfileHandler, UpdateProfileHandler
@@ -24,6 +24,7 @@ from src.identity.domain.exceptions import (
     ProfileNotFoundError,
     UserNotFoundError,
 )
+from src.identity.infrastructure.services import PROFILE_UPDATE_LIMIT, limiter
 from src.identity.interface.api.dependencies import (
     CurrentUserDep,
     CurrentUserIdDep,
@@ -131,9 +132,12 @@ async def complete_profile(
         400: {"model": ErrorResponse, "description": "Validation error"},
         401: {"model": ErrorResponse, "description": "Not authenticated"},
         404: {"model": ErrorResponse, "description": "Profile not found"},
+        429: {"model": ErrorResponse, "description": "Rate limited"},
     },
 )
+@limiter.limit(PROFILE_UPDATE_LIMIT)
 async def update_profile(
+    request: Request,  # noqa: ARG001
     body: UpdateProfileRequest,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[UpdateProfileHandler, Depends(get_update_profile_handler)],

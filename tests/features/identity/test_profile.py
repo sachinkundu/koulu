@@ -624,12 +624,17 @@ async def attempt_update_partial_location(
 async def attempt_update_other_profile(
     client: AsyncClient, requester_email: str, target_email: str, context: dict[str, Any]
 ) -> None:
-    """Attempt to update another user's profile."""
+    """Attempt to update another user's profile (should fail - no PATCH on /{user_id}/profile)."""
     token = await _get_auth_token(client, requester_email)
 
-    # Try to update using PATCH endpoint (should fail with 404 since we can only PATCH /me/profile)
+    # Get target user ID
+    target_user = context.get("other_user", context.get("user"))
+    assert target_user is not None, "Target user not found in context"
+    target_user_id = target_user.id
+
+    # Try to PATCH /{user_id}/profile - this route only supports GET, not PATCH
     response = await client.patch(
-        "/api/v1/users/me/profile",
+        f"/api/v1/users/{target_user_id}/profile",
         json={"display_name": "Hacked"},
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -639,17 +644,25 @@ async def attempt_update_other_profile(
 
 @when(parsers.parse('the user completes their profile with bio "{bio}"'))
 async def complete_profile_with_bio(client: AsyncClient, bio: str, context: dict[str, Any]) -> None:
-    """Complete profile with specific bio content."""
+    """Complete profile with specific bio content (complete first, then update bio via PATCH)."""
     token = await _get_auth_token(client, context["email"])
 
-    response = await client.put(
+    # Step 1: Complete profile with display name (PUT doesn't accept bio)
+    await client.put(
         "/api/v1/users/me/profile",
-        json={"display_name": "Test User", "bio": bio},
+        json={"display_name": "Test User"},
         headers={"Authorization": f"Bearer {token}"},
     )
 
-    context["profile_response"] = response
-    context["profile_complete_success"] = response.status_code == 200
+    # Step 2: Update bio via PATCH (which runs sanitization through Bio value object)
+    patch_response = await client.patch(
+        "/api/v1/users/me/profile",
+        json={"bio": bio},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    context["profile_response"] = patch_response
+    context["profile_complete_success"] = patch_response.status_code == 200
 
 
 @when("the user sends 20 profile update requests within 1 minute")
@@ -1024,7 +1037,9 @@ async def request_fails_with_error(
     elif error_type == "authentication required":
         assert response.status_code == 401
     elif error_type == "unauthorized":
-        assert response.status_code == 403
+        # 405 Method Not Allowed: the API only exposes PATCH on /me/profile,
+        # so attempting to PATCH /{user_id}/profile returns 405
+        assert response.status_code in (403, 405)
 
 
 @then('the request should fail with "authentication required" error')
@@ -1055,15 +1070,24 @@ async def profile_saved_successfully(client: AsyncClient, context: dict[str, Any
 
 @then("the requests should be rate limited after the threshold")
 async def requests_rate_limited(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify some requests were rate limited."""
-    # For now, just check that we have responses
-    # Rate limiting will be implemented in Phase 4
-    assert "update_responses" in context
+    """Verify some requests were rate limited (429 Too Many Requests)."""
+    responses = context["update_responses"]
+    rate_limited_responses = [r for r in responses if r.status_code == 429]
+    assert len(rate_limited_responses) > 0, (
+        f"Expected some 429 responses but got statuses: {[r.status_code for r in responses]}"
+    )
 
 
 @then('subsequent requests should fail with "rate limit exceeded" error')
 async def subsequent_requests_rate_limited(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify subsequent requests were rate limited."""
-    # Rate limiting will be implemented in Phase 4
-    # For now, just verify we sent multiple requests
-    assert "update_responses" in context
+    """Verify rate-limited responses contain error message."""
+    responses = context["update_responses"]
+    rate_limited_responses = [r for r in responses if r.status_code == 429]
+    assert len(rate_limited_responses) > 0
+
+    # Verify error response body
+    for response in rate_limited_responses:
+        data = response.json()
+        assert (
+            "rate" in data.get("message", "").lower() or "limit" in data.get("message", "").lower()
+        )

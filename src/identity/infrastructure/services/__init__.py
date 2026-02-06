@@ -9,6 +9,7 @@ from src.identity.infrastructure.services.password_hasher import Argon2PasswordH
 from src.identity.infrastructure.services.rate_limiter import (
     LOGIN_LIMIT,
     PASSWORD_RESET_LIMIT,
+    PROFILE_UPDATE_LIMIT,
     REGISTER_LIMIT,
     RESEND_VERIFICATION_LIMIT,
     limiter,
@@ -21,6 +22,7 @@ __all__ = [
     "JWTService",
     "LOGIN_LIMIT",
     "PASSWORD_RESET_LIMIT",
+    "PROFILE_UPDATE_LIMIT",
     "REGISTER_LIMIT",
     "RESEND_VERIFICATION_LIMIT",
     "limiter",

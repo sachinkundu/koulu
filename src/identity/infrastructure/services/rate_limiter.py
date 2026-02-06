@@ -41,3 +41,6 @@ PASSWORD_RESET_LIMIT = "3/15 minutes"
 
 # Verification resend: 3 requests per 15 minutes per email
 RESEND_VERIFICATION_LIMIT = "3/15 minutes"
+
+# Profile update: 10 requests per hour per IP
+PROFILE_UPDATE_LIMIT = "10/hour"
