@@ -168,6 +168,26 @@ Once approved, implement the current phase:
 
 **Then ask:** "Phase X complete. Proceed to Phase X+1?"
 
+### Step 7: Consider E2E Tests (Optional)
+
+After phase completion, consider if E2E tests would add value:
+
+**When to consider E2E tests:**
+- ✅ Feature involves multi-page user journey
+- ✅ Feature has complex frontend-backend integration
+- ✅ Feature is critical to business (auth, payment, core workflow)
+- ✅ Frontend UI is implemented (Phase 4+)
+
+**When to skip E2E tests:**
+- ❌ Backend-only implementation (BDD tests sufficient)
+- ❌ Simple CRUD (unit + BDD coverage adequate)
+- ❌ Internal/admin features (lower priority)
+- ❌ No frontend UI yet
+
+**Important:** E2E tests are NOT part of Definition of Done. They are recommended for critical flows but optional. Use `/e2e-test` command to add E2E tests after phase completion if needed.
+
+**See:** `docs/testing/e2e-testing-design.md` for E2E testing strategy and best practices.
+
 ---
 
 ## Phasing Strategies
@@ -357,6 +377,7 @@ npm run typecheck
 
 Before marking any phase complete:
 
+**Required (Definition of Done):**
 - [ ] All phase files created
 - [ ] Code follows existing patterns
 - [ ] All phase BDD scenarios passing
@@ -367,6 +388,9 @@ Before marking any phase complete:
 - [ ] No security issues introduced
 - [ ] Documentation updated (if needed)
 - [ ] Git commit created with clear message
+
+**Optional (Recommended for critical flows):**
+- [ ] E2E tests added for critical user journeys (use `/e2e-test` if needed)
 
 ---
 
