@@ -807,7 +807,7 @@ Each feature will have a detailed PRD and BDD specification. The index below map
 | Feature Area | PRD Document | BDD Spec | Status |
 |--------------|--------------|----------|--------|
 | User Registration & Authentication | `docs/features/identity/registration-authentication-prd.md` | `tests/features/identity/registration_authentication.feature` | ✅ Complete |
-| User Profile | `docs/features/identity/profile-prd.md` | `tests/features/identity/profile.feature` | 🚧 Phase 1 of 5 Complete |
+| User Profile | `docs/features/identity/profile-prd.md` | `tests/features/identity/profile.feature` | 🚧 Phase 3 of 5 Complete |
 | Community Feed | `docs/features/community/feed-prd.md` | `tests/features/community/feed.feature` | |
 | Posts | `docs/features/community/posts-prd.md` | `tests/features/community/posts.feature` | |
 | Comments | `docs/features/community/comments-prd.md` | `tests/features/community/comments.feature` | |

@@ -6,8 +6,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.identity.application.commands import CompleteProfileCommand
-from src.identity.application.handlers import CompleteProfileHandler
+from src.identity.application.commands import CompleteProfileCommand, UpdateProfileCommand
+from src.identity.application.handlers import CompleteProfileHandler, UpdateProfileHandler
 from src.identity.application.queries import (
     GetProfileActivityHandler,
     GetProfileActivityQuery,
@@ -17,7 +17,10 @@ from src.identity.application.queries import (
     GetProfileStatsQuery,
 )
 from src.identity.domain.exceptions import (
+    InvalidBioError,
     InvalidDisplayNameError,
+    InvalidLocationError,
+    InvalidSocialLinkError,
     ProfileNotFoundError,
     UserNotFoundError,
 )
@@ -28,6 +31,7 @@ from src.identity.interface.api.dependencies import (
     get_profile_activity_handler,
     get_profile_handler,
     get_profile_stats_handler,
+    get_update_profile_handler,
 )
 from src.identity.interface.api.schemas import (
     ActivityChartResponse,
@@ -38,6 +42,7 @@ from src.identity.interface.api.schemas import (
     ProfileDetailResponse,
     ProfileResponse,
     StatsResponse,
+    UpdateProfileRequest,
     UserResponse,
 )
 
@@ -116,6 +121,82 @@ async def complete_profile(
         avatar_url=body.avatar_url,
         bio=None,
         is_complete=True,
+    )
+
+
+@router.patch(
+    "/me/profile",
+    response_model=ProfileDetailResponse,
+    responses={
+        400: {"model": ErrorResponse, "description": "Validation error"},
+        401: {"model": ErrorResponse, "description": "Not authenticated"},
+        404: {"model": ErrorResponse, "description": "Profile not found"},
+    },
+)
+async def update_profile(
+    body: UpdateProfileRequest,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[UpdateProfileHandler, Depends(get_update_profile_handler)],
+) -> ProfileDetailResponse:
+    """Update user profile fields."""
+    try:
+        command = UpdateProfileCommand(
+            user_id=current_user_id,
+            display_name=body.display_name,
+            avatar_url=body.avatar_url,
+            bio=body.bio,
+            city=body.city,
+            country=body.country,
+            twitter_url=body.twitter_url,
+            linkedin_url=body.linkedin_url,
+            instagram_url=body.instagram_url,
+            website_url=body.website_url,
+        )
+        await handler.handle(command)
+    except (
+        InvalidDisplayNameError,
+        InvalidBioError,
+        InvalidLocationError,
+        InvalidSocialLinkError,
+    ) as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": e.code, "message": e.message},
+        ) from e
+    except ProfileNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "profile_not_found", "message": "Profile not found"},
+        ) from e
+    except UserNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "user_not_found", "message": "User not found"},
+        ) from e
+
+    # Return updated profile by fetching it
+    from src.identity.domain.value_objects import UserId
+
+    user_repo = handler._user_repository
+    user = await user_repo.get_by_id(UserId(value=current_user_id))
+
+    profile = user.profile if user else None
+    assert profile is not None
+
+    return ProfileDetailResponse(
+        display_name=profile.display_name.value if profile.display_name else None,
+        avatar_url=profile.avatar_url,
+        bio=profile.bio.value if profile.bio else None,
+        location_city=profile.location.city if profile.location else None,
+        location_country=profile.location.country if profile.location else None,
+        twitter_url=profile.social_links.twitter_url if profile.social_links else None,
+        linkedin_url=profile.social_links.linkedin_url if profile.social_links else None,
+        instagram_url=profile.social_links.instagram_url if profile.social_links else None,
+        website_url=profile.social_links.website_url if profile.social_links else None,
+        is_complete=profile.is_complete,
+        is_own_profile=True,
+        created_at=profile.created_at,
+        updated_at=profile.updated_at,
     )
 
 

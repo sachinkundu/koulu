@@ -26,7 +26,8 @@
       "Bash(./scripts/setup-test-db.sh:*)",
       "Bash(tree:*)",
       "Bash(docker-compose:*)",
-      "Bash(docker compose:*)"
+      "Bash(docker compose:*)",
+      "Bash(docker exec:*)"
     ]
   }
 }

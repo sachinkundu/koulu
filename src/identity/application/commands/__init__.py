@@ -9,6 +9,7 @@ from src.identity.application.commands.password_reset import (
 )
 from src.identity.application.commands.refresh_token import RefreshTokenCommand
 from src.identity.application.commands.register_user import RegisterUserCommand
+from src.identity.application.commands.update_profile import UpdateProfileCommand
 from src.identity.application.commands.verify_email import (
     ResendVerificationCommand,
     VerifyEmailCommand,
@@ -23,5 +24,6 @@ __all__ = [
     "RequestPasswordResetCommand",
     "ResendVerificationCommand",
     "ResetPasswordCommand",
+    "UpdateProfileCommand",
     "VerifyEmailCommand",
 ]

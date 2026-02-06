@@ -69,6 +69,20 @@ class CompleteProfileRequest(BaseModel):
     avatar_url: str | None = None
 
 
+class UpdateProfileRequest(BaseModel):
+    """Request body for updating user profile."""
+
+    display_name: str | None = Field(None, min_length=2, max_length=50)
+    avatar_url: str | None = None
+    bio: str | None = Field(None, max_length=500)
+    city: str | None = Field(None, min_length=2, max_length=100)
+    country: str | None = Field(None, min_length=2, max_length=100)
+    twitter_url: str | None = None
+    linkedin_url: str | None = None
+    instagram_url: str | None = None
+    website_url: str | None = None
+
+
 # ============================================================================
 # Response Schemas
 # ============================================================================

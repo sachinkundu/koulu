@@ -9,6 +9,7 @@ from src.identity.domain.events import (
     PasswordReset,
     PasswordResetRequested,
     ProfileCompleted,
+    ProfileUpdated,
     UserLoggedIn,
     UserRegistered,
     UserVerified,
@@ -21,9 +22,12 @@ from src.identity.domain.exceptions import (
     UserNotVerifiedError,
 )
 from src.identity.domain.value_objects import (
+    Bio,
     DisplayName,
     EmailAddress,
     HashedPassword,
+    Location,
+    SocialLinks,
     UserId,
 )
 from src.shared.domain import DomainEvent
@@ -181,6 +185,58 @@ class User:
                 display_name=display_name,
             )
         )
+
+    def update_profile(
+        self,
+        display_name: DisplayName | None = None,
+        avatar_url: str | None = None,
+        bio: Bio | None = None,
+        location: Location | None = None,
+        social_links: SocialLinks | None = None,
+    ) -> list[str]:
+        """
+        Update user profile fields.
+
+        Args:
+            display_name: New display name
+            avatar_url: New avatar URL
+            bio: New bio
+            location: New location
+            social_links: New social links
+
+        Returns:
+            List of field names that were changed
+        """
+        if self.profile is None:
+            self.profile = Profile(user_id=self.id)
+
+        # Track which fields changed
+        changed_fields: list[str] = []
+
+        if display_name is not None and display_name != self.profile.display_name:
+            changed_fields.append("display_name")
+        if avatar_url is not None and avatar_url != self.profile.avatar_url:
+            changed_fields.append("avatar_url")
+        if bio is not None and bio != self.profile.bio:
+            changed_fields.append("bio")
+        if location is not None and location != self.profile.location:
+            changed_fields.append("location")
+        if social_links is not None and social_links != self.profile.social_links:
+            changed_fields.append("social_links")
+
+        # Update profile if any fields changed
+        if changed_fields:
+            self.profile.update(
+                display_name=display_name,
+                avatar_url=avatar_url,
+                bio=bio,
+                location=location,
+                social_links=social_links,
+            )
+            self._update_timestamp()
+            self._add_event(ProfileUpdated(user_id=self.id, changed_fields=changed_fields))
+
+        return changed_fields
 
     def disable(self) -> None:
         """Disable the user account."""

@@ -19,6 +19,7 @@ from src.identity.application.handlers import (
     RequestPasswordResetHandler,
     ResendVerificationHandler,
     ResetPasswordHandler,
+    UpdateProfileHandler,
     VerifyEmailHandler,
 )
 from src.identity.application.queries import (
@@ -300,6 +301,17 @@ def get_profile_activity_handler(user_repo: UserRepositoryDep) -> GetProfileActi
 def get_profile_stats_handler(user_repo: UserRepositoryDep) -> GetProfileStatsHandler:
     """Get profile stats handler."""
     return GetProfileStatsHandler(user_repository=user_repo)
+
+
+def get_update_profile_handler(
+    user_repo: UserRepositoryDep,
+    avatar_generator: AvatarGeneratorDep,
+) -> UpdateProfileHandler:
+    """Get update profile handler."""
+    return UpdateProfileHandler(
+        user_repository=user_repo,
+        avatar_generator=avatar_generator,
+    )
 
 
 # ============================================================================
