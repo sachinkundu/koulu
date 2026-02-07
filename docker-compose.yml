@@ -1,13 +1,12 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: koulu-postgres
     environment:
       POSTGRES_USER: koulu
       POSTGRES_PASSWORD: koulu_dev_password
       POSTGRES_DB: koulu
     ports:
-      - "5432:5432"
+      - "${KOULU_PG_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -18,9 +17,8 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: koulu-redis
     ports:
-      - "6379:6379"
+      - "${KOULU_REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -31,10 +29,9 @@ services:
 
   mailhog:
     image: mailhog/mailhog
-    container_name: koulu-mailhog
     ports:
-      - "1025:1025"  # SMTP server
-      - "8025:8025"  # Web UI
+      - "${KOULU_MAIL_SMTP_PORT:-1025}:1025"  # SMTP server
+      - "${KOULU_MAIL_WEB_PORT:-8025}:8025"  # Web UI
     logging:
       driver: none
 
