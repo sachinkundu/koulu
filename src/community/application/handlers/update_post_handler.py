@@ -62,7 +62,9 @@ class UpdatePostHandler:
             raise PostNotFoundError(str(post_id))
 
         # Get editor's membership
-        member = await self._member_repository.get_by_user_and_community(editor_id, post.community_id)
+        member = await self._member_repository.get_by_user_and_community(
+            editor_id, post.community_id
+        )
         if member is None:
             logger.warning("update_post_not_member", editor_id=str(editor_id))
             raise NotCommunityMemberError()

@@ -22,7 +22,7 @@ from src.identity.infrastructure.services import JWTService
 
 # Import shared database dependencies from identity
 # (reusing the same database instance)
-from src.identity.interface.api.dependencies import SessionDep
+from src.identity.interface.api.dependencies import SessionDep as SessionDep
 
 # ============================================================================
 # Repository Dependencies

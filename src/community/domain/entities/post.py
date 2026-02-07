@@ -166,7 +166,9 @@ class Post:
         if changed_fields:
             self.edited_at = datetime.now(UTC)
             self._update_timestamp()
-            self._add_event(PostEdited(post_id=self.id, editor_id=editor_id, changed_fields=changed_fields))
+            self._add_event(
+                PostEdited(post_id=self.id, editor_id=editor_id, changed_fields=changed_fields)
+            )
 
         return changed_fields
 

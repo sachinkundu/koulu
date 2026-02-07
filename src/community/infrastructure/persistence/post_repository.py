@@ -67,7 +67,7 @@ class SqlAlchemyPostRepository(IPostRepository):
     async def get_by_id(self, post_id: PostId) -> Post | None:
         """Get a post by ID (excluding deleted posts)."""
         result = await self._session.execute(
-            select(PostModel).where(PostModel.id == post_id.value, PostModel.is_deleted == False)
+            select(PostModel).where(PostModel.id == post_id.value, PostModel.is_deleted == False)  # noqa: E712
         )
         post_model = result.scalar_one_or_none()
 
@@ -95,7 +95,7 @@ class SqlAlchemyPostRepository(IPostRepository):
         """List posts in a community (excluding deleted)."""
         result = await self._session.execute(
             select(PostModel)
-            .where(PostModel.community_id == community_id.value, PostModel.is_deleted == False)
+            .where(PostModel.community_id == community_id.value, PostModel.is_deleted == False)  # noqa: E712
             .order_by(PostModel.is_pinned.desc(), PostModel.created_at.desc())
             .limit(limit)
             .offset(offset)

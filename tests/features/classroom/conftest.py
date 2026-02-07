@@ -7,12 +7,18 @@ from uuid import uuid4
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.classroom.infrastructure.persistence.models import CourseModel
+from src.classroom.infrastructure.persistence.models import (
+    CourseModel,
+    LessonModel,
+    ModuleModel,
+)
 from src.identity.infrastructure.persistence.models import ProfileModel, UserModel
 from src.identity.infrastructure.services import Argon2PasswordHasher
 
 # Type aliases
 CreateCourseFactory = Callable[..., Coroutine[Any, Any, CourseModel]]
+CreateModuleFactory = Callable[..., Coroutine[Any, Any, ModuleModel]]
+CreateLessonFactory = Callable[..., Coroutine[Any, Any, LessonModel]]
 
 
 @pytest_asyncio.fixture
@@ -80,3 +86,57 @@ async def create_course_in_db(db_session: AsyncSession) -> CreateCourseFactory:
         return course
 
     return _create_course
+
+
+@pytest_asyncio.fixture
+async def create_module_in_db(db_session: AsyncSession) -> CreateModuleFactory:
+    """Factory fixture to create modules directly in the database."""
+
+    async def _create_module(
+        course_id: Any,
+        title: str = "Test Module",
+        description: str | None = None,
+        position: int = 1,
+    ) -> ModuleModel:
+        module_id = uuid4()
+        module = ModuleModel(
+            id=module_id,
+            course_id=course_id,
+            title=title,
+            description=description,
+            position=position,
+        )
+        db_session.add(module)
+        await db_session.commit()
+        await db_session.refresh(module)
+        return module
+
+    return _create_module
+
+
+@pytest_asyncio.fixture
+async def create_lesson_in_db(db_session: AsyncSession) -> CreateLessonFactory:
+    """Factory fixture to create lessons directly in the database."""
+
+    async def _create_lesson(
+        module_id: Any,
+        title: str = "Test Lesson",
+        content_type: str = "text",
+        content: str = "Default lesson content.",
+        position: int = 1,
+    ) -> LessonModel:
+        lesson_id = uuid4()
+        lesson = LessonModel(
+            id=lesson_id,
+            module_id=module_id,
+            title=title,
+            content_type=content_type,
+            content=content,
+            position=position,
+        )
+        db_session.add(lesson)
+        await db_session.commit()
+        await db_session.refresh(lesson)
+        return lesson
+
+    return _create_lesson

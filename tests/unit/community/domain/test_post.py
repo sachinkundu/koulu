@@ -225,9 +225,7 @@ class TestPostCreate:
 class TestPostEdit:
     """Tests for Post.edit() method."""
 
-    def test_edit_post_by_author_updates_title(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_edit_post_by_author_updates_title(self, post: Post, author_id: UserId) -> None:
         """Post.edit() by author should update title and return changed fields."""
         new_title = PostTitle("Updated Title")
 
@@ -241,9 +239,7 @@ class TestPostEdit:
         assert changed == ["title"]
         assert post.edited_at is not None
 
-    def test_edit_post_by_author_updates_content(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_edit_post_by_author_updates_content(self, post: Post, author_id: UserId) -> None:
         """Post.edit() by author should update content and return changed fields."""
         new_content = PostContent("Updated content goes here.")
 
@@ -257,9 +253,7 @@ class TestPostEdit:
         assert changed == ["content"]
         assert post.edited_at is not None
 
-    def test_edit_post_by_author_updates_image_url(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_edit_post_by_author_updates_image_url(self, post: Post, author_id: UserId) -> None:
         """Post.edit() by author should update image_url and return changed fields."""
         new_image_url = "https://example.com/new-image.png"
 
@@ -273,9 +267,7 @@ class TestPostEdit:
         assert changed == ["image_url"]
         assert post.edited_at is not None
 
-    def test_edit_post_by_author_updates_category(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_edit_post_by_author_updates_category(self, post: Post, author_id: UserId) -> None:
         """Post.edit() by author should update category and return changed fields."""
         new_category_id = CategoryId(value=uuid4())
 
@@ -289,9 +281,7 @@ class TestPostEdit:
         assert changed == ["category_id"]
         assert post.edited_at is not None
 
-    def test_edit_post_updates_multiple_fields(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_edit_post_updates_multiple_fields(self, post: Post, author_id: UserId) -> None:
         """Post.edit() should update multiple fields and return all changed fields."""
         new_title = PostTitle("New Title")
         new_content = PostContent("New content.")
@@ -345,9 +335,7 @@ class TestPostEdit:
         assert changed == []
         assert post.edited_at == original_edited_at  # Should not update timestamp
 
-    def test_edit_post_by_non_author_without_permission_raises_error(
-        self, post: Post
-    ) -> None:
+    def test_edit_post_by_non_author_without_permission_raises_error(self, post: Post) -> None:
         """Post.edit() by non-author with MEMBER role should raise NotPostAuthorError."""
         other_user_id = UserId(value=uuid4())
 
@@ -408,9 +396,7 @@ class TestPostEdit:
                 image_url="http://example.com/image.png",
             )
 
-    def test_edit_post_publishes_post_edited_event(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_edit_post_publishes_post_edited_event(self, post: Post, author_id: UserId) -> None:
         """Post.edit() should publish PostEdited event."""
         post.clear_events()  # Clear creation event
 
@@ -464,18 +450,14 @@ class TestPostDelete:
 
         assert post.updated_at > original_updated_at
 
-    def test_delete_already_deleted_post_raises_error(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_delete_already_deleted_post_raises_error(self, post: Post, author_id: UserId) -> None:
         """Post.delete() on already deleted post should raise PostAlreadyDeletedError."""
         post.delete(deleter_id=author_id)  # First delete succeeds
 
         with pytest.raises(PostAlreadyDeletedError):
             post.delete(deleter_id=author_id)  # Second delete fails
 
-    def test_delete_post_publishes_post_deleted_event(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_delete_post_publishes_post_deleted_event(self, post: Post, author_id: UserId) -> None:
         """Post.delete() should publish PostDeleted event."""
         post.clear_events()  # Clear creation event
 
@@ -495,9 +477,7 @@ class TestPostIsEdited:
         """Post.is_edited should return False for newly created post."""
         assert post.is_edited is False
 
-    def test_is_edited_returns_true_after_edit(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_is_edited_returns_true_after_edit(self, post: Post, author_id: UserId) -> None:
         """Post.is_edited should return True after post has been edited."""
         post.edit(
             editor_id=author_id,

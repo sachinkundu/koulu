@@ -78,7 +78,9 @@ class CreatePostHandler:
             category_id = CategoryId(command.category_id)
             category = await self._category_repository.get_by_id(category_id)
         elif command.category_name is not None:
-            category = await self._category_repository.get_by_name(community_id, command.category_name)
+            category = await self._category_repository.get_by_name(
+                community_id, command.category_name
+            )
         else:
             # Default to first category (should be "General")
             categories = await self._category_repository.list_by_community(community_id)

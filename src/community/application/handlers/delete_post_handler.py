@@ -56,7 +56,9 @@ class DeletePostHandler:
             raise PostNotFoundError(str(post_id))
 
         # Get deleter's membership
-        member = await self._member_repository.get_by_user_and_community(deleter_id, post.community_id)
+        member = await self._member_repository.get_by_user_and_community(
+            deleter_id, post.community_id
+        )
         if member is None:
             logger.warning("delete_post_not_member", deleter_id=str(deleter_id))
             raise NotCommunityMemberError()

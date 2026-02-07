@@ -57,3 +57,137 @@ class CourseAlreadyDeletedError(ClassroomDomainError):
 
     def __init__(self) -> None:
         super().__init__("Course has been deleted")
+
+
+# Module validation errors
+class ModuleTitleRequiredError(ClassroomDomainError):
+    """Raised when module title is empty."""
+
+    def __init__(self) -> None:
+        super().__init__("Title is required")
+
+
+class ModuleTitleTooShortError(ClassroomDomainError):
+    """Raised when module title is too short."""
+
+    def __init__(self, min_length: int) -> None:
+        super().__init__(f"Title must be at least {min_length} characters")
+
+
+class ModuleTitleTooLongError(ClassroomDomainError):
+    """Raised when module title exceeds maximum length."""
+
+    def __init__(self, max_length: int) -> None:
+        super().__init__(f"Title must be {max_length} characters or less")
+
+
+class ModuleDescriptionTooLongError(ClassroomDomainError):
+    """Raised when module description exceeds maximum length."""
+
+    def __init__(self, max_length: int) -> None:
+        super().__init__(f"Description must be {max_length} characters or less")
+
+
+# Module state errors
+class ModuleNotFoundError(ClassroomDomainError):
+    """Raised when a module cannot be found."""
+
+    def __init__(self, module_id: str) -> None:
+        super().__init__(f"Module not found: {module_id}")
+        self.module_id = module_id
+
+
+class ModuleLimitExceededError(ClassroomDomainError):
+    """Raised when module limit is exceeded."""
+
+    def __init__(self, max_modules: int) -> None:
+        super().__init__(f"Maximum {max_modules} modules allowed per course")
+
+
+class ModuleHasLessonsError(ClassroomDomainError):
+    """Raised when attempting to hard delete a module that has lessons."""
+
+    def __init__(self) -> None:
+        super().__init__("Module has lessons and cannot be hard deleted")
+
+
+# Lesson validation errors
+class LessonTitleRequiredError(ClassroomDomainError):
+    """Raised when lesson title is empty."""
+
+    def __init__(self) -> None:
+        super().__init__("Title is required")
+
+
+class LessonTitleTooShortError(ClassroomDomainError):
+    """Raised when lesson title is too short."""
+
+    def __init__(self, min_length: int) -> None:
+        super().__init__(f"Title must be at least {min_length} characters")
+
+
+class LessonTitleTooLongError(ClassroomDomainError):
+    """Raised when lesson title exceeds maximum length."""
+
+    def __init__(self, max_length: int) -> None:
+        super().__init__(f"Title must be {max_length} characters or less")
+
+
+# Lesson state errors
+class LessonNotFoundError(ClassroomDomainError):
+    """Raised when a lesson cannot be found."""
+
+    def __init__(self, lesson_id: str) -> None:
+        super().__init__(f"Lesson not found: {lesson_id}")
+        self.lesson_id = lesson_id
+
+
+class LessonLimitExceededError(ClassroomDomainError):
+    """Raised when lesson limit is exceeded."""
+
+    def __init__(self, max_lessons: int) -> None:
+        super().__init__(f"Maximum {max_lessons} lessons allowed per module")
+
+
+# Content validation errors
+class InvalidContentTypeError(ClassroomDomainError):
+    """Raised when content type is not valid."""
+
+    def __init__(self, content_type: str) -> None:
+        super().__init__(f"Invalid content type: {content_type}")
+
+
+class TextContentRequiredError(ClassroomDomainError):
+    """Raised when text content is empty."""
+
+    def __init__(self) -> None:
+        super().__init__("Content is required")
+
+
+class TextContentTooLongError(ClassroomDomainError):
+    """Raised when text content exceeds maximum length."""
+
+    def __init__(self, max_length: int) -> None:
+        super().__init__(f"Content must be {max_length} characters or less")
+
+
+class VideoUrlRequiredError(ClassroomDomainError):
+    """Raised when video URL is empty."""
+
+    def __init__(self) -> None:
+        super().__init__("Video URL is required")
+
+
+class InvalidVideoUrlError(ClassroomDomainError):
+    """Raised when video URL is not a valid YouTube, Vimeo, or Loom URL."""
+
+    def __init__(self) -> None:
+        super().__init__("Invalid video URL. Supported: YouTube, Vimeo, Loom")
+
+
+# Position errors
+class InvalidPositionError(ClassroomDomainError):
+    """Raised when position values are invalid."""
+
+    def __init__(self, reason: str = "Invalid position") -> None:
+        super().__init__(reason)
