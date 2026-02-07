@@ -17,7 +17,8 @@ user_invocable: true
 User must provide:
 1. **PRD path** - The feature's PRD.md file
 2. **Screenshot directory** - Folder containing Skool.com reference images
-3. **(Optional) Focus areas** - Specific components or interactions to emphasize
+3. **(Optional) Phase plan path** - Path to implementation phases document (e.g., `feed-implementation-phases.md`)
+4. **(Optional) Focus areas** - Specific components or interactions to emphasize
 
 ---
 
@@ -30,12 +31,19 @@ User must provide:
    - Identify key user flows
    - Extract component needs from acceptance criteria
 
-2. **Load Design System**
+2. **Read Phase Plan (if provided)**
+   - Load implementation phases document
+   - Extract phase structure (Phase 1, 2, 3, etc.)
+   - Note which components/features belong to each phase
+   - Understand phase dependencies
+   - This will be used to organize UI_SPEC.md by phase
+
+3. **Load Design System**
    - Read `.claude/skills/ui-design/SKILL.md`
    - Review `tailwind.config.ts` for available tokens
    - Note: Design system is Skool.com-inspired, so screenshots should align
 
-3. **Scan Existing Components**
+4. **Scan Existing Components**
    - Use Glob to find existing components: `src/components/**/*.tsx`, `src/features/*/components/*.tsx`
    - Identify reusable patterns (Card, Form, Button, etc.)
    - Note component props and styling patterns
@@ -84,12 +92,29 @@ For each screenshot provided:
    - If exists: reference it with file path
    - If new: describe what needs to be built
 
-2. **Create Component Inventory**
+2. **Map Components to Phases** (if phase plan provided)
+   For each phase in the plan:
+   - Extract phase name and scope description
+   - Identify which UI components are needed for that phase
+   - Look for frontend file lists in phase scope sections
+   - Note component enhancements vs. new components
+   - Track dependencies (Phase 2 enhances Phase 1 components)
+
+   **What to extract from phase plan:**
+   - Phase number and name (e.g., "Phase 1: Foundation")
+   - Scope description (what user can do after this phase)
+   - Frontend file paths listed in phase scope
+   - Component names from file paths (e.g., `CreatePostModal.tsx` → `<CreatePostModal />`)
+   - Enhancement notes (e.g., "Update PostDetail.tsx - show pinned indicators")
+
+3. **Create Component Inventory**
    Table format:
-   | Screenshot Element | Koulu Component | Status | Notes |
-   |-------------------|-----------------|--------|-------|
-   | Post card | `<FeedPostCard />` | New | Similar to existing Card pattern |
-   | Category pills | `<CategoryTabs />` | New | See screenshot 2 |
+   | Screenshot Element | Koulu Component | Phase | Status | Notes |
+   |-------------------|-----------------|-------|--------|-------|
+   | Post card | `<FeedPostCard />` | Phase 4 | New | Similar to existing Card pattern |
+   | Category pills | `<CategoryTabs />` | Phase 4 | New | See screenshot 2 |
+   | Create post form | `<CreatePostModal />` | Phase 1 | New | Reuse Form components |
+   | Pin button | `<PostActions />` | Phase 2 | New | Admin only |
 
 ### Phase 4: Generate UI_SPEC.md
 
@@ -105,6 +130,37 @@ Create structured specification document:
 - Screenshot 1: [Brief description]
 - Screenshot 2: [Brief description]
 ...
+
+## Phase-to-Component Mapping
+
+*(If phase plan provided)*
+
+### Phase 1: [Phase Name]
+**Scope:** [Brief description from phase plan]
+
+**Components:**
+- `<ComponentName />` - See section below (Line X)
+- `<AnotherComponent />` - See section below (Line Y)
+
+**UI Elements:**
+- [List of UI elements to implement in this phase]
+
+### Phase 2: [Phase Name]
+**Scope:** [Brief description]
+
+**Components:**
+- `<ComponentName />` - See section below
+- Enhancements to `<ExistingComponent />` from Phase 1
+
+**UI Elements:**
+- [List of new/enhanced UI elements]
+
+### Phase 3: [Phase Name]
+...
+
+**Note:** This mapping helps you implement the feature incrementally. During each phase, focus only on the components listed for that phase. Later phase components are fully spec'd below but should be skipped until their phase.
+
+---
 
 ## Layout Structure
 
@@ -122,9 +178,11 @@ Create structured specification document:
 
 ## Component Specifications
 
-### [Component Name]
+### [Component Name] *(Phase N)*
 
 **Screenshot reference:** [File name]
+
+**Implementation phase:** Phase N - [Phase name]
 
 **Purpose:** [What it does]
 
@@ -299,32 +357,43 @@ Claude: I'll help you generate a UI specification from Skool.com screenshots.
 Please provide:
 1. Path to your PRD:
 2. Path to screenshot directory:
-3. (Optional) Specific focus areas:
+3. (Optional) Path to phase plan:
+4. (Optional) Specific focus areas:
 
 User:
-1. docs/features/community-feed/PRD.md
-2. docs/features/community-feed/screenshots/
-3. Focus on the post card and category filter components
+1. docs/features/community/feed-prd.md
+2. docs/features/community/screenshots/
+3. docs/features/community/feed-implementation-phases.md
+4. Focus on the post card and category filter components
 
 Claude:
 [Reads PRD]
+[Reads phase plan - extracts 4 phases and component mapping]
 [Loads design system]
 [Scans existing components]
 [Views each screenshot]
 [Analyzes visual patterns]
 [Maps to design tokens]
-[Generates UI_SPEC.md]
+[Maps components to phases]
+[Generates UI_SPEC.md with phase organization]
 
 Generated UI specification at:
-docs/features/community-feed/UI_SPEC.md
+docs/features/community/UI_SPEC.md
 
 Summary:
 - 5 screenshots analyzed
-- 4 components identified
-  - 2 can reuse existing patterns (Card, Avatar)
-  - 2 need new components (FeedPostCard, CategoryTabs)
+- 4 phases identified from implementation plan
+- 8 components mapped to phases:
+  Phase 1: CreatePostModal, PostDetail
+  Phase 2: PostActions (pin/lock)
+  Phase 3: CommentList, CommentForm, LikeButton
+  Phase 4: FeedView, PostCard, CategorySidebar
+- 6 can reuse existing patterns (Card, Avatar, Button, Form, etc.)
+- 2 need new components (FeedPostCard, CategoryTabs)
 - Design tokens: All patterns match existing system
 - Complexity: Medium (new components follow established patterns)
+
+The UI_SPEC includes a Phase-to-Component Mapping section to guide incremental implementation.
 ```
 
 ---
@@ -343,14 +412,25 @@ Summary:
 
 **Before this skill:**
 - `write-feature-spec` - Creates PRD/BDD
+- Phase planning (manual) - Creates `[feature]-implementation-phases.md` for complex features
 
 **After this skill:**
 - `write-technical-design` - Uses UI_SPEC for detailed component design
 - `implement-feature` - Uses UI_SPEC for implementation guidance
 
-**Workflow:**
+**Workflow (Simple Feature):**
 1. Write PRD (`write-feature-spec`)
 2. Gather Skool.com screenshots
 3. **Generate UI spec (`generate-ui-spec`)** ← This skill
 4. Write TDD (`write-technical-design`)
 5. Implement feature (`implement-feature`)
+
+**Workflow (Complex/Phased Feature):**
+1. Write PRD (`write-feature-spec`)
+2. Create phase plan (e.g., `feed-implementation-phases.md`)
+3. Gather Skool.com screenshots (complete feature)
+4. **Generate UI spec (`generate-ui-spec` with phase plan)** ← This skill
+5. Write TDD (`write-technical-design`)
+6. Implement Phase 1 (`implement-feature` - reads Phase 1 sections of UI_SPEC)
+7. Implement Phase 2 (`implement-feature` - reads Phase 2 sections of UI_SPEC)
+8. ... continue until all phases complete
