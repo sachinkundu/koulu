@@ -212,6 +212,7 @@ Read the appropriate skill BEFORE implementation:
 | BDD specs | `.claude/skills/bdd.md` |
 | Security review | `.claude/skills/security.md` |
 | UI components | `.claude/skills/ui-design.md` |
+| Generate UI spec from screenshots | `/generate-ui-spec` |
 
 ---
 
@@ -220,6 +221,7 @@ Read the appropriate skill BEFORE implementation:
 | Workflow | Prompt File | When to Use |
 |----------|-------------|-------------|
 | Write Feature Spec | `prompts/write-feature-spec.md` | Creating PRD + BDD from OVERVIEW_PRD |
+| Generate UI Spec | `/generate-ui-spec` skill | Analyzing Skool.com screenshots to create UI_SPEC.md |
 | Implement Feature | `prompts/implement-feature.md` | Building code from completed spec |
 
 ---
