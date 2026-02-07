@@ -1,6 +1,7 @@
 ---
 name: ui-design
 description: Follow Koulu design system inspired by Skool.com for consistent UI implementation
+model: sonnet
 ---
 
 # Skill: UI Design System (Koulu)

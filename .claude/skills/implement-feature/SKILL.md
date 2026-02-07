@@ -1,6 +1,7 @@
 ---
 name: implement-feature
 description: Implement a feature from completed PRD and BDD specs
+model: opus
 ---
 
 # Implement Feature (Vertical Slicing)

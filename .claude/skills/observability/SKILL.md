@@ -1,6 +1,7 @@
 ---
 name: observability
 description: Implement OpenTelemetry tracing and structured logging for distributed systems
+model: sonnet
 ---
 
 # Skill: Observability

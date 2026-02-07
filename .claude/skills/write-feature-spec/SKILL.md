@@ -1,6 +1,7 @@
 ---
 name: write-feature-spec
 description: Generate PRD and BDD specifications for a feature from OVERVIEW_PRD
+model: sonnet
 ---
 
 # Usage

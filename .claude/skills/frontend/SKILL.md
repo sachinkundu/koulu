@@ -1,6 +1,7 @@
 ---
 name: frontend
 description: Follow frontend development standards for React, TypeScript, and TailwindCSS
+model: sonnet
 ---
 
 # Skill: Frontend Development

@@ -1,6 +1,7 @@
 ---
 name: bdd
 description: Write BDD specifications using Gherkin for behavior-driven development
+model: sonnet
 ---
 
 # Skill: BDD Specifications

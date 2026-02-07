@@ -1,6 +1,7 @@
 ---
 name: architecture
 description: Apply DDD and Hexagonal Architecture patterns when designing or refactoring code
+model: opus
 ---
 
 # Skill: DDD Architecture

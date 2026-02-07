@@ -2,6 +2,7 @@
 name: generate-ui-spec
 description: Generate UI_SPEC.md by analyzing Skool.com screenshots and PRD
 user_invocable: true
+model: sonnet
 ---
 
 # Skill: Generate UI Specification from Screenshots

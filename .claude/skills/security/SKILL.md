@@ -1,6 +1,7 @@
 ---
 name: security
 description: Apply OWASP security standards and prevent common vulnerabilities
+model: opus
 ---
 
 # Skill: Security Standards

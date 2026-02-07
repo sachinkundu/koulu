@@ -1,6 +1,7 @@
 ---
 name: document-work
 description: Document completed work, create summary, update PRDs, and commit changes
+model: sonnet
 ---
 
 # Usage

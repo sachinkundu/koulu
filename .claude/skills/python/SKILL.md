@@ -1,6 +1,7 @@
 ---
 name: python
 description: Follow Python backend development standards with FastAPI and strict typing
+model: sonnet
 ---
 
 # Skill: Python Backend Development

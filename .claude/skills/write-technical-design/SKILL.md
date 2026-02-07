@@ -1,6 +1,7 @@
 ---
 name: write-technical-design
 description: Generate Technical Design Document (TDD) from approved PRD and BDD specs
+model: opus
 ---
 
 # Write Technical Design Document (TDD)
