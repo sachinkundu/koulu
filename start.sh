@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# ============================================
+# Source per-project isolation variables
+# ============================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/scripts/project-env.sh"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -34,6 +40,7 @@ get_version() {
 echo ""
 echo "=========================================="
 echo "  Koulu Development Environment Setup"
+echo "  Project: ${COMPOSE_PROJECT_NAME}"
 echo "=========================================="
 echo ""
 
@@ -94,15 +101,26 @@ echo ""
 # ============================================
 info "Setting up environment files..."
 
-if [ ! -f .env ]; then
-    if [ -f .env.example ]; then
+# Generate .env with computed ports
+if [ -f .env.example ]; then
+    if [ ! -f .env ]; then
         cp .env.example .env
         success "Created .env from .env.example"
     else
-        error ".env.example not found. Cannot create .env file."
+        success ".env already exists"
     fi
+
+    # Patch port-dependent values in .env to match computed ports
+    sed -i "s|^KOULU_PG_PORT=.*|KOULU_PG_PORT=${KOULU_PG_PORT}|" .env
+    sed -i "s|^KOULU_REDIS_PORT=.*|KOULU_REDIS_PORT=${KOULU_REDIS_PORT}|" .env
+    sed -i "s|^KOULU_MAIL_SMTP_PORT=.*|KOULU_MAIL_SMTP_PORT=${KOULU_MAIL_SMTP_PORT}|" .env
+    sed -i "s|^KOULU_MAIL_WEB_PORT=.*|KOULU_MAIL_WEB_PORT=${KOULU_MAIL_WEB_PORT}|" .env
+    sed -i "s|^DATABASE_URL=.*|DATABASE_URL=postgresql+asyncpg://koulu:koulu_dev_password@localhost:${KOULU_PG_PORT}/koulu|" .env
+    sed -i "s|^REDIS_URL=.*|REDIS_URL=redis://localhost:${KOULU_REDIS_PORT}/0|" .env
+    sed -i "s|^MAIL_PORT=.*|MAIL_PORT=${KOULU_MAIL_SMTP_PORT}|" .env
+    success "Patched .env with computed ports (PG:${KOULU_PG_PORT} Redis:${KOULU_REDIS_PORT} Mail:${KOULU_MAIL_SMTP_PORT}/${KOULU_MAIL_WEB_PORT})"
 else
-    success ".env already exists"
+    error ".env.example not found. Cannot create .env file."
 fi
 
 if [ ! -f frontend/.env ]; then
@@ -121,18 +139,14 @@ echo ""
 # ============================================
 # STEP 3: Start Docker Containers
 # ============================================
-info "Starting Docker containers..."
+info "Starting Docker containers (project: ${COMPOSE_PROJECT_NAME})..."
 
-# Check if all containers are already running
-POSTGRES_RUNNING=$(docker ps --filter "name=koulu-postgres" --filter "status=running" -q)
-REDIS_RUNNING=$(docker ps --filter "name=koulu-redis" --filter "status=running" -q)
-MAILHOG_RUNNING=$(docker ps --filter "name=koulu-mailhog" --filter "status=running" -q)
+# Check if all services are already running for this compose project
+SERVICES_RUNNING=$($COMPOSE_CMD ps --status running --format '{{.Service}}' 2>/dev/null | wc -l)
 
-if [ -n "$POSTGRES_RUNNING" ] && [ -n "$REDIS_RUNNING" ] && [ -n "$MAILHOG_RUNNING" ]; then
+if [ "$SERVICES_RUNNING" -ge 3 ]; then
     success "Containers already running"
 else
-    # Remove any existing containers (running or stopped) to avoid conflicts
-    docker rm -f koulu-postgres koulu-redis koulu-mailhog 2>/dev/null || true
     $COMPOSE_CMD up -d --remove-orphans
     success "Containers started"
 fi
@@ -141,7 +155,7 @@ fi
 info "Waiting for PostgreSQL to be ready..."
 MAX_RETRIES=30
 RETRY_COUNT=0
-until docker exec koulu-postgres pg_isready -U koulu &> /dev/null; do
+until $COMPOSE_CMD exec -T postgres pg_isready -U koulu &> /dev/null; do
     RETRY_COUNT=$((RETRY_COUNT + 1))
     if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
         error "PostgreSQL failed to start after $MAX_RETRIES attempts"
@@ -153,7 +167,7 @@ success "PostgreSQL is ready"
 # Wait for Redis to be healthy
 info "Waiting for Redis to be ready..."
 RETRY_COUNT=0
-until docker exec koulu-redis redis-cli ping &> /dev/null; do
+until $COMPOSE_CMD exec -T redis redis-cli ping &> /dev/null; do
     RETRY_COUNT=$((RETRY_COUNT + 1))
     if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
         error "Redis failed to start after $MAX_RETRIES attempts"
@@ -213,6 +227,9 @@ echo "=========================================="
 echo -e "${GREEN}  Setup Complete!${NC}"
 echo "=========================================="
 echo ""
+echo "Project: ${COMPOSE_PROJECT_NAME}"
+echo "Ports:   PG=${KOULU_PG_PORT} Redis=${KOULU_REDIS_PORT} Mail=${KOULU_MAIL_SMTP_PORT}/${KOULU_MAIL_WEB_PORT}"
+echo ""
 echo "To start the application, run in separate terminals:"
 echo ""
 echo -e "  ${BLUE}Backend:${NC}"
@@ -225,5 +242,5 @@ echo "Access points:"
 echo "  - Frontend:    http://localhost:5173"
 echo "  - Backend API: http://localhost:8000"
 echo "  - API Docs:    http://localhost:8000/docs"
-echo "  - MailHog:     http://localhost:8025"
+echo "  - MailHog:     http://localhost:${KOULU_MAIL_WEB_PORT}"
 echo ""
