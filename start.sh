@@ -123,7 +123,19 @@ echo ""
 # ============================================
 info "Starting Docker containers..."
 
-$COMPOSE_CMD up -d
+# Check if all containers are already running
+POSTGRES_RUNNING=$(docker ps --filter "name=koulu-postgres" --filter "status=running" -q)
+REDIS_RUNNING=$(docker ps --filter "name=koulu-redis" --filter "status=running" -q)
+MAILHOG_RUNNING=$(docker ps --filter "name=koulu-mailhog" --filter "status=running" -q)
+
+if [ -n "$POSTGRES_RUNNING" ] && [ -n "$REDIS_RUNNING" ] && [ -n "$MAILHOG_RUNNING" ]; then
+    success "Containers already running"
+else
+    # Remove any existing containers (running or stopped) to avoid conflicts
+    docker rm -f koulu-postgres koulu-redis koulu-mailhog 2>/dev/null || true
+    $COMPOSE_CMD up -d --remove-orphans
+    success "Containers started"
+fi
 
 # Wait for PostgreSQL to be healthy
 info "Waiting for PostgreSQL to be ready..."
