@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
+# Source per-project isolation variables
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/project-env.sh"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -13,8 +17,7 @@ echo -e "${BLUE}   Koulu E2E Test Runner${NC}"
 echo -e "${BLUE}======================================${NC}"
 echo ""
 
-# Get project root (parent of scripts directory)
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 E2E_DIR="${PROJECT_ROOT}/tests/e2e"
 
 # Function to check if a service is running
@@ -25,23 +28,23 @@ check_service() {
 
     echo -n "Checking ${name}... "
     if eval "${check_cmd}" > /dev/null 2>&1; then
-        echo -e "${GREEN}✓ Running${NC}"
+        echo -e "${GREEN}Running${NC}"
         return 0
     else
-        echo -e "${RED}✗ Not running${NC}"
+        echo -e "${RED}Not running${NC}"
         return 1
     fi
 }
 
-# Function to check docker container
-check_container() {
-    local name=$1
-    echo -n "Checking ${name}... "
-    if docker ps --format '{{.Names}}' | grep -q "^${name}$"; then
-        echo -e "${GREEN}✓ Running${NC}"
+# Function to check docker compose service
+check_compose_service() {
+    local service=$1
+    echo -n "Checking ${service}... "
+    if docker compose ps --status running --format '{{.Service}}' 2>/dev/null | grep -q "^${service}$"; then
+        echo -e "${GREEN}Running${NC}"
         return 0
     else
-        echo -e "${RED}✗ Not running${NC}"
+        echo -e "${RED}Not running${NC}"
         return 1
     fi
 }
@@ -49,11 +52,11 @@ check_container() {
 echo -e "${YELLOW}Step 1: Checking Prerequisites${NC}"
 echo "-----------------------------------"
 
-# Check docker containers
+# Check docker compose services
 ALL_OK=true
-check_container "koulu-postgres" || ALL_OK=false
-check_container "koulu-redis" || ALL_OK=false
-check_container "koulu-mailhog" || ALL_OK=false
+check_compose_service "postgres" || ALL_OK=false
+check_compose_service "redis" || ALL_OK=false
+check_compose_service "mailhog" || ALL_OK=false
 
 # Check backend
 check_service "Backend API (port 8000)" "http://localhost:8000/health" "curl -sf http://localhost:8000/health" || ALL_OK=false
@@ -64,26 +67,26 @@ check_service "Frontend (port 5173)" "http://localhost:5173" "curl -sf http://lo
 echo ""
 
 if [ "$ALL_OK" = false ]; then
-    echo -e "${RED}✗ Prerequisites not met!${NC}"
+    echo -e "${RED}Prerequisites not met!${NC}"
     echo ""
     echo "To fix:"
     echo "  1. Start Docker containers: docker compose up -d"
-    echo "  2. Start backend: cd backend && uvicorn src.main:app --host 0.0.0.0 --port 8000"
+    echo "  2. Start backend: uvicorn src.main:app --host 0.0.0.0 --port 8000"
     echo "  3. Start frontend: cd frontend && npm run dev"
     echo ""
     exit 1
 fi
 
-echo -e "${GREEN}✓ All prerequisites met${NC}"
+echo -e "${GREEN}All prerequisites met${NC}"
 echo ""
 
 # Step 2: Flush Redis (clear rate limits)
 echo -e "${YELLOW}Step 2: Clearing Redis (rate limits)${NC}"
 echo "-----------------------------------"
-if docker exec koulu-redis redis-cli FLUSHALL > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ Redis flushed${NC}"
+if docker compose exec -T redis redis-cli FLUSHALL > /dev/null 2>&1; then
+    echo -e "${GREEN}Redis flushed${NC}"
 else
-    echo -e "${RED}✗ Failed to flush Redis${NC}"
+    echo -e "${RED}Failed to flush Redis${NC}"
     exit 1
 fi
 echo ""
@@ -95,17 +98,17 @@ echo "-----------------------------------"
 if [ -f "$HOME/.config/nvm/nvm.sh" ]; then
     source "$HOME/.config/nvm/nvm.sh"
     nvm use 20 > /dev/null 2>&1
-    echo -e "${GREEN}✓ Using Node $(node --version)${NC}"
+    echo -e "${GREEN}Using Node $(node --version)${NC}"
 elif command -v node > /dev/null 2>&1; then
     NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
     if [ "$NODE_VERSION" -ge 20 ]; then
-        echo -e "${GREEN}✓ Using Node $(node --version)${NC}"
+        echo -e "${GREEN}Using Node $(node --version)${NC}"
     else
-        echo -e "${RED}✗ Node 20+ required (found $(node --version))${NC}"
+        echo -e "${RED}Node 20+ required (found $(node --version))${NC}"
         exit 1
     fi
 else
-    echo -e "${RED}✗ Node.js not found${NC}"
+    echo -e "${RED}Node.js not found${NC}"
     exit 1
 fi
 echo ""
@@ -133,11 +136,11 @@ EXIT_CODE=$?
 echo ""
 if [ $EXIT_CODE -eq 0 ]; then
     echo -e "${GREEN}======================================${NC}"
-    echo -e "${GREEN}   ✓ All E2E tests passed!${NC}"
+    echo -e "${GREEN}   All E2E tests passed!${NC}"
     echo -e "${GREEN}======================================${NC}"
 else
     echo -e "${RED}======================================${NC}"
-    echo -e "${RED}   ✗ E2E tests failed${NC}"
+    echo -e "${RED}   E2E tests failed${NC}"
     echo -e "${RED}======================================${NC}"
     echo ""
     echo "To view the HTML report:"

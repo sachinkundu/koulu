@@ -8,7 +8,7 @@ const API_URL = process.env.API_URL ?? 'http://localhost:8000/api/v1';
 export async function flushRateLimits(): Promise<void> {
   const { execSync } = await import('child_process');
   try {
-    execSync('docker exec koulu-redis redis-cli FLUSHALL', { stdio: 'pipe' });
+    execSync('docker compose exec -T redis redis-cli FLUSHALL', { stdio: 'pipe' });
   } catch {
     // Redis might not be running via docker, ignore
   }
