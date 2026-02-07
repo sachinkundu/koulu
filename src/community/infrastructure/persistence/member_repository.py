@@ -52,7 +52,7 @@ class SqlAlchemyMemberRepository(IMemberRepository):
             select(CommunityMemberModel).where(
                 CommunityMemberModel.user_id == user_id.value,
                 CommunityMemberModel.community_id == community_id.value,
-                CommunityMemberModel.is_active == True,
+                CommunityMemberModel.is_active.is_(True),
             )
         )
         member_model = result.scalar_one_or_none()
@@ -72,7 +72,7 @@ class SqlAlchemyMemberRepository(IMemberRepository):
             select(CommunityMemberModel.user_id).where(
                 CommunityMemberModel.user_id == user_id.value,
                 CommunityMemberModel.community_id == community_id.value,
-                CommunityMemberModel.is_active == True,
+                CommunityMemberModel.is_active.is_(True),
             )
         )
         return result.scalar_one_or_none() is not None
@@ -86,7 +86,7 @@ class SqlAlchemyMemberRepository(IMemberRepository):
             select(CommunityMemberModel)
             .where(
                 CommunityMemberModel.community_id == community_id.value,
-                CommunityMemberModel.is_active == True,
+                CommunityMemberModel.is_active.is_(True),
             )
             .order_by(CommunityMemberModel.joined_at)
         )

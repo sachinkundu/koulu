@@ -1,25 +1,19 @@
 """Pytest fixtures for Community BDD tests."""
 
-import asyncio
-from collections.abc import AsyncGenerator, Callable, Coroutine
+from collections.abc import Callable, Coroutine
 from typing import Any
 from uuid import UUID, uuid4
 
-import pytest
 import pytest_asyncio
-from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.community.domain.value_objects import CategoryId, CommunityId, MemberRole
 from src.community.infrastructure.persistence.models import (
     CategoryModel,
     CommunityMemberModel,
     CommunityModel,
 )
-from src.identity.domain.value_objects import UserId
 from src.identity.infrastructure.persistence.models import ProfileModel, UserModel
 from src.identity.infrastructure.services import Argon2PasswordHasher
-
 
 # Type aliases for factory functions
 CreateCommunityFactory = Callable[..., Coroutine[Any, Any, CommunityModel]]

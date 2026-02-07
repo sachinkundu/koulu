@@ -114,62 +114,62 @@ Create the foundation with Posts aggregate and basic CRUD. Users can create post
 
 ### BDD Scenarios Skipped (58 scenarios)
 
-**Phase 2 (Roles & Permissions - 8 scenarios):**
-- Line 95: Rate limit prevents excessive posting → Phase 2 (rate limiting)
-- Line 143: Admin deletes another user's post → Phase 2 (admin permissions)
-- Line 153: Moderator deletes a post → Phase 2 (moderator permissions)
+**Phase 2 (Comments, Reactions & Locking - 25 scenarios):**
 - Line 171: Deleting post cascades to comments → Phase 2 (comments exist)
-- Line 187: Admin pins an important post → Phase 2 (pinning)
-- Line 198: Moderator pins a post → Phase 2 (pinning)
-- Line 206: Admin unpins a post → Phase 2 (pinning)
-- Line 214: Regular member cannot pin posts → Phase 2 (pinning)
+- Line 226: Admin locks comments on a post → Phase 2 (locking)
+- Line 237: Admin unlocks a locked post → Phase 2 (locking)
+- Line 246: Cannot comment on locked post → Phase 2 (comments + locking)
+- Line 254: Regular member cannot lock posts → Phase 2 (locking)
+- Line 266: Member adds a comment to a post → Phase 2 (comments)
+- Line 276: Member replies to a comment → Phase 2 (comments)
+- Line 288: Cannot reply to a reply → Phase 2 (comments)
+- Line 296: Comment content too long → Phase 2 (comments)
+- Line 304: Comment content required → Phase 2 (comments)
+- Line 311: Rate limit prevents comment spam → Phase 2 (comments + rate limiting)
+- Line 325: Author edits their own comment → Phase 2 (comments)
+- Line 335: Author deletes comment with no replies → Phase 2 (comments)
+- Line 345: Author deletes comment that has replies → Phase 2 (comments)
+- Line 356: Admin deletes any comment → Phase 2 (comments)
+- Line 364: Member cannot edit another member's comment → Phase 2 (comments)
+- Line 374: Member cannot delete another member's comment → Phase 2 (comments)
+- Line 387: Member likes a post → Phase 2 (reactions)
+- Line 398: Member unlikes a post → Phase 2 (reactions)
+- Line 410: Member likes a comment → Phase 2 (reactions)
+- Line 420: Member unlikes a comment → Phase 2 (reactions)
+- Line 431: Liking a post twice is idempotent → Phase 2 (reactions)
+- Line 441: Member can like their own post → Phase 2 (reactions)
+- Line 450: Rate limit prevents excessive liking → Phase 2 (reactions + rate limiting)
+- Line 458: Unauthenticated user cannot like posts → Phase 2 (reactions)
 
-**Phase 3 (Comments & Reactions - 25 scenarios):**
-- Line 226: Admin locks comments on a post → Phase 3 (locking)
-- Line 237: Admin unlocks a locked post → Phase 3 (locking)
-- Line 246: Cannot comment on locked post → Phase 3 (comments + locking)
-- Line 254: Regular member cannot lock posts → Phase 3 (locking)
-- Line 266: Member adds a comment to a post → Phase 3 (comments)
-- Line 276: Member replies to a comment → Phase 3 (comments)
-- Line 288: Cannot reply to a reply → Phase 3 (comments)
-- Line 296: Comment content too long → Phase 3 (comments)
-- Line 304: Comment content required → Phase 3 (comments)
-- Line 311: Rate limit prevents comment spam → Phase 3 (comments + rate limiting)
-- Line 325: Author edits their own comment → Phase 3 (comments)
-- Line 335: Author deletes comment with no replies → Phase 3 (comments)
-- Line 345: Author deletes comment that has replies → Phase 3 (comments)
-- Line 356: Admin deletes any comment → Phase 3 (comments)
-- Line 364: Member cannot edit another member's comment → Phase 3 (comments)
-- Line 374: Member cannot delete another member's comment → Phase 3 (comments)
-- Line 387: Member likes a post → Phase 3 (reactions)
-- Line 398: Member unlikes a post → Phase 3 (reactions)
-- Line 410: Member likes a comment → Phase 3 (reactions)
-- Line 420: Member unlikes a comment → Phase 3 (reactions)
-- Line 431: Liking a post twice is idempotent → Phase 3 (reactions)
-- Line 441: Member can like their own post → Phase 3 (reactions)
-- Line 450: Rate limit prevents excessive liking → Phase 3 (reactions + rate limiting)
-- Line 458: Unauthenticated user cannot like posts → Phase 3 (reactions)
-- Line 644: View post with comments → Phase 3 (comments)
-- Line 657: View post with threaded comments → Phase 3 (comments)
+**Phase 3 (Pinning, Feed & Categories - 20 scenarios):**
+- Line 95: Rate limit prevents excessive posting → Phase 3 (rate limiting)
+- Line 143: Admin deletes another user's post → Phase 3 (admin permissions)
+- Line 153: Moderator deletes a post → Phase 3 (moderator permissions)
+- Line 187: Admin pins an important post → Phase 3 (pinning)
+- Line 198: Moderator pins a post → Phase 3 (pinning)
+- Line 206: Admin unpins a post → Phase 3 (pinning)
+- Line 214: Regular member cannot pin posts → Phase 3 (pinning)
+- Line 468: Admin creates a new category → Phase 3 (category CRUD)
+- Line 481: Admin updates a category → Phase 3 (category CRUD)
+- Line 493: Admin deletes empty category → Phase 3 (category CRUD)
+- Line 503: Cannot delete category with posts → Phase 3 (category CRUD)
+- Line 512: Category name must be unique → Phase 3 (category CRUD)
+- Line 520: Member cannot create categories → Phase 3 (category CRUD)
+- Line 527: Moderator cannot create categories → Phase 3 (category CRUD)
+- Line 534: Admin moves post to different category → Phase 3 (category CRUD)
+- Line 546: View feed with Hot sorting → Phase 3 (feed)
+- Line 558: View feed with New sorting → Phase 3 (feed)
+- Line 570: View feed with Top sorting → Phase 3 (feed)
+- Line 582: Pinned posts always appear first → Phase 3 (feed + pinning)
+- Line 596: Filter feed by category → Phase 3 (feed)
+- Line 608: Paginate feed with cursor → Phase 3 (feed)
+- Line 619: Empty feed shows appropriate message → Phase 3 (feed)
 
-**Phase 4 (Feed & Categories - 25 scenarios):**
-- Line 468: Admin creates a new category → Phase 4 (category CRUD)
-- Line 481: Admin updates a category → Phase 4 (category CRUD)
-- Line 493: Admin deletes empty category → Phase 4 (category CRUD)
-- Line 503: Cannot delete category with posts → Phase 4 (category CRUD)
-- Line 512: Category name must be unique → Phase 4 (category CRUD)
-- Line 520: Member cannot create categories → Phase 4 (category CRUD)
-- Line 527: Moderator cannot create categories → Phase 4 (category CRUD)
-- Line 534: Admin moves post to different category → Phase 4 (category CRUD)
-- Line 546: View feed with Hot sorting → Phase 4 (feed)
-- Line 558: View feed with New sorting → Phase 4 (feed)
-- Line 570: View feed with Top sorting → Phase 4 (feed)
-- Line 582: Pinned posts always appear first → Phase 4 (feed + pinning)
-- Line 596: Filter feed by category → Phase 4 (feed)
-- Line 608: Paginate feed with cursor → Phase 4 (feed)
-- Line 619: Empty feed shows appropriate message → Phase 4 (feed)
+**Phase 4 (Edge Cases & Auth - 5 scenarios):**
 - Line 628: Unauthenticated user cannot view feed → Phase 4 (feed)
 - Line 633: Non-member cannot view community feed → Phase 4 (feed)
+- Line 644: View post with comments → Phase 4 (comments)
+- Line 657: View post with threaded comments → Phase 4 (comments)
 - Line 670: Admin role has full permissions → Phase 4 (permissions summary)
 - Line 681: Moderator has moderation permissions → Phase 4 (permissions summary)
 - Line 692: Member has basic permissions → Phase 4 (permissions summary)
@@ -221,137 +221,54 @@ cd frontend && npm run typecheck && npm run test
 
 ---
 
-## Phase 2: Roles, Permissions & Rate Limiting
-
-**Duration:** 4-5 hours
-
-### Goal
-Add role-based permissions (ADMIN, MODERATOR), post pinning/locking, and rate limiting. Enable admins/moderators to manage content.
-
-### Scope
-
-**Backend - Domain Layer:**
-- `src/community/domain/specifications/can_delete_post_spec.py` - Authorization spec
-- `src/community/domain/specifications/can_pin_post_spec.py`
-- `src/community/domain/specifications/can_lock_post_spec.py`
-- Update `src/community/domain/entities/post.py` - Add pin(), unpin(), lock(), unlock() methods
-- Update `src/community/domain/events.py` - Add PostPinned, PostUnpinned, PostLocked, PostUnlocked
-
-**Backend - Application Layer:**
-- `src/community/application/commands.py` - Add PinPostCommand, LockPostCommand
-- `src/community/application/handlers/pin_post_handler.py`
-- `src/community/application/handlers/lock_post_handler.py`
-
-**Backend - Infrastructure Layer:**
-- `src/community/infrastructure/services/rate_limiter.py` - Redis-based rate limiter
-- Update `src/community/infrastructure/persistence/models.py` - Add is_pinned, pinned_at, is_locked columns
-
-**Backend - Interface Layer:**
-- Update `src/community/interface/api/controllers/post_controller.py` - Add POST /posts/:id/pin, DELETE /posts/:id/pin, POST /posts/:id/lock
-- `src/community/interface/api/middleware/rate_limit_middleware.py` - Rate limit decorator
-
-**Frontend:**
-- `frontend/src/features/community/components/PostActions.tsx` - Pin, lock buttons (admin only)
-- Update `frontend/src/features/community/components/PostDetail.tsx` - Show pinned/locked indicators
-
-**Tests:**
-- Update `tests/unit/community/domain/test_post.py` - Test pin/lock methods
-- `tests/unit/community/domain/test_specifications.py` - Test authorization specs
-
-### BDD Scenarios Enabled (8 new = 20 total)
-
-- ✅ Line 95: Rate limit prevents excessive posting
-- ✅ Line 143: Admin deletes another user's post
-- ✅ Line 153: Moderator deletes a post
-- ✅ Line 171: Deleting post cascades to comments (partial - will fully work in Phase 3)
-- ✅ Line 187: Admin pins an important post
-- ✅ Line 198: Moderator pins a post
-- ✅ Line 206: Admin unpins a post
-- ✅ Line 214: Regular member cannot pin posts
-
-### BDD Scenarios Skipped (50 remaining)
-
-**Phase 3 (Comments & Reactions - 25 scenarios):**
-- All comment and reaction scenarios
-
-**Phase 4 (Feed & Categories - 25 scenarios):**
-- All feed and category scenarios
-
-### Dependencies
-- Phase 1 complete
-
-### Estimated Time
-4-5 hours
-
-### Definition of Done
-- [ ] All Phase 2 files created
-- [ ] 20 BDD scenarios passing (12 from Phase 1 + 8 new)
-- [ ] 50 scenarios skipped with phase markers
-- [ ] Unit tests passing
-- [ ] Rate limiting working (Redis integration)
-- [ ] Authorization specs working
-- [ ] Linting passes
-- [ ] Type checking passes
-- [ ] Coverage ≥ 80%
-- [ ] CI green
-
-### Verification Commands
-```bash
-# Backend - BDD tests
-pytest tests/features/community/test_feed.py -v
-# Expected: 20 passed, 50 skipped
-
-# Unit tests
-pytest tests/unit/community/domain/test_specifications.py -v
-
-# Rate limiting test
-pytest tests/unit/community/infrastructure/test_rate_limiter.py -v
-
-# Backend verification
-./scripts/verify.sh
-```
-
----
-
-## Phase 3: Comments & Reactions
+## Phase 2: Comments, Reactions & Post Locking
 
 **Duration:** 6-8 hours
 
 ### Goal
-Add Comments and Reactions (likes) to posts. Enable threaded discussions with proper depth limits and soft deletion.
+Add Comments and Reactions (likes) to posts, plus post locking. Enable threaded discussions with proper depth limits, soft deletion, and rate limiting.
 
 ### Scope
 
 **Backend - Domain Layer:**
 - `src/community/domain/value_objects/comment_id.py` - CommentId
 - `src/community/domain/value_objects/reaction_id.py` - ReactionId
-- `src/community/domain/value_objects/comment_content.py` - CommentContent
-- `src/community/domain/entities/comment.py` - Comment entity
+- `src/community/domain/value_objects/comment_content.py` - CommentContent (validation, sanitization)
+- `src/community/domain/entities/comment.py` - Comment aggregate root
 - `src/community/domain/entities/reaction.py` - Reaction entity
-- Update `src/community/domain/entities/post.py` - Add add_comment(), add_reaction() methods
+- Update `src/community/domain/entities/post.py` - Add lock(), unlock() methods
 - Update `src/community/domain/events.py` - CommentAdded, CommentEdited, CommentDeleted, PostLiked, PostUnliked, CommentLiked, CommentUnliked
+- Update `src/community/domain/exceptions.py` - Add CommentNotFoundError
 - `src/community/domain/repositories/comment_repository.py` - ICommentRepository
 - `src/community/domain/repositories/reaction_repository.py` - IReactionRepository
 
 **Backend - Application Layer:**
-- `src/community/application/commands.py` - AddCommentCommand, EditCommentCommand, DeleteCommentCommand, LikePostCommand, UnlikePostCommand
+- `src/community/application/commands.py` - LockPostCommand, UnlockPostCommand, AddCommentCommand, EditCommentCommand, DeleteCommentCommand, LikePostCommand, UnlikePostCommand, LikeCommentCommand, UnlikeCommentCommand
+- `src/community/application/queries.py` - GetPostCommentsQuery
+- `src/community/application/handlers/lock_post_handler.py`
+- `src/community/application/handlers/unlock_post_handler.py`
 - `src/community/application/handlers/add_comment_handler.py`
 - `src/community/application/handlers/edit_comment_handler.py`
 - `src/community/application/handlers/delete_comment_handler.py`
 - `src/community/application/handlers/like_post_handler.py`
 - `src/community/application/handlers/unlike_post_handler.py`
+- `src/community/application/handlers/like_comment_handler.py`
+- `src/community/application/handlers/unlike_comment_handler.py`
+- `src/community/application/handlers/get_post_comments_handler.py`
+- Update `src/community/application/handlers/delete_post_handler.py` - Add cascade delete
 
 **Backend - Infrastructure Layer:**
-- Update `src/community/infrastructure/persistence/models.py` - Add comments, reactions tables
-- `src/community/infrastructure/persistence/comment_repository.py`
-- `src/community/infrastructure/persistence/reaction_repository.py`
-- `migrations/versions/XXXX_create_comments_table.py`
-- `migrations/versions/XXXX_create_reactions_table.py`
+- Update `src/community/infrastructure/persistence/models.py` - Add CommentModel, ReactionModel
+- `src/community/infrastructure/persistence/comment_repository.py` - SqlAlchemyCommentRepository
+- `src/community/infrastructure/persistence/reaction_repository.py` - SqlAlchemyReactionRepository
+- `migrations/versions/20260208_1000_create_comments.py`
+- `migrations/versions/20260208_1010_create_reactions.py`
 
 **Backend - Interface Layer:**
-- `src/community/interface/api/controllers/comment_controller.py` - POST /posts/:id/comments, PATCH /comments/:id, DELETE /comments/:id
-- Update `src/community/interface/api/controllers/post_controller.py` - POST /posts/:id/like, DELETE /posts/:id/like
-- `src/community/interface/api/controllers/reaction_controller.py` - POST /comments/:id/like, DELETE /comments/:id/like
+- `src/community/interface/api/schemas.py` - Add AddCommentRequest, EditCommentRequest, CommentResponse, CreateCommentResponse, LikeResponse; update PostResponse
+- `src/community/interface/api/dependencies.py` - Add repository and handler factories
+- Update `src/community/interface/api/post_controller.py` - Add POST /posts/:id/lock, DELETE /posts/:id/lock, POST /posts/:id/like, DELETE /posts/:id/like
+- `src/community/interface/api/comment_controller.py` - Full CRUD for comments and comment likes
 
 **Frontend:**
 - `frontend/src/features/community/api/commentApi.ts`
@@ -364,16 +281,20 @@ Add Comments and Reactions (likes) to posts. Enable threaded discussions with pr
 - Update `frontend/src/features/community/components/PostDetail.tsx` - Add comments, like button
 
 **Tests:**
-- `tests/unit/community/domain/test_comment.py`
-- `tests/unit/community/domain/test_reaction.py`
+- `tests/unit/community/domain/test_comment.py` - ~15 tests
+- `tests/unit/community/domain/test_reaction.py` - ~4 tests
+- `tests/unit/community/domain/test_comment_content.py` - ~10 tests
+- Update `tests/unit/community/domain/test_post.py` - Add lock/unlock tests (~7 tests)
 
 ### BDD Scenarios Enabled (25 new = 45 total)
 
-**Comments (15 scenarios):**
+**Post Locking (4 scenarios):**
 - ✅ Line 226: Admin locks comments on a post
 - ✅ Line 237: Admin unlocks a locked post
 - ✅ Line 246: Cannot comment on locked post
 - ✅ Line 254: Regular member cannot lock posts
+
+**Comments (12 scenarios):**
 - ✅ Line 266: Member adds a comment to a post
 - ✅ Line 276: Member replies to a comment
 - ✅ Line 288: Cannot reply to a reply (max depth)
@@ -386,8 +307,6 @@ Add Comments and Reactions (likes) to posts. Enable threaded discussions with pr
 - ✅ Line 356: Admin deletes any comment
 - ✅ Line 364: Member cannot edit another member's comment
 - ✅ Line 374: Member cannot delete another member's comment
-- ✅ Line 644: View post with comments
-- ✅ Line 657: View post with threaded comments
 
 **Reactions (8 scenarios):**
 - ✅ Line 387: Member likes a post
@@ -399,34 +318,41 @@ Add Comments and Reactions (likes) to posts. Enable threaded discussions with pr
 - ✅ Line 450: Rate limit prevents excessive liking
 - ✅ Line 458: Unauthenticated user cannot like posts
 
-**Cascading (1 scenario - now fully works):**
+**Cascading (1 scenario):**
 - ✅ Line 171: Deleting post cascades to comments and reactions
 
-### BDD Scenarios Skipped (25 remaining - Phase 4)
+### BDD Scenarios Skipped (25 remaining)
 
-All feed and category management scenarios
+**Phase 3 (Pinning, Feed & Categories - 25 scenarios):**
+- All pinning, feed sorting, pagination, and category management scenarios
 
 ### Dependencies
-- Phase 2 complete
+- Phase 1 complete
 
 ### Estimated Time
 6-8 hours
 
 ### Definition of Done
-- [ ] All Phase 3 files created
-- [ ] 45 BDD scenarios passing
-- [ ] 25 scenarios skipped with phase markers
-- [ ] Unit tests passing
+- [ ] All Phase 2 files created
+- [ ] 45 BDD scenarios passing (20 from Phase 1 + 25 new)
+- [ ] 25 scenarios skipped with Phase 3+ markers
+- [ ] Unit tests passing (~36 new tests)
 - [ ] Comment threading working (max depth 1)
-- [ ] Soft deletion working
+- [ ] Soft deletion working (comments with replies)
+- [ ] Post locking working
 - [ ] Reactions working (like/unlike idempotent)
+- [ ] Rate limiting working (comments, likes)
+- [ ] Cascade delete working (post → comments → reactions)
 - [ ] Linting passes
 - [ ] Type checking passes
 - [ ] Coverage ≥ 80%
-- [ ] CI green
+- [ ] CI green (0 failed, 0 warnings)
 
 ### Verification Commands
 ```bash
+# Run migrations
+alembic upgrade head
+
 # Backend - BDD tests
 pytest tests/features/community/test_feed.py -v
 # Expected: 45 passed, 25 skipped
@@ -437,22 +363,25 @@ pytest tests/unit/community/ -v
 # Backend verification
 ./scripts/verify.sh
 
-# Frontend
-cd frontend && npm run typecheck && npm run test
+# Verify skip markers reference correct phases
+grep -r "@pytest.mark.skip" tests/features/community/ | grep "Phase [0-9]"
 ```
 
 ---
 
-## Phase 4: Feed Display & Category Management
+## Phase 3: Pinning, Feed & Categories
 
 **Duration:** 6-8 hours
 
 ### Goal
-Implement the feed with Hot/New/Top sorting, cursor pagination, category filtering, and full category CRUD. Complete the feature.
+Add post pinning, implement the feed with Hot/New/Top sorting, cursor pagination, category filtering, and full category CRUD.
 
 ### Scope
 
 **Backend - Domain Layer:**
+- `src/community/domain/specifications/can_pin_post_spec.py` - Authorization spec
+- Update `src/community/domain/entities/post.py` - Add pin(), unpin() methods
+- Update `src/community/domain/events.py` - Add PostPinned, PostUnpinned
 - `src/community/domain/services/feed_sort_strategy.py` - IFeedSortStrategy interface
 - `src/community/domain/services/hot_sort_strategy.py`
 - `src/community/domain/services/new_sort_strategy.py`
@@ -461,20 +390,25 @@ Implement the feed with Hot/New/Top sorting, cursor pagination, category filteri
 - Update `src/community/domain/entities/category.py` - Add validation, slug generation
 
 **Backend - Application Layer:**
+- `src/community/application/commands.py` - PinPostCommand, UnpinPostCommand, CreateCategoryCommand, UpdateCategoryCommand, DeleteCategoryCommand
 - `src/community/application/queries.py` - GetFeedQuery
+- `src/community/application/handlers/pin_post_handler.py`
+- `src/community/application/handlers/unpin_post_handler.py`
 - `src/community/application/handlers/get_feed_handler.py`
-- `src/community/application/commands.py` - CreateCategoryCommand, UpdateCategoryCommand, DeleteCategoryCommand
 - `src/community/application/handlers/create_category_handler.py`
 - `src/community/application/handlers/update_category_handler.py`
 - `src/community/application/handlers/delete_category_handler.py`
 
 **Backend - Infrastructure Layer:**
+- Update `src/community/infrastructure/persistence/models.py` - Add is_pinned, pinned_at columns
 - Update `src/community/infrastructure/persistence/post_repository.py` - Add feed queries with sorting
 - `src/community/infrastructure/services/cursor_pagination.py` - Cursor encoding/decoding
+- `src/community/infrastructure/services/rate_limiter.py` - Redis-based rate limiter (for post rate limit)
 
 **Backend - Interface Layer:**
-- Update `src/community/interface/api/controllers/post_controller.py` - GET /posts/feed?sort=hot&category_id=&limit=20&cursor=
+- Update `src/community/interface/api/controllers/post_controller.py` - Add POST /posts/:id/pin, DELETE /posts/:id/pin, GET /posts/feed
 - `src/community/interface/api/controllers/category_controller.py` - Full CRUD
+- `src/community/interface/api/middleware/rate_limit_middleware.py` - Rate limit decorator
 
 **Frontend:**
 - `frontend/src/features/community/api/categoryApi.ts`
@@ -487,10 +421,19 @@ Implement the feed with Hot/New/Top sorting, cursor pagination, category filteri
 - Update `frontend/src/pages/CommunityPage.tsx` - Full layout with sidebar
 
 **Tests:**
+- Update `tests/unit/community/domain/test_post.py` - Test pin/unpin methods
+- `tests/unit/community/domain/test_specifications.py` - Test authorization specs
 - `tests/unit/community/domain/test_feed_sort_strategy.py`
 - `tests/unit/community/infrastructure/test_cursor_pagination.py`
+- `tests/unit/community/infrastructure/test_rate_limiter.py`
 
-### BDD Scenarios Enabled (25 new = 70 total - ALL SCENARIOS)
+### BDD Scenarios Enabled (20 new = 65 total)
+
+**Pinning (4 scenarios):**
+- ✅ Line 187: Admin pins an important post
+- ✅ Line 198: Moderator pins a post
+- ✅ Line 206: Admin unpins a post
+- ✅ Line 214: Regular member cannot pin posts
 
 **Categories (8 scenarios):**
 - ✅ Line 468: Admin creates a new category
@@ -502,7 +445,7 @@ Implement the feed with Hot/New/Top sorting, cursor pagination, category filteri
 - ✅ Line 527: Moderator cannot create categories
 - ✅ Line 534: Admin moves post to different category
 
-**Feed (9 scenarios):**
+**Feed (7 scenarios):**
 - ✅ Line 546: View feed with Hot sorting
 - ✅ Line 558: View feed with New sorting
 - ✅ Line 570: View feed with Top sorting
@@ -510,38 +453,134 @@ Implement the feed with Hot/New/Top sorting, cursor pagination, category filteri
 - ✅ Line 596: Filter feed by category
 - ✅ Line 608: Paginate feed with cursor
 - ✅ Line 619: Empty feed shows appropriate message
-- ✅ Line 628: Unauthenticated user cannot view feed
-- ✅ Line 633: Non-member cannot view community feed
 
-**Permissions (3 scenarios):**
-- ✅ Line 670: Admin role has full permissions
-- ✅ Line 681: Moderator has moderation permissions
-- ✅ Line 692: Member has basic permissions
+**Rate Limiting (1 scenario):**
+- ✅ Line 95: Rate limit prevents excessive posting
 
-**Edge Cases (5 scenarios):**
-- ✅ Line 708: Concurrent edits - last write wins
-- ✅ Line 717: Viewing deleted post returns 404
-- ✅ Line 726: Deleted user's content shows placeholder
-- ✅ Line 734: Maximum 5 pinned posts displayed
+### BDD Scenarios Skipped (5 remaining)
 
-### BDD Scenarios Skipped
-- None - all 70 scenarios enabled
+**Phase 4 (Edge Cases & Permissions Summary - 5 scenarios):**
+- Line 628: Unauthenticated user cannot view feed
+- Line 633: Non-member cannot view community feed
+- Line 644: View post with comments (already passing in Phase 2, may need feed integration)
+- Line 657: View post with threaded comments (already passing in Phase 2, may need feed integration)
+- Line 670: Admin role has full permissions
+- Line 681: Moderator has moderation permissions
+- Line 692: Member has basic permissions
+- Line 708: Concurrent edits - last write wins
+- Line 717: Viewing deleted post returns 404
+- Line 726: Deleted user's content shows placeholder
+- Line 734: Maximum 5 pinned posts displayed
 
 ### Dependencies
-- Phase 3 complete
+- Phase 2 complete
 
 ### Estimated Time
 6-8 hours
 
 ### Definition of Done
-- [ ] All Phase 4 files created
-- [ ] **ALL 70 BDD scenarios passing** ✅
-- [ ] 0 scenarios skipped ✅
+- [ ] All Phase 3 files created
+- [ ] 65 BDD scenarios passing (45 from Phase 2 + 20 new)
+- [ ] 5 scenarios skipped with Phase 4 markers
 - [ ] Unit tests passing
+- [ ] Post pinning working
 - [ ] Hot/New/Top sorting working correctly
 - [ ] Cursor pagination working
 - [ ] Category CRUD working
-- [ ] Feed displays correctly in frontend
+- [ ] Rate limiting working (post creation)
+- [ ] Linting passes
+- [ ] Type checking passes
+- [ ] Coverage ≥ 80%
+- [ ] CI green
+
+### Verification Commands
+```bash
+# Backend - BDD tests
+pytest tests/features/community/test_feed.py -v
+# Expected: 65 passed, 5 skipped
+
+# Unit tests
+pytest tests/unit/community/ -v
+
+# Backend verification
+./scripts/verify.sh
+
+# Verify skip markers
+grep -r "@pytest.mark.skip" tests/features/community/ | grep "Phase [0-9]"
+```
+
+---
+
+## Phase 4: Edge Cases & Permissions Summary
+
+**Duration:** 2-3 hours
+
+### Goal
+Complete remaining edge cases, permission summary scenarios, and authentication checks. Finalize the feature.
+
+### Scope
+
+**Backend - Application Layer:**
+- Minor adjustments to existing handlers for edge cases
+- Ensure all authorization checks complete
+
+**Frontend:**
+- `frontend/src/features/community/api/postApi.ts`
+- `frontend/src/features/community/api/commentApi.ts`
+- `frontend/src/features/community/api/reactionApi.ts`
+- `frontend/src/features/community/hooks/useFeed.ts`
+- `frontend/src/features/community/hooks/useCategories.ts`
+- `frontend/src/features/community/components/FeedView.tsx` - Main feed component
+- `frontend/src/features/community/components/PostCard.tsx` - Feed item
+- `frontend/src/features/community/components/CategorySidebar.tsx` - Category filter
+- `frontend/src/features/community/components/SortDropdown.tsx` - Hot/New/Top
+- `frontend/src/features/community/components/CommentList.tsx`
+- `frontend/src/features/community/components/CommentForm.tsx`
+- `frontend/src/features/community/components/LikeButton.tsx`
+- Update `frontend/src/pages/CommunityPage.tsx` - Full layout with sidebar
+
+**Tests:**
+- Integration tests for edge cases
+
+### BDD Scenarios Enabled (5 new = 70 total - ALL SCENARIOS)
+
+**Authentication & Authorization (2 scenarios):**
+- ✅ Line 628: Unauthenticated user cannot view feed
+- ✅ Line 633: Non-member cannot view community feed
+
+**View Scenarios (2 scenarios):**
+- ✅ Line 644: View post with comments
+- ✅ Line 657: View post with threaded comments
+
+**Permissions Summary (3 scenarios):**
+- ✅ Line 670: Admin role has full permissions
+- ✅ Line 681: Moderator has moderation permissions
+- ✅ Line 692: Member has basic permissions
+
+**Edge Cases (3 scenarios):**
+- ✅ Line 708: Concurrent edits - last write wins
+- ✅ Line 717: Viewing deleted post returns 404
+- ✅ Line 726: Deleted user's content shows placeholder
+
+**Pinning Limit (1 scenario):**
+- ✅ Line 734: Maximum 5 pinned posts displayed
+
+### BDD Scenarios Skipped
+- None - all 70 scenarios enabled ✅
+
+### Dependencies
+- Phase 3 complete
+
+### Estimated Time
+2-3 hours
+
+### Definition of Done
+- [ ] All Phase 4 adjustments complete
+- [ ] **ALL 70 BDD scenarios passing** ✅
+- [ ] 0 scenarios skipped ✅
+- [ ] All edge cases handled
+- [ ] Frontend complete
+- [ ] Feed displays correctly
 - [ ] Linting passes
 - [ ] Type checking passes
 - [ ] Coverage ≥ 80%
@@ -574,11 +613,11 @@ cd frontend && npm run typecheck && npm run test
 ```
 Phase 1 (Foundation - Posts CRUD)
     ↓
-Phase 2 (Roles & Permissions)
+Phase 2 (Comments, Reactions & Post Locking)
     ↓
-Phase 3 (Comments & Reactions)
+Phase 3 (Pinning, Feed & Categories)
     ↓
-Phase 4 (Feed & Categories)
+Phase 4 (Edge Cases & Permissions Summary)
 ```
 
 **Linear dependency:** Each phase builds on the previous one.

@@ -7,22 +7,34 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.community.application.handlers import (
+    AddCommentHandler,
     CreatePostHandler,
+    DeleteCommentHandler,
     DeletePostHandler,
+    EditCommentHandler,
+    GetPostCommentsHandler,
     GetPostHandler,
+    LikeCommentHandler,
+    LikePostHandler,
+    LockPostHandler,
+    UnlikeCommentHandler,
+    UnlikePostHandler,
+    UnlockPostHandler,
     UpdatePostHandler,
 )
 from src.community.infrastructure.persistence import (
     SqlAlchemyCategoryRepository,
+    SqlAlchemyCommentRepository,
     SqlAlchemyMemberRepository,
     SqlAlchemyPostRepository,
+    SqlAlchemyReactionRepository,
 )
 from src.config import settings
 from src.identity.infrastructure.services import JWTService
 
 # Import shared database dependencies from identity
 # (reusing the same database instance)
-from src.identity.interface.api.dependencies import SessionDep
+from src.identity.interface.api.dependencies import SessionDep as SessionDep
 
 # ============================================================================
 # Repository Dependencies
@@ -44,9 +56,21 @@ def get_member_repository(session: SessionDep) -> SqlAlchemyMemberRepository:
     return SqlAlchemyMemberRepository(session)
 
 
+def get_comment_repository(session: SessionDep) -> SqlAlchemyCommentRepository:
+    """Get comment repository."""
+    return SqlAlchemyCommentRepository(session)
+
+
+def get_reaction_repository(session: SessionDep) -> SqlAlchemyReactionRepository:
+    """Get reaction repository."""
+    return SqlAlchemyReactionRepository(session)
+
+
 PostRepositoryDep = Annotated[SqlAlchemyPostRepository, Depends(get_post_repository)]
 CategoryRepositoryDep = Annotated[SqlAlchemyCategoryRepository, Depends(get_category_repository)]
 MemberRepositoryDep = Annotated[SqlAlchemyMemberRepository, Depends(get_member_repository)]
+CommentRepositoryDep = Annotated[SqlAlchemyCommentRepository, Depends(get_comment_repository)]
+ReactionRepositoryDep = Annotated[SqlAlchemyReactionRepository, Depends(get_reaction_repository)]
 
 
 # ============================================================================
@@ -93,12 +117,128 @@ def get_update_post_handler(
 
 def get_delete_post_handler(
     post_repo: PostRepositoryDep,
+    comment_repo: CommentRepositoryDep,
+    reaction_repo: ReactionRepositoryDep,
     member_repo: MemberRepositoryDep,
 ) -> DeletePostHandler:
     """Get delete post handler."""
     return DeletePostHandler(
         post_repository=post_repo,
+        comment_repository=comment_repo,
+        reaction_repository=reaction_repo,
         member_repository=member_repo,
+    )
+
+
+def get_lock_post_handler(
+    post_repo: PostRepositoryDep,
+    member_repo: MemberRepositoryDep,
+) -> LockPostHandler:
+    """Get lock post handler."""
+    return LockPostHandler(
+        post_repository=post_repo,
+        member_repository=member_repo,
+    )
+
+
+def get_unlock_post_handler(
+    post_repo: PostRepositoryDep,
+    member_repo: MemberRepositoryDep,
+) -> UnlockPostHandler:
+    """Get unlock post handler."""
+    return UnlockPostHandler(
+        post_repository=post_repo,
+        member_repository=member_repo,
+    )
+
+
+def get_add_comment_handler(
+    comment_repo: CommentRepositoryDep,
+    post_repo: PostRepositoryDep,
+    member_repo: MemberRepositoryDep,
+) -> AddCommentHandler:
+    """Get add comment handler."""
+    return AddCommentHandler(
+        comment_repository=comment_repo,
+        post_repository=post_repo,
+        member_repository=member_repo,
+    )
+
+
+def get_edit_comment_handler(
+    comment_repo: CommentRepositoryDep,
+    post_repo: PostRepositoryDep,
+    member_repo: MemberRepositoryDep,
+) -> EditCommentHandler:
+    """Get edit comment handler."""
+    return EditCommentHandler(
+        comment_repository=comment_repo,
+        post_repository=post_repo,
+        member_repository=member_repo,
+    )
+
+
+def get_delete_comment_handler(
+    comment_repo: CommentRepositoryDep,
+    post_repo: PostRepositoryDep,
+    member_repo: MemberRepositoryDep,
+) -> DeleteCommentHandler:
+    """Get delete comment handler."""
+    return DeleteCommentHandler(
+        comment_repository=comment_repo,
+        post_repository=post_repo,
+        member_repository=member_repo,
+    )
+
+
+def get_like_post_handler(
+    reaction_repo: ReactionRepositoryDep,
+    post_repo: PostRepositoryDep,
+) -> LikePostHandler:
+    """Get like post handler."""
+    return LikePostHandler(
+        reaction_repository=reaction_repo,
+        post_repository=post_repo,
+    )
+
+
+def get_unlike_post_handler(
+    reaction_repo: ReactionRepositoryDep,
+) -> UnlikePostHandler:
+    """Get unlike post handler."""
+    return UnlikePostHandler(
+        reaction_repository=reaction_repo,
+    )
+
+
+def get_like_comment_handler(
+    reaction_repo: ReactionRepositoryDep,
+    comment_repo: CommentRepositoryDep,
+) -> LikeCommentHandler:
+    """Get like comment handler."""
+    return LikeCommentHandler(
+        reaction_repository=reaction_repo,
+        comment_repository=comment_repo,
+    )
+
+
+def get_unlike_comment_handler(
+    reaction_repo: ReactionRepositoryDep,
+) -> UnlikeCommentHandler:
+    """Get unlike comment handler."""
+    return UnlikeCommentHandler(
+        reaction_repository=reaction_repo,
+    )
+
+
+def get_get_post_comments_handler(
+    comment_repo: CommentRepositoryDep,
+    reaction_repo: ReactionRepositoryDep,
+) -> GetPostCommentsHandler:
+    """Get post comments handler."""
+    return GetPostCommentsHandler(
+        comment_repository=comment_repo,
+        reaction_repository=reaction_repo,
     )
 
 

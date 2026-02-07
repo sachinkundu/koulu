@@ -161,6 +161,14 @@ class CannotDeleteCommentError(CommunityDomainError):
         super().__init__("You don't have permission to delete this comment")
 
 
+class CommentNotFoundError(CommunityDomainError):
+    """Raised when a comment cannot be found."""
+
+    def __init__(self, comment_id: str) -> None:
+        super().__init__(f"Comment not found: {comment_id}")
+        self.comment_id = comment_id
+
+
 # Community membership errors
 class NotCommunityMemberError(CommunityDomainError):
     """Raised when user is not a member of the community."""

@@ -10,3 +10,12 @@ class GetPostQuery:
 
     post_id: UUID
     requester_id: UUID | None = None  # For permission checking
+
+
+@dataclass(frozen=True)
+class GetPostCommentsQuery:
+    """Query to get comments for a post."""
+
+    post_id: UUID
+    limit: int = 100
+    offset: int = 0

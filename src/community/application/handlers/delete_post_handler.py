@@ -8,7 +8,12 @@ from src.community.domain.exceptions import (
     NotCommunityMemberError,
     PostNotFoundError,
 )
-from src.community.domain.repositories import IMemberRepository, IPostRepository
+from src.community.domain.repositories import (
+    ICommentRepository,
+    IMemberRepository,
+    IPostRepository,
+    IReactionRepository,
+)
 from src.community.domain.value_objects import PostId
 from src.identity.domain.value_objects import UserId
 from src.shared.infrastructure import event_bus
@@ -22,10 +27,14 @@ class DeletePostHandler:
     def __init__(
         self,
         post_repository: IPostRepository,
+        comment_repository: ICommentRepository,
+        reaction_repository: IReactionRepository,
         member_repository: IMemberRepository,
     ) -> None:
         """Initialize with dependencies."""
         self._post_repository = post_repository
+        self._comment_repository = comment_repository
+        self._reaction_repository = reaction_repository
         self._member_repository = member_repository
 
     async def handle(self, command: DeletePostCommand) -> None:
@@ -56,7 +65,9 @@ class DeletePostHandler:
             raise PostNotFoundError(str(post_id))
 
         # Get deleter's membership
-        member = await self._member_repository.get_by_user_and_community(deleter_id, post.community_id)
+        member = await self._member_repository.get_by_user_and_community(
+            deleter_id, post.community_id
+        )
         if member is None:
             logger.warning("delete_post_not_member", deleter_id=str(deleter_id))
             raise NotCommunityMemberError()
@@ -70,6 +81,10 @@ class DeletePostHandler:
                 role=member.role.value,
             )
             raise CannotDeletePostError()
+
+        # Cascade delete: remove comments and reactions before deleting post
+        await self._reaction_repository.delete_by_post_cascade(post.id)
+        await self._comment_repository.delete_by_post(post.id)
 
         # Delete the post
         post.delete(deleter_id)

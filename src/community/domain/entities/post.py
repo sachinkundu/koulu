@@ -4,8 +4,15 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from src.community.domain.events import PostCreated, PostDeleted, PostEdited
+from src.community.domain.events import (
+    PostCreated,
+    PostDeleted,
+    PostEdited,
+    PostLocked,
+    PostUnlocked,
+)
 from src.community.domain.exceptions import (
+    CannotLockPostError,
     InvalidImageUrlError,
     NotPostAuthorError,
     PostAlreadyDeletedError,
@@ -166,7 +173,9 @@ class Post:
         if changed_fields:
             self.edited_at = datetime.now(UTC)
             self._update_timestamp()
-            self._add_event(PostEdited(post_id=self.id, editor_id=editor_id, changed_fields=changed_fields))
+            self._add_event(
+                PostEdited(post_id=self.id, editor_id=editor_id, changed_fields=changed_fields)
+            )
 
         return changed_fields
 
@@ -186,6 +195,54 @@ class Post:
         self.is_deleted = True
         self._update_timestamp()
         self._add_event(PostDeleted(post_id=self.id, deleted_by=deleter_id))
+
+    def lock(self, locker_id: UserId, locker_role: MemberRole) -> None:
+        """
+        Lock the post to prevent new comments.
+
+        Args:
+            locker_id: The user locking the post
+            locker_role: The role of the locker
+
+        Raises:
+            PostAlreadyDeletedError: If post is deleted
+            CannotLockPostError: If user doesn't have permission
+        """
+        if self.is_deleted:
+            raise PostAlreadyDeletedError()
+
+        # Check permission: must be admin or moderator
+        if not locker_role.can_lock_posts():
+            raise CannotLockPostError()
+
+        if not self.is_locked:
+            self.is_locked = True
+            self._update_timestamp()
+            self._add_event(PostLocked(post_id=self.id, locked_by=locker_id))
+
+    def unlock(self, unlocker_id: UserId, unlocker_role: MemberRole) -> None:
+        """
+        Unlock the post to allow comments again.
+
+        Args:
+            unlocker_id: The user unlocking the post
+            unlocker_role: The role of the unlocker
+
+        Raises:
+            PostAlreadyDeletedError: If post is deleted
+            CannotLockPostError: If user doesn't have permission
+        """
+        if self.is_deleted:
+            raise PostAlreadyDeletedError()
+
+        # Check permission: must be admin or moderator
+        if not unlocker_role.can_lock_posts():
+            raise CannotLockPostError()
+
+        if self.is_locked:
+            self.is_locked = False
+            self._update_timestamp()
+            self._add_event(PostUnlocked(post_id=self.id, unlocked_by=unlocker_id))
 
     @property
     def is_edited(self) -> bool:

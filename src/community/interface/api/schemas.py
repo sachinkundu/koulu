@@ -29,6 +29,19 @@ class UpdatePostRequest(BaseModel):
     category_id: UUID | None = None
 
 
+class AddCommentRequest(BaseModel):
+    """Request body for adding a comment."""
+
+    content: str = Field(..., min_length=1, max_length=2000)
+    parent_comment_id: UUID | None = None
+
+
+class EditCommentRequest(BaseModel):
+    """Request body for editing a comment."""
+
+    content: str = Field(..., min_length=1, max_length=2000)
+
+
 # ============================================================================
 # Response Schemas
 # ============================================================================
@@ -55,9 +68,42 @@ class PostResponse(BaseModel):
     is_pinned: bool
     is_locked: bool
     is_edited: bool
+    comment_count: int = 0
+    like_count: int = 0
     created_at: datetime
     updated_at: datetime
     edited_at: datetime | None
+
+
+class CommentResponse(BaseModel):
+    """Comment response."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    post_id: UUID
+    author_id: UUID | None
+    content: str
+    parent_comment_id: UUID | None
+    is_deleted: bool
+    like_count: int = 0
+    is_edited: bool
+    created_at: datetime
+    updated_at: datetime
+    edited_at: datetime | None
+
+
+class CreateCommentResponse(BaseModel):
+    """Response for successful comment creation."""
+
+    comment_id: UUID
+    message: str = "Comment added successfully"
+
+
+class LikeResponse(BaseModel):
+    """Response for like/unlike operations."""
+
+    message: str
 
 
 class MessageResponse(BaseModel):

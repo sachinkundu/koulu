@@ -10,7 +10,6 @@ from uuid import uuid4
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects.postgresql import UUID
 
 revision: str = "007_seed_default_categories"
 down_revision: str | None = "006_create_posts"

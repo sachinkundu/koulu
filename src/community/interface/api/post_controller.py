@@ -10,17 +10,26 @@ from sqlalchemy import select
 from src.community.application.commands import (
     CreatePostCommand,
     DeletePostCommand,
+    LikePostCommand,
+    LockPostCommand,
+    UnlikePostCommand,
+    UnlockPostCommand,
     UpdatePostCommand,
 )
 from src.community.application.handlers import (
     CreatePostHandler,
     DeletePostHandler,
     GetPostHandler,
+    LikePostHandler,
+    LockPostHandler,
+    UnlikePostHandler,
+    UnlockPostHandler,
     UpdatePostHandler,
 )
 from src.community.application.queries import GetPostQuery
 from src.community.domain.exceptions import (
     CannotDeletePostError,
+    CannotLockPostError,
     CategoryNotFoundError,
     CommunityDomainError,
     NotCommunityMemberError,
@@ -39,12 +48,17 @@ from src.community.interface.api.dependencies import (
     get_create_post_handler,
     get_delete_post_handler,
     get_get_post_handler,
+    get_like_post_handler,
+    get_lock_post_handler,
+    get_unlike_post_handler,
+    get_unlock_post_handler,
     get_update_post_handler,
 )
 from src.community.interface.api.schemas import (
     CreatePostRequest,
     CreatePostResponse,
     ErrorResponse,
+    LikeResponse,
     MessageResponse,
     PostResponse,
     UpdatePostRequest,
@@ -307,3 +321,147 @@ async def delete_post(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         ) from e
+
+
+# ============================================================================
+# Lock/Unlock Endpoints
+# ============================================================================
+
+
+@router.post(
+    "/{post_id}/lock",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        401: {"model": ErrorResponse, "description": "Not authenticated"},
+        403: {"model": ErrorResponse, "description": "Not authorized to lock"},
+        404: {"model": ErrorResponse, "description": "Post not found"},
+    },
+)
+async def lock_post(
+    post_id: UUID,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[LockPostHandler, Depends(get_lock_post_handler)],
+) -> None:
+    """Lock a post to prevent new comments."""
+    try:
+        command = LockPostCommand(post_id=post_id, locker_id=current_user_id)
+        await handler.handle(command)
+
+        logger.info("lock_post_api_success", post_id=str(post_id))
+
+    except PostNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        ) from e
+    except (NotCommunityMemberError, CannotLockPostError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        ) from e
+    except CommunityDomainError as e:
+        logger.error("lock_post_domain_error", error=str(e), post_id=str(post_id))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+
+
+@router.delete(
+    "/{post_id}/lock",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        401: {"model": ErrorResponse, "description": "Not authenticated"},
+        403: {"model": ErrorResponse, "description": "Not authorized to unlock"},
+        404: {"model": ErrorResponse, "description": "Post not found"},
+    },
+)
+async def unlock_post(
+    post_id: UUID,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[UnlockPostHandler, Depends(get_unlock_post_handler)],
+) -> None:
+    """Unlock a post to allow comments again."""
+    try:
+        command = UnlockPostCommand(post_id=post_id, unlocker_id=current_user_id)
+        await handler.handle(command)
+
+        logger.info("unlock_post_api_success", post_id=str(post_id))
+
+    except PostNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        ) from e
+    except (NotCommunityMemberError, CannotLockPostError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        ) from e
+    except CommunityDomainError as e:
+        logger.error("unlock_post_domain_error", error=str(e), post_id=str(post_id))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+
+
+# ============================================================================
+# Like/Unlike Post Endpoints
+# ============================================================================
+
+
+@router.post(
+    "/{post_id}/like",
+    response_model=LikeResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"model": ErrorResponse, "description": "Not authenticated"},
+        404: {"model": ErrorResponse, "description": "Post not found"},
+    },
+)
+async def like_post(
+    post_id: UUID,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[LikePostHandler, Depends(get_like_post_handler)],
+) -> LikeResponse:
+    """Like a post."""
+    try:
+        command = LikePostCommand(post_id=post_id, user_id=current_user_id)
+        await handler.handle(command)
+
+        logger.info("like_post_api_success", post_id=str(post_id))
+        return LikeResponse(message="Post liked successfully")
+
+    except PostNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        ) from e
+    except CommunityDomainError as e:
+        logger.error("like_post_domain_error", error=str(e), post_id=str(post_id))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+
+
+@router.delete(
+    "/{post_id}/like",
+    response_model=LikeResponse,
+    status_code=status.HTTP_200_OK,
+    responses={
+        401: {"model": ErrorResponse, "description": "Not authenticated"},
+    },
+)
+async def unlike_post(
+    post_id: UUID,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[UnlikePostHandler, Depends(get_unlike_post_handler)],
+) -> LikeResponse:
+    """Unlike a post."""
+    command = UnlikePostCommand(post_id=post_id, user_id=current_user_id)
+    await handler.handle(command)
+
+    logger.info("unlike_post_api_success", post_id=str(post_id))
+    return LikeResponse(message="Post unliked successfully")

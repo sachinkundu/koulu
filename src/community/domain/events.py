@@ -3,7 +3,13 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
-from src.community.domain.value_objects import CategoryId, CommunityId, PostId
+from src.community.domain.value_objects import (
+    CategoryId,
+    CommentId,
+    CommunityId,
+    PostId,
+    ReactionId,
+)
 from src.identity.domain.value_objects import UserId
 from src.shared.domain import DomainEvent
 
@@ -146,3 +152,99 @@ class CategoryDeleted(DomainEvent):
     @property
     def event_type(self) -> str:
         return "CategoryDeleted"
+
+
+@dataclass(frozen=True)
+class CommentAdded(DomainEvent):
+    """Event published when a comment is added to a post."""
+
+    comment_id: CommentId
+    post_id: PostId
+    author_id: UserId
+    content: str
+    parent_comment_id: CommentId | None
+    timestamp: datetime = datetime.now(UTC)
+
+    @property
+    def event_type(self) -> str:
+        return "CommentAdded"
+
+
+@dataclass(frozen=True)
+class CommentEdited(DomainEvent):
+    """Event published when a comment is edited."""
+
+    comment_id: CommentId
+    editor_id: UserId
+    timestamp: datetime = datetime.now(UTC)
+
+    @property
+    def event_type(self) -> str:
+        return "CommentEdited"
+
+
+@dataclass(frozen=True)
+class CommentDeleted(DomainEvent):
+    """Event published when a comment is deleted."""
+
+    comment_id: CommentId
+    deleted_by: UserId
+    timestamp: datetime = datetime.now(UTC)
+
+    @property
+    def event_type(self) -> str:
+        return "CommentDeleted"
+
+
+@dataclass(frozen=True)
+class PostLiked(DomainEvent):
+    """Event published when a post is liked."""
+
+    reaction_id: ReactionId
+    post_id: PostId
+    user_id: UserId
+    timestamp: datetime = datetime.now(UTC)
+
+    @property
+    def event_type(self) -> str:
+        return "PostLiked"
+
+
+@dataclass(frozen=True)
+class PostUnliked(DomainEvent):
+    """Event published when a post is unliked."""
+
+    post_id: PostId
+    user_id: UserId
+    timestamp: datetime = datetime.now(UTC)
+
+    @property
+    def event_type(self) -> str:
+        return "PostUnliked"
+
+
+@dataclass(frozen=True)
+class CommentLiked(DomainEvent):
+    """Event published when a comment is liked."""
+
+    reaction_id: ReactionId
+    comment_id: CommentId
+    user_id: UserId
+    timestamp: datetime = datetime.now(UTC)
+
+    @property
+    def event_type(self) -> str:
+        return "CommentLiked"
+
+
+@dataclass(frozen=True)
+class CommentUnliked(DomainEvent):
+    """Event published when a comment is unliked."""
+
+    comment_id: CommentId
+    user_id: UserId
+    timestamp: datetime = datetime.now(UTC)
+
+    @property
+    def event_type(self) -> str:
+        return "CommentUnliked"

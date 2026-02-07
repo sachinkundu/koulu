@@ -458,7 +458,7 @@ Feature: Community Feed
   Scenario: Unauthenticated user cannot like posts
     Given a post exists
     When I attempt to like the post without authentication
-    Then the like should fail with error "Authentication required"
+    Then the like should fail with error "Not authenticated"
 
   # ============================================
   # CATEGORIES

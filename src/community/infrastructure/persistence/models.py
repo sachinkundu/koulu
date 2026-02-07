@@ -251,3 +251,127 @@ class PostModel(Base):
         "CategoryModel",
         back_populates="posts",
     )
+    comments: Mapped[list["CommentModel"]] = relationship(
+        "CommentModel",
+        back_populates="post",
+        cascade="all, delete-orphan",
+    )
+
+
+class CommentModel(Base):
+    """SQLAlchemy model for comments table."""
+
+    __tablename__ = "comments"
+
+    id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        primary_key=True,
+    )
+    post_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("posts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    author_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    parent_comment_id: Mapped[UUID | None] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("comments.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    content: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+    )
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+    edited_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    # Indexes for comment queries
+    __table_args__ = (
+        Index("idx_comment_post_created", "post_id", "created_at"),
+        Index("idx_comment_parent", "parent_comment_id"),
+    )
+
+    # Relationships
+    post: Mapped["PostModel"] = relationship(
+        "PostModel",
+        back_populates="comments",
+    )
+    parent: Mapped["CommentModel | None"] = relationship(
+        "CommentModel",
+        remote_side=[id],
+        back_populates="replies",
+    )
+    replies: Mapped[list["CommentModel"]] = relationship(
+        "CommentModel",
+        back_populates="parent",
+        cascade="all, delete-orphan",
+    )
+
+
+class ReactionModel(Base):
+    """SQLAlchemy model for reactions table."""
+
+    __tablename__ = "reactions"
+
+    id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        primary_key=True,
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    target_type: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+    )
+    target_id: Mapped[UUID] = mapped_column(
+        PgUUID(as_uuid=True),
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+    )
+
+    # Unique constraint: one reaction per user per target
+    # Composite index for target lookups
+    __table_args__ = (
+        Index(
+            "idx_reaction_user_target",
+            "user_id",
+            "target_type",
+            "target_id",
+            unique=True,
+        ),
+        Index("idx_reaction_target", "target_type", "target_id"),
+    )

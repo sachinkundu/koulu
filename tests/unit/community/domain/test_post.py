@@ -5,8 +5,15 @@ from uuid import uuid4
 import pytest
 
 from src.community.domain.entities.post import Post
-from src.community.domain.events import PostCreated, PostDeleted, PostEdited
+from src.community.domain.events import (
+    PostCreated,
+    PostDeleted,
+    PostEdited,
+    PostLocked,
+    PostUnlocked,
+)
 from src.community.domain.exceptions import (
+    CannotLockPostError,
     InvalidImageUrlError,
     NotPostAuthorError,
     PostAlreadyDeletedError,
@@ -225,9 +232,7 @@ class TestPostCreate:
 class TestPostEdit:
     """Tests for Post.edit() method."""
 
-    def test_edit_post_by_author_updates_title(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_edit_post_by_author_updates_title(self, post: Post, author_id: UserId) -> None:
         """Post.edit() by author should update title and return changed fields."""
         new_title = PostTitle("Updated Title")
 
@@ -241,9 +246,7 @@ class TestPostEdit:
         assert changed == ["title"]
         assert post.edited_at is not None
 
-    def test_edit_post_by_author_updates_content(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_edit_post_by_author_updates_content(self, post: Post, author_id: UserId) -> None:
         """Post.edit() by author should update content and return changed fields."""
         new_content = PostContent("Updated content goes here.")
 
@@ -257,9 +260,7 @@ class TestPostEdit:
         assert changed == ["content"]
         assert post.edited_at is not None
 
-    def test_edit_post_by_author_updates_image_url(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_edit_post_by_author_updates_image_url(self, post: Post, author_id: UserId) -> None:
         """Post.edit() by author should update image_url and return changed fields."""
         new_image_url = "https://example.com/new-image.png"
 
@@ -273,9 +274,7 @@ class TestPostEdit:
         assert changed == ["image_url"]
         assert post.edited_at is not None
 
-    def test_edit_post_by_author_updates_category(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_edit_post_by_author_updates_category(self, post: Post, author_id: UserId) -> None:
         """Post.edit() by author should update category and return changed fields."""
         new_category_id = CategoryId(value=uuid4())
 
@@ -289,9 +288,7 @@ class TestPostEdit:
         assert changed == ["category_id"]
         assert post.edited_at is not None
 
-    def test_edit_post_updates_multiple_fields(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_edit_post_updates_multiple_fields(self, post: Post, author_id: UserId) -> None:
         """Post.edit() should update multiple fields and return all changed fields."""
         new_title = PostTitle("New Title")
         new_content = PostContent("New content.")
@@ -345,9 +342,7 @@ class TestPostEdit:
         assert changed == []
         assert post.edited_at == original_edited_at  # Should not update timestamp
 
-    def test_edit_post_by_non_author_without_permission_raises_error(
-        self, post: Post
-    ) -> None:
+    def test_edit_post_by_non_author_without_permission_raises_error(self, post: Post) -> None:
         """Post.edit() by non-author with MEMBER role should raise NotPostAuthorError."""
         other_user_id = UserId(value=uuid4())
 
@@ -408,9 +403,7 @@ class TestPostEdit:
                 image_url="http://example.com/image.png",
             )
 
-    def test_edit_post_publishes_post_edited_event(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_edit_post_publishes_post_edited_event(self, post: Post, author_id: UserId) -> None:
         """Post.edit() should publish PostEdited event."""
         post.clear_events()  # Clear creation event
 
@@ -464,18 +457,14 @@ class TestPostDelete:
 
         assert post.updated_at > original_updated_at
 
-    def test_delete_already_deleted_post_raises_error(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_delete_already_deleted_post_raises_error(self, post: Post, author_id: UserId) -> None:
         """Post.delete() on already deleted post should raise PostAlreadyDeletedError."""
         post.delete(deleter_id=author_id)  # First delete succeeds
 
         with pytest.raises(PostAlreadyDeletedError):
             post.delete(deleter_id=author_id)  # Second delete fails
 
-    def test_delete_post_publishes_post_deleted_event(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_delete_post_publishes_post_deleted_event(self, post: Post, author_id: UserId) -> None:
         """Post.delete() should publish PostDeleted event."""
         post.clear_events()  # Clear creation event
 
@@ -495,9 +484,7 @@ class TestPostIsEdited:
         """Post.is_edited should return False for newly created post."""
         assert post.is_edited is False
 
-    def test_is_edited_returns_true_after_edit(
-        self, post: Post, author_id: UserId
-    ) -> None:
+    def test_is_edited_returns_true_after_edit(self, post: Post, author_id: UserId) -> None:
         """Post.is_edited should return True after post has been edited."""
         post.edit(
             editor_id=author_id,
@@ -593,3 +580,116 @@ class TestPostEquality:
         hash2 = hash(post)
 
         assert hash1 == hash2
+
+
+class TestPostLock:
+    """Tests for Post.lock() method."""
+
+    def test_lock_post_by_admin(self, post: Post) -> None:
+        """Post.lock() by admin should set is_locked to True."""
+        admin_id = UserId(value=uuid4())
+
+        post.lock(locker_id=admin_id, locker_role=MemberRole.ADMIN)
+
+        assert post.is_locked is True
+
+    def test_lock_post_by_moderator(self, post: Post) -> None:
+        """Post.lock() by moderator should set is_locked to True."""
+        mod_id = UserId(value=uuid4())
+
+        post.lock(locker_id=mod_id, locker_role=MemberRole.MODERATOR)
+
+        assert post.is_locked is True
+
+    def test_lock_post_by_member_raises_error(self, post: Post) -> None:
+        """Post.lock() by regular member should raise CannotLockPostError."""
+        member_id = UserId(value=uuid4())
+
+        with pytest.raises(CannotLockPostError):
+            post.lock(locker_id=member_id, locker_role=MemberRole.MEMBER)
+
+    def test_lock_post_publishes_post_locked_event(self, post: Post) -> None:
+        """Post.lock() should publish PostLocked event."""
+        post.clear_events()
+        admin_id = UserId(value=uuid4())
+
+        post.lock(locker_id=admin_id, locker_role=MemberRole.ADMIN)
+
+        events = post.events
+        assert len(events) == 1
+        assert isinstance(events[0], PostLocked)
+        assert events[0].post_id == post.id
+        assert events[0].locked_by == admin_id
+
+    def test_lock_already_locked_post_is_idempotent(self, post: Post) -> None:
+        """Post.lock() on already locked post should be idempotent (no event)."""
+        admin_id = UserId(value=uuid4())
+        post.lock(locker_id=admin_id, locker_role=MemberRole.ADMIN)
+        post.clear_events()
+
+        post.lock(locker_id=admin_id, locker_role=MemberRole.ADMIN)
+
+        assert post.is_locked is True
+        assert len(post.events) == 0
+
+    def test_lock_deleted_post_raises_error(self, post: Post, author_id: UserId) -> None:
+        """Post.lock() on deleted post should raise PostAlreadyDeletedError."""
+        post.delete(deleter_id=author_id)
+        admin_id = UserId(value=uuid4())
+
+        with pytest.raises(PostAlreadyDeletedError):
+            post.lock(locker_id=admin_id, locker_role=MemberRole.ADMIN)
+
+
+class TestPostUnlock:
+    """Tests for Post.unlock() method."""
+
+    def test_unlock_locked_post(self, post: Post) -> None:
+        """Post.unlock() should set is_locked to False."""
+        admin_id = UserId(value=uuid4())
+        post.lock(locker_id=admin_id, locker_role=MemberRole.ADMIN)
+
+        post.unlock(unlocker_id=admin_id, unlocker_role=MemberRole.ADMIN)
+
+        assert post.is_locked is False
+
+    def test_unlock_post_by_member_raises_error(self, post: Post) -> None:
+        """Post.unlock() by regular member should raise CannotLockPostError."""
+        admin_id = UserId(value=uuid4())
+        post.lock(locker_id=admin_id, locker_role=MemberRole.ADMIN)
+
+        member_id = UserId(value=uuid4())
+        with pytest.raises(CannotLockPostError):
+            post.unlock(unlocker_id=member_id, unlocker_role=MemberRole.MEMBER)
+
+    def test_unlock_post_publishes_post_unlocked_event(self, post: Post) -> None:
+        """Post.unlock() should publish PostUnlocked event."""
+        admin_id = UserId(value=uuid4())
+        post.lock(locker_id=admin_id, locker_role=MemberRole.ADMIN)
+        post.clear_events()
+
+        post.unlock(unlocker_id=admin_id, unlocker_role=MemberRole.ADMIN)
+
+        events = post.events
+        assert len(events) == 1
+        assert isinstance(events[0], PostUnlocked)
+        assert events[0].post_id == post.id
+        assert events[0].unlocked_by == admin_id
+
+    def test_unlock_already_unlocked_post_is_idempotent(self, post: Post) -> None:
+        """Post.unlock() on already unlocked post should be idempotent (no event)."""
+        admin_id = UserId(value=uuid4())
+        post.clear_events()
+
+        post.unlock(unlocker_id=admin_id, unlocker_role=MemberRole.ADMIN)
+
+        assert post.is_locked is False
+        assert len(post.events) == 0
+
+    def test_unlock_deleted_post_raises_error(self, post: Post, author_id: UserId) -> None:
+        """Post.unlock() on deleted post should raise PostAlreadyDeletedError."""
+        post.delete(deleter_id=author_id)
+        admin_id = UserId(value=uuid4())
+
+        with pytest.raises(PostAlreadyDeletedError):
+            post.unlock(unlocker_id=admin_id, unlocker_role=MemberRole.ADMIN)

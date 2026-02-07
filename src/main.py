@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from src.community.interface.api import posts_router
+from src.community.interface.api import comments_router, post_comments_router, posts_router
 from src.config import settings
 from src.identity.domain.exceptions import RateLimitExceededError
 from src.identity.infrastructure.services import limiter
@@ -134,3 +134,5 @@ async def health_check() -> dict[str, str]:
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(user_router, prefix="/api/v1")
 app.include_router(posts_router, prefix="/api/v1")
+app.include_router(post_comments_router, prefix="/api/v1")
+app.include_router(comments_router, prefix="/api/v1")
