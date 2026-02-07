@@ -11,7 +11,9 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from src.config import settings
 
 # Import all models to ensure they're registered with Base.metadata
-from src.identity.infrastructure.persistence import models  # noqa: F401
+from src.identity.infrastructure.persistence import models as identity_models  # noqa: F401
+from src.community.infrastructure.persistence import models as community_models  # noqa: F401
+from src.classroom.infrastructure.persistence import models as classroom_models  # noqa: F401
 from src.shared.infrastructure.database import Base
 
 config = context.config
