@@ -23,6 +23,47 @@ Before writing ANY code, ask yourself:
 
 ---
 
+## ⛔ ZERO TOLERANCE POLICY: TEST FAILURES
+
+**NEVER mark ANY work complete while tests are failing.**
+
+This means:
+- ✅ `pytest` output MUST show `0 failed` (not `1 failed`, not `10 failed`, not `100 failed`)
+- ✅ All tests MUST either `PASS` or be explicitly `SKIPPED` with phase markers
+- ✅ FAILING tests are NOT the same as SKIPPED tests — do not conflate them
+- ✅ "Phase 2-4 scenarios" is NOT an excuse to commit failing tests
+
+**If you see ANY number other than 0 in the "failed" count:**
+1. ❌ **STOP** — do not mark work complete
+2. ❌ **DO NOT COMMIT** — do not create git commits
+3. ❌ **DO NOT RATIONALIZE** — "these failures are for future phases" is WRONG
+4. ✅ **FIX OR SKIP** — either implement the missing code or add `@pytest.mark.skip(reason="Phase X: condition")`
+
+**Examples:**
+
+```bash
+# ❌ WRONG - Work is NOT complete, do not mark done
+===================== 60 passed, 10 failed, 2 skipped ======================
+
+# ✅ CORRECT - All tests passing or properly skipped
+===================== 60 passed, 30 skipped ===============================
+```
+
+**What "CI must be green" means:**
+- pytest exit code 0 (no failures)
+- All tests either pass or are skipped with phase markers
+- Coverage meets threshold (≥80%)
+- No warnings (fix root cause, don't suppress)
+
+**Consequences of violation:**
+- Code must be reverted to last green state
+- Bug documented with root cause analysis
+- Trust lost — will be remembered in MEMORY.md
+
+**This is non-negotiable. Zero tolerance means zero.**
+
+---
+
 ## Research Protocol
 
 **Before ANY implementation:**
@@ -93,13 +134,46 @@ Continue on the SAME feature branch. New branch only for new features.
 
 **⚠️ MANDATORY: A feature is NOT complete until ALL checks pass with ZERO failures, ZERO warnings, AND coverage threshold met.**
 
-### Before Marking ANY Feature Complete:
+### Before Marking ANY Feature Complete — BLOCKING CHECKLIST:
 
-1. **Infrastructure Running:** `docker-compose up -d` (postgres, redis, mailhog)
-2. **Test Database Exists:** `docker exec koulu-postgres psql -U koulu -c "\l" | grep koulu_test`
-3. **Python Verification:** `./scripts/verify.sh` — ALL checks pass **INCLUDING coverage ≥80%**
-4. **BDD Tests:** `pytest tests/features/` — **0 failures, 0 warnings**
-5. **Frontend Verification:** `./scripts/verify-frontend.sh` — ALL checks pass
+**Run these commands and verify EXACT outputs:**
+
+1. **Infrastructure Running:**
+   ```bash
+   docker-compose up -d
+   ```
+   - ✅ Must show: All services healthy
+
+2. **Test Database Exists:**
+   ```bash
+   docker exec koulu-postgres psql -U koulu -c "\l" | grep koulu_test
+   ```
+   - ✅ Must show: `koulu_test` database present
+
+3. **BDD Tests — MUST SHOW `0 failed`:**
+   ```bash
+   pytest tests/features/ --tb=short
+   ```
+   - ✅ **REQUIRED:** `===================== X passed, Y skipped ======================`
+   - ✅ **REQUIRED:** `0 failed` in output (if you see `10 failed`, work is NOT complete)
+   - ✅ **REQUIRED:** `0 warnings` in output
+   - ❌ **BLOCKING:** ANY number other than `0` in "failed" count = work is NOT done
+
+4. **Python Verification — MUST SHOW coverage ≥80%:**
+   ```bash
+   ./scripts/verify.sh
+   ```
+   - ✅ **REQUIRED:** `TOTAL ... 80%` or higher in coverage report
+   - ✅ **REQUIRED:** All linting, type checking, unit tests pass
+   - ❌ **BLOCKING:** Coverage <80% = work is NOT done
+
+5. **Frontend Verification (if applicable):**
+   ```bash
+   ./scripts/verify-frontend.sh
+   ```
+   - ✅ Must show: All checks pass
+
+**If ANY check fails, work is NOT complete. No exceptions. No rationalizations.**
 
 ### Red Flags (Feature is NOT Complete):
 - ❌ Tests contain `pass` stubs instead of real assertions
@@ -120,13 +194,66 @@ Continue on the SAME feature branch. New branch only for new features.
 - Never silently suppress warnings
 
 ### Evidence Required:
-When documenting completion, include BOTH test results AND coverage:
+
+**When documenting completion, you MUST include EXACT output showing:**
+
+1. **Test results with `0 failed`:**
+   ```
+   ======================= 36 passed, 30 skipped, 0 warnings =======================
+   ```
+   - ✅ Shows pass count
+   - ✅ Shows skip count (if phased implementation)
+   - ✅ **CRITICAL:** Shows `0 failed` (not `10 failed`, not `1 failed`)
+   - ✅ Shows `0 warnings`
+
+2. **Coverage ≥80%:**
+   ```
+   TOTAL                          1586    317    132     12    80%
+   ```
+   - ✅ Shows coverage percentage meets threshold
+
+**Invalid evidence examples:**
 ```
-======================= 36 passed, 0 warnings =======================
-TOTAL                          1586    317    132     12    80%
+# ❌ WRONG - 10 failed means work is NOT done
+===================== 60 passed, 10 failed, 2 skipped ======================
+
+# ❌ WRONG - 53% coverage is below 80% threshold
+TOTAL                          1586    848    132     12    53%
+
+# ❌ WRONG - Warnings present
+===================== 36 passed, 5 warnings ================================
 ```
 
-**If coverage is below 80%, the feature is NOT complete. Add unit tests for untested domain logic.**
+**If you cannot provide evidence showing `0 failed` and coverage ≥80%, the feature is NOT complete. Fix the failures or add the missing tests.**
+
+### Self-Correction Protocol:
+
+**If you realize you made a mistake (marked work complete when tests were failing):**
+
+1. **Acknowledge immediately:**
+   - "I made a mistake marking this complete while tests were failing."
+   - No excuses, no rationalizations
+
+2. **Assess damage:**
+   - Was code committed? `git log -1`
+   - What tests are failing? `pytest tests/features/ -v`
+   - Is CI broken? Check exit code
+
+3. **Fix or revert:**
+   - **Option A (Fix):** If failures are quick to fix (< 30 min), fix them now
+   - **Option B (Revert):** If complex, revert to last green state: `git reset --hard HEAD~1`
+
+4. **Document lesson:**
+   - Update MEMORY.md with new BUG-XXX entry
+   - Include root cause analysis
+   - Include prevention measures
+   - Share with user
+
+5. **Verify green:**
+   - Run full verification checklist
+   - Confirm `0 failed` before proceeding
+
+**Better to catch your own mistakes early than have user discover them.**
 
 ---
 

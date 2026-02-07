@@ -2,9 +2,12 @@
 
 **Version:** 1.0
 **Last Updated:** February 6, 2026
-**Status:** Draft
+**Status:** In Progress - Phase 1 Complete
+**Implementation Status:** Phase 1 Complete (Posts CRUD, Pinning, Locking)
 **Bounded Context:** Community
 **PRD Type:** Feature Specification
+
+**Implementation Summary:** See `docs/summaries/community-feed-phase1-summary.md`
 
 ---
 

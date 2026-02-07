@@ -176,19 +176,81 @@ Once approved, implement the current phase:
 
 ### Step 6: Phase Completion
 
+**⚠️ CRITICAL: Read and follow Pre-Completion Verification Protocol below BEFORE marking phase complete.**
+
+#### Pre-Completion Verification Protocol
+
+**MANDATORY STEPS - Execute IN ORDER:**
+
+**Option 1: Use Helper Script (Recommended)**
+
+Run the automated verification script:
+```bash
+./scripts/verify-phase-complete.sh "Phase 1"
+```
+
+This script will:
+- ✅ Check infrastructure is running
+- ✅ Verify test database exists
+- ✅ Run pytest and verify `0 failed` (RED FLAG if > 0)
+- ✅ Check for `0 warnings`
+- ✅ Verify coverage ≥80%
+- ✅ Provide clear PASS/FAIL verdict
+
+If script exits with code 0 (success) → Proceed to mark phase complete
+If script exits with code 1 (failure) → **STOP, fix the issues, do NOT proceed**
+
+**Option 2: Manual Verification**
+
+If you prefer manual verification, follow these steps:
+
+1. **Run pytest and READ THE OUTPUT:**
+   ```bash
+   pytest tests/features/ --tb=short
+   ```
+
+2. **Check for the word "failed" in output:**
+   - ✅ If output shows `0 failed` → Proceed to step 3
+   - ❌ If output shows `X failed` (where X > 0) → **STOP IMMEDIATELY, GO TO "Red Flags" SECTION BELOW**
+
+3. **Verify EXACT output format:**
+   ```
+   ===================== X passed, Y skipped, 0 warnings ======================
+   ```
+   - ✅ `0 failed` present (explicitly check this word is "0")
+   - ✅ `0 warnings` present
+   - If ANY number > 0 appears after "failed", **work is NOT complete**
+
+4. **Check coverage:**
+   ```bash
+   ./scripts/verify.sh
+   ```
+   - ✅ Coverage must be ≥80%
+   - ❌ If coverage <80%, **work is NOT complete**
+
+5. **Self-check for rationalization trap:**
+   - Ask yourself: "Am I about to say 'these failures are for Phase 2-4'?"
+   - If YES → **YOU ARE MAKING A MISTAKE, DO NOT PROCEED**
+   - Failing tests must be fixed OR skipped with phase markers — NEVER committed as failing
+
+6. **Only if ALL checks pass, mark phase complete:**
+
 **Mark phase complete when:**
-- All files created
-- All phase-specific tests passing (BDD + unit)
-- Future tests skipped with phase markers
-- Verification scripts pass
-- CI green (no failing tests)
-- Code reviewed (if applicable)
+- ✅ All files created
+- ✅ **pytest shows `0 failed`** (verified in step 2-3 above)
+- ✅ All phase-specific tests passing (BDD + unit)
+- ✅ Future tests skipped with phase markers (not failing)
+- ✅ Verification scripts pass
+- ✅ Coverage ≥80%
+- ✅ CI green (no failing tests)
+- ✅ Code reviewed (if applicable)
 
 **Report completion with:**
 - Test pass/skip counts (e.g., "8 passed, 30 skipped")
 - Which scenarios are skipped and for which phase
+- **EXACT pytest output showing `0 failed`**
+- Coverage percentage (must be ≥80%)
 - CI status (must be green ✅)
-- Coverage percentage (must meet threshold)
 
 **Then ask:** "Phase X complete. Proceed to Phase X+1?"
 
@@ -196,13 +258,59 @@ Once approved, implement the current phase:
 ```
 Phase 1 Complete ✅
 
-Tests: 8 passed, 30 skipped (Phase 2: 12, Phase 3: 18)
+pytest tests/features/community/test_feed.py -v
+===================== 8 passed, 30 skipped, 0 warnings =======================
+
+Scenarios: 8 passed, 30 skipped (Phase 2: 12, Phase 3: 18)
 Coverage: 81%
 CI: Green ✅
 Deployable: Yes
 
 Proceed to Phase 2 (Validation & Error Handling)?
 ```
+
+#### Red Flags - STOP Immediately If You See These:
+
+**⛔ NEVER proceed if you encounter ANY of these:**
+
+1. **pytest output shows `X failed` where X > 0**
+   - ❌ "60 passed, 10 failed" → **STOP, work is NOT complete**
+   - ❌ "358 passed, 8 failed" → **STOP, work is NOT complete**
+   - What to do: Fix the failures OR add `@pytest.mark.skip(reason="Phase X: condition")` markers
+
+2. **You're about to rationalize failures as "okay"**
+   - ❌ "These 10 failures are Phase 2-4 scenarios, so it's fine" → **WRONG**
+   - ❌ "These tests aren't relevant to this phase" → **WRONG, skip them with markers**
+   - ❌ "CI will be green after Phase 2" → **WRONG, CI must be green NOW**
+   - What to do: Stop rationalizing, fix or skip the tests
+
+3. **You're conflating FAILING with SKIPPED**
+   - ❌ "30 scenarios are for future phases" + "10 tests failing" → **NOT the same thing**
+   - ✅ SKIPPED = properly marked with `@pytest.mark.skip(reason="Phase X: ...")`
+   - ❌ FAILING = missing step definitions, broken code, not implemented yet
+   - What to do: Add skip markers to convert FAILING → SKIPPED
+
+4. **Coverage below 80%**
+   - ❌ "Coverage: 53%" → **STOP, work is NOT complete**
+   - What to do: Add unit tests for untested domain logic
+
+5. **You're about to mark work complete without running verification**
+   - ❌ Skipping `pytest tests/features/` command → **WRONG**
+   - ❌ Not checking `./scripts/verify.sh` output → **WRONG**
+   - What to do: Run ALL verification commands and READ the output
+
+6. **You see warnings and are about to ignore them**
+   - ❌ "5 warnings" in pytest output → **STOP, fix root cause**
+   - What to do: Fix warnings at source, don't suppress
+
+**If you encounter ANY red flag:**
+1. **STOP** - Do not mark work complete
+2. **DO NOT COMMIT** - Do not create git commits
+3. **FIX OR SKIP** - Either implement missing code or add proper skip markers
+4. **VERIFY AGAIN** - Re-run verification checklist
+5. **ONLY THEN** proceed if all checks pass
+
+**Remember:** User gave clear mandate: "CI must be green with 0 failures". This is non-negotiable.
 
 ### Step 7: Consider E2E Tests (Optional)
 

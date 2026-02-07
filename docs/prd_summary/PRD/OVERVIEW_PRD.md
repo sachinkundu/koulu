@@ -808,7 +808,7 @@ Each feature will have a detailed PRD and BDD specification. The index below map
 |--------------|--------------|----------|--------|
 | User Registration & Authentication | `docs/features/identity/registration-authentication-prd.md` | `tests/features/identity/registration_authentication.feature` | ✅ Complete |
 | User Profile | `docs/features/identity/profile-prd.md` | `tests/features/identity/profile.feature` | ✅ Complete |
-| Community Feed | `docs/features/community/feed-prd.md` | `tests/features/community/feed.feature` | |
+| Community Feed | `docs/features/community/feed-prd.md` | `tests/features/community/feed.feature` | 🚧 Phase 1/4 Complete |
 | Posts | `docs/features/community/posts-prd.md` | `tests/features/community/posts.feature` | |
 | Comments | `docs/features/community/comments-prd.md` | `tests/features/community/comments.feature` | |
 | Reactions | `docs/features/community/reactions-prd.md` | `tests/features/community/reactions.feature` | |
