@@ -76,3 +76,5 @@ alembic/versions/__pycache__/
 # Docker volumes (for local dev)
 postgres_data/
 redis_data/
+
+.claude/settings.local.json
