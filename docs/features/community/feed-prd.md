@@ -1,13 +1,15 @@
 # Community Feed - Product Requirements Document
 
 **Version:** 1.0
-**Last Updated:** February 6, 2026
-**Status:** In Progress - Phase 1 Complete
-**Implementation Status:** Phase 1 Complete (Posts CRUD, Pinning, Locking)
+**Last Updated:** February 7, 2026
+**Status:** In Progress - Phase 2 Complete
+**Implementation Status:** Phase 2 Complete (Comments, Reactions, Post Locking)
 **Bounded Context:** Community
 **PRD Type:** Feature Specification
 
-**Implementation Summary:** See `docs/summaries/community-feed-phase1-summary.md`
+**Implementation Summaries:**
+- Phase 1: `docs/summaries/community/community-feed-phase1-summary.md`
+- Phase 2: `docs/summaries/community/community-feed-phase2-summary.md`
 
 ---
 
