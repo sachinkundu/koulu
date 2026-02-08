@@ -2432,20 +2432,6 @@ async def event_with_parent_comment_id(
     assert response is not None and response.status_code == 201
 
 
-@pytest.mark.skip(reason="Phase 3: Comment rate limiting not yet implemented")
-@when("I attempt to add another comment")
-async def attempt_add_another_comment(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Attempt to add another comment for rate limit test (Phase 3)."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Simplified post creation for reactions not yet implemented")
-@given("I created a post")
-async def created_a_post(client: AsyncClient, context: dict[str, Any]) -> None:
-    """User created a post (Phase 3 - simplified version)."""
-    pass
-
-
 @pytest.mark.skip(reason="Phase 4: Feed sorting not yet implemented")
 @then(parsers.parse("posts should be ordered: {posts}"))
 async def posts_ordered_with_arg(posts: str, client: AsyncClient, context: dict[str, Any]) -> None:
@@ -2476,4 +2462,3 @@ async def then_regular_posts_with_arg(
 ) -> None:
     """Verify regular posts order after pinned posts (Phase 4)."""
     pass
-
