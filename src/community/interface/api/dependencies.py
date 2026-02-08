@@ -12,6 +12,7 @@ from src.community.application.handlers import (
     DeleteCommentHandler,
     DeletePostHandler,
     EditCommentHandler,
+    GetFeedHandler,
     GetPostCommentsHandler,
     GetPostHandler,
     LikeCommentHandler,
@@ -249,6 +250,17 @@ def get_list_categories_handler(
     """Get list categories handler."""
     return ListCategoriesHandler(
         category_repository=category_repo,
+    )
+
+
+def get_get_feed_handler(
+    post_repo: PostRepositoryDep,
+    member_repo: MemberRepositoryDep,
+) -> GetFeedHandler:
+    """Get feed handler."""
+    return GetFeedHandler(
+        post_repository=post_repo,
+        member_repository=member_repo,
     )
 
 

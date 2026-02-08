@@ -68,6 +68,14 @@ class CreatePostResponse(BaseModel):
     id: UUID
 
 
+class AuthorResponse(BaseModel):
+    """Author information for posts."""
+
+    id: UUID
+    display_name: str
+    avatar_url: str | None
+
+
 class PostResponse(BaseModel):
     """Post response."""
 
@@ -75,7 +83,7 @@ class PostResponse(BaseModel):
 
     id: UUID
     community_id: UUID
-    author_id: UUID
+    created_by: UUID  # Frontend expects created_by, not author_id
     category_id: UUID
     title: str
     content: str
@@ -88,6 +96,7 @@ class PostResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     edited_at: datetime | None
+    author: AuthorResponse | None = None  # Optional author information
 
 
 class CommentResponse(BaseModel):
@@ -125,6 +134,14 @@ class MessageResponse(BaseModel):
     """Generic message response."""
 
     message: str
+
+
+class FeedResponse(BaseModel):
+    """Feed response with list of posts."""
+
+    items: list[PostResponse]  # Frontend expects 'items', not 'posts'
+    cursor: str | None  # Frontend uses cursor-based pagination
+    has_more: bool  # Indicates if there are more items
 
 
 class ErrorResponse(BaseModel):

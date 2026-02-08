@@ -19,6 +19,7 @@ from src.community.application.commands import (
 from src.community.application.handlers import (
     CreatePostHandler,
     DeletePostHandler,
+    GetFeedHandler,
     GetPostHandler,
     LikePostHandler,
     LockPostHandler,
@@ -26,7 +27,7 @@ from src.community.application.handlers import (
     UnlockPostHandler,
     UpdatePostHandler,
 )
-from src.community.application.queries import GetPostQuery
+from src.community.application.queries import GetFeedQuery, GetPostQuery
 from src.community.domain.exceptions import (
     CannotDeletePostError,
     CannotLockPostError,
@@ -47,6 +48,7 @@ from src.community.interface.api.dependencies import (
     SessionDep,
     get_create_post_handler,
     get_delete_post_handler,
+    get_get_feed_handler,
     get_get_post_handler,
     get_like_post_handler,
     get_lock_post_handler,
@@ -55,14 +57,17 @@ from src.community.interface.api.dependencies import (
     get_update_post_handler,
 )
 from src.community.interface.api.schemas import (
+    AuthorResponse,
     CreatePostRequest,
     CreatePostResponse,
     ErrorResponse,
+    FeedResponse,
     LikeResponse,
     MessageResponse,
     PostResponse,
     UpdatePostRequest,
 )
+from src.identity.infrastructure.persistence.models import ProfileModel
 
 logger = structlog.get_logger()
 
@@ -78,17 +83,17 @@ async def get_default_community_id(session: SessionDep) -> UUID:
     """
     Get the default community ID.
 
-    For MVP, there's only one community with slug 'koulu'.
+    Uses the first available community (ordered by creation date).
     """
     result = await session.execute(
-        select(CommunityModel.id).where(CommunityModel.slug == "koulu")
+        select(CommunityModel.id).order_by(CommunityModel.created_at).limit(1)
     )
     community_id = result.scalar_one_or_none()
 
     if community_id is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Default community not found",
+            detail="No community found",
         )
 
     return community_id
@@ -100,6 +105,91 @@ DefaultCommunityIdDep = Annotated[UUID, Depends(get_default_community_id)]
 # ============================================================================
 # Endpoints
 # ============================================================================
+
+
+@router.get(
+    "",
+    response_model=FeedResponse,
+    responses={
+        401: {"model": ErrorResponse, "description": "Not authenticated"},
+        403: {"model": ErrorResponse, "description": "Not a community member"},
+    },
+)
+async def get_feed(
+    session: SessionDep,
+    current_user_id: CurrentUserIdDep,
+    community_id: DefaultCommunityIdDep,
+    handler: Annotated[GetFeedHandler, Depends(get_get_feed_handler)],
+    limit: int = 20,
+    offset: int = 0,
+) -> FeedResponse:
+    """Get the community feed (list of posts)."""
+    try:
+        query = GetFeedQuery(
+            community_id=community_id,
+            requester_id=current_user_id,
+            limit=min(limit, 100),  # Cap at 100 posts
+            offset=offset,
+        )
+        posts = await handler.handle(query)
+
+        logger.info("get_feed_api_success", community_id=str(community_id), count=len(posts))
+
+        # Fetch author profiles for all posts
+        author_ids = [post.author_id.value for post in posts]
+        profiles_result = await session.execute(
+            select(ProfileModel).where(ProfileModel.user_id.in_(author_ids))
+        )
+        profiles_map = {p.user_id: p for p in profiles_result.scalars().all()}
+
+        # Convert domain entities to response models with author info
+        post_responses = []
+        for post in posts:
+            author_profile = profiles_map.get(post.author_id.value)
+            author = None
+            if author_profile:
+                author = AuthorResponse(
+                    id=author_profile.user_id,
+                    display_name=author_profile.display_name or "Unknown",
+                    avatar_url=author_profile.avatar_url,
+                )
+
+            post_responses.append(
+                PostResponse(
+                    id=post.id.value,
+                    community_id=post.community_id.value,
+                    created_by=post.author_id.value,
+                    category_id=post.category_id.value,
+                    title=post.title.value,
+                    content=post.content.value,
+                    image_url=post.image_url,
+                    is_pinned=post.is_pinned,
+                    is_locked=post.is_locked,
+                    is_edited=post.is_edited,
+                    created_at=post.created_at,
+                    updated_at=post.updated_at,
+                    edited_at=post.edited_at,
+                    author=author,
+                )
+            )
+
+        return FeedResponse(
+            items=post_responses,  # Frontend expects 'items'
+            cursor=None,  # TODO: Implement cursor-based pagination
+            has_more=False,  # TODO: Calculate based on total posts available
+        )
+
+    except NotCommunityMemberError as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        ) from e
+    except CommunityDomainError as e:
+        logger.error("get_feed_domain_error", error=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
 
 
 @router.post(
@@ -186,7 +276,7 @@ async def get_post(
         return PostResponse(
             id=post.id.value,
             community_id=post.community_id.value,
-            author_id=post.author_id.value,
+            created_by=post.author_id.value,  # Map author_id to created_by for frontend
             category_id=post.category_id.value,
             title=post.title.value,
             content=post.content.value,

@@ -5,6 +5,7 @@ from src.community.application.handlers.create_post_handler import CreatePostHan
 from src.community.application.handlers.delete_comment_handler import DeleteCommentHandler
 from src.community.application.handlers.delete_post_handler import DeletePostHandler
 from src.community.application.handlers.edit_comment_handler import EditCommentHandler
+from src.community.application.handlers.get_feed_handler import GetFeedHandler
 from src.community.application.handlers.get_post_comments_handler import GetPostCommentsHandler
 from src.community.application.handlers.get_post_handler import GetPostHandler
 from src.community.application.handlers.like_comment_handler import LikeCommentHandler
@@ -22,6 +23,7 @@ __all__ = [
     "DeleteCommentHandler",
     "DeletePostHandler",
     "EditCommentHandler",
+    "GetFeedHandler",
     "GetPostCommentsHandler",
     "GetPostHandler",
     "LikeCommentHandler",

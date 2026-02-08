@@ -1,14 +1,15 @@
 """Community category API endpoints."""
 
 from typing import Annotated
-from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, Depends
+from sqlalchemy import select
 
 from src.community.application.handlers import ListCategoriesHandler
 from src.community.application.queries import ListCategoriesQuery
-from src.community.interface.api.dependencies import get_list_categories_handler
+from src.community.infrastructure.persistence.models import CommunityModel
+from src.community.interface.api.dependencies import SessionDep, get_list_categories_handler
 from src.community.interface.api.schemas import CategoryResponse
 
 logger = structlog.get_logger()
@@ -21,6 +22,7 @@ router = APIRouter(
 
 @router.get("/categories", response_model=list[CategoryResponse])
 async def list_categories(
+    session: SessionDep,
     handler: Annotated[ListCategoriesHandler, Depends(get_list_categories_handler)],
 ) -> list[CategoryResponse]:
     """
@@ -28,11 +30,16 @@ async def list_categories(
 
     Returns a list of all available categories that can be used when creating posts.
     """
-    # TODO: Make community_id configurable when multi-community support is added
-    # For now, hardcode the default community ID
-    default_community_id = UUID("00000000-0000-0000-0000-000000000001")
+    # Get the first available community (same logic as feed endpoint)
+    result = await session.execute(
+        select(CommunityModel.id).order_by(CommunityModel.created_at).limit(1)
+    )
+    community_id = result.scalar_one_or_none()
 
-    query = ListCategoriesQuery(community_id=default_community_id)
+    if not community_id:
+        return []
+
+    query = ListCategoriesQuery(community_id=community_id)
     categories = await handler.handle(query)
 
     # Convert domain entities to response DTOs

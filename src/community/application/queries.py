@@ -26,3 +26,13 @@ class ListCategoriesQuery:
     """Query to list all categories for a community."""
 
     community_id: UUID
+
+
+@dataclass(frozen=True)
+class GetFeedQuery:
+    """Query to get the community feed."""
+
+    community_id: UUID
+    requester_id: UUID | None = None  # For permission checking
+    limit: int = 20
+    offset: int = 0
