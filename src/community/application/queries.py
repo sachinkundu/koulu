@@ -19,3 +19,10 @@ class GetPostCommentsQuery:
     post_id: UUID
     limit: int = 100
     offset: int = 0
+
+
+@dataclass(frozen=True)
+class ListCategoriesQuery:
+    """Query to list all categories for a community."""
+
+    community_id: UUID
