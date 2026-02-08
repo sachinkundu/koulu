@@ -16,6 +16,9 @@ echo -e "${BLUE}======================================${NC}"
 echo -e "${BLUE}   Koulu E2E Test Runner${NC}"
 echo -e "${BLUE}======================================${NC}"
 echo ""
+echo "Project: ${COMPOSE_PROJECT_NAME}"
+echo "Ports:   Backend=${KOULU_BACKEND_PORT} Frontend=${KOULU_FRONTEND_PORT}"
+echo ""
 
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 E2E_DIR="${PROJECT_ROOT}/tests/e2e"
@@ -59,10 +62,10 @@ check_compose_service "redis" || ALL_OK=false
 check_compose_service "mailhog" || ALL_OK=false
 
 # Check backend
-check_service "Backend API (port 8000)" "http://localhost:8000/health" "curl -sf http://localhost:8000/health" || ALL_OK=false
+check_service "Backend API (port ${KOULU_BACKEND_PORT})" "http://localhost:${KOULU_BACKEND_PORT}/health" "curl -sf http://localhost:${KOULU_BACKEND_PORT}/health" || ALL_OK=false
 
 # Check frontend
-check_service "Frontend (port 5173)" "http://localhost:5173" "curl -sf http://localhost:5173" || ALL_OK=false
+check_service "Frontend (port ${KOULU_FRONTEND_PORT})" "http://localhost:${KOULU_FRONTEND_PORT}" "curl -sf http://localhost:${KOULU_FRONTEND_PORT}" || ALL_OK=false
 
 echo ""
 
@@ -71,8 +74,11 @@ if [ "$ALL_OK" = false ]; then
     echo ""
     echo "To fix:"
     echo "  1. Start Docker containers: docker compose up -d"
-    echo "  2. Start backend: uvicorn src.main:app --host 0.0.0.0 --port 8000"
-    echo "  3. Start frontend: cd frontend && npm run dev"
+    echo "  2. Start backend: uvicorn src.main:app --host 0.0.0.0 --port ${KOULU_BACKEND_PORT}"
+    echo "  3. Start frontend: cd frontend && npm run dev -- --port ${KOULU_FRONTEND_PORT}"
+    echo ""
+    echo "Project: ${COMPOSE_PROJECT_NAME}"
+    echo "Ports: Backend=${KOULU_BACKEND_PORT} Frontend=${KOULU_FRONTEND_PORT}"
     echo ""
     exit 1
 fi
@@ -117,6 +123,19 @@ echo ""
 echo -e "${YELLOW}Step 4: Running Playwright Tests${NC}"
 echo "-----------------------------------"
 cd "${E2E_DIR}"
+
+# Export environment variables for Playwright to use computed ports
+export BASE_URL="http://localhost:${KOULU_FRONTEND_PORT}"
+export API_URL="http://localhost:${KOULU_BACKEND_PORT}/api/v1"
+export MAILHOG_URL="http://localhost:${KOULU_MAIL_WEB_PORT}"
+export REDIS_CONTAINER="${KOULU_VOLUME_PREFIX:-koulu}_redis"
+
+echo "Test environment:"
+echo "  BASE_URL=${BASE_URL}"
+echo "  API_URL=${API_URL}"
+echo "  MAILHOG_URL=${MAILHOG_URL}"
+echo "  REDIS_CONTAINER=${REDIS_CONTAINER}"
+echo ""
 
 # Parse arguments
 if [ $# -eq 0 ]; then

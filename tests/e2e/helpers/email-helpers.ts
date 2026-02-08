@@ -65,7 +65,7 @@ export async function getVerificationToken(
       // Extract token from verification link: /verify?token=<token>
       const match = body.match(/verify\?token=([^"&\s<]+)/);
       if (match) {
-        return match[1];
+        return decodeURIComponent(match[1]);
       }
     }
 

@@ -2,13 +2,15 @@ import { test, expect } from '@playwright/test';
 import { RegisterPage } from '../../fixtures/pages/auth/register-page';
 import { ProfileSetupPage } from '../../fixtures/pages/profile/profile-setup-page';
 import { HomePage } from '../../fixtures/pages/home-page';
-import { generateTestEmail } from '../../helpers/api-helpers';
+import { generateTestEmail, flushRateLimits } from '../../helpers/api-helpers';
 import { getVerificationToken } from '../../helpers/email-helpers';
 
 test.describe('New Member Onboarding', () => {
   test('should complete full registration flow: register, verify email, complete profile, see homepage', async ({
     page,
   }) => {
+    // Flush rate limits before UI registration to avoid 429 from parallel API registrations
+    await flushRateLimits();
     const email = generateTestEmail();
     const password = 'testpass123';
     const displayName = `E2E User ${Date.now()}`;
@@ -41,14 +43,11 @@ test.describe('New Member Onboarding', () => {
     // Step 8: Should be redirected to homepage
     await page.waitForURL(/^\/$|.*\/$/, { timeout: 10_000 });
 
-    // Step 9: Verify homepage shows welcome message with display name
+    // Step 9: Verify homepage shows user's avatar with display name
     const homePage = new HomePage(page);
     await homePage.waitForPage();
 
-    const welcomeMessage = await homePage.getWelcomeMessage();
-    expect(welcomeMessage).toContain(displayName);
-
-    const headerName = await homePage.getDisplayedName();
-    expect(headerName).toBe(displayName);
+    const avatarAlt = await homePage.getAvatarAltText();
+    expect(avatarAlt).toBe(displayName);
   });
 });

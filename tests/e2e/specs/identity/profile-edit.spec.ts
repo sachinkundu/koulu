@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../../fixtures/pages/auth/login-page';
+import { HomePage } from '../../fixtures/pages/home-page';
 import { ProfileEditPage } from '../../fixtures/pages/profile/profile-edit-page';
 import { ProfileViewPage } from '../../fixtures/pages/profile/profile-view-page';
 import { createUserWithProfile } from '../../helpers/api-helpers';
@@ -17,8 +18,10 @@ test.describe('Profile Edit', () => {
     await loginPage.login(user.email, user.password);
     await page.waitForURL(/^\/$|.*\/$/, { timeout: 10_000 });
 
-    // Step 2: Navigate to edit profile
-    await page.click('[data-testid="header-edit-profile-link"]');
+    // Step 2: Navigate to edit profile via user dropdown
+    const homePage = new HomePage(page);
+    await homePage.waitForPage();
+    await homePage.navigateToEditProfile();
     await page.waitForURL('**/profile/edit', { timeout: 10_000 });
 
     // Step 3: Edit the profile
@@ -62,8 +65,10 @@ test.describe('Profile Edit', () => {
     await loginPage.login(user.email, user.password);
     await page.waitForURL(/^\/$|.*\/$/, { timeout: 10_000 });
 
-    // Step 2: Navigate to edit profile
-    await page.click('[data-testid="header-edit-profile-link"]');
+    // Step 2: Navigate to edit profile via user dropdown
+    const homePage = new HomePage(page);
+    await homePage.waitForPage();
+    await homePage.navigateToEditProfile();
     await page.waitForURL('**/profile/edit', { timeout: 10_000 });
 
     // Step 3: Clear display name and submit

@@ -3,14 +3,21 @@ import { getVerificationToken } from './email-helpers';
 const API_URL = process.env.API_URL ?? 'http://localhost:8000/api/v1';
 /**
  * Flush Redis to clear all rate limits.
- * Uses docker exec since Redis doesn't have an HTTP API.
+ * Uses docker exec with the container name (set via REDIS_CONTAINER env var).
+ * Falls back to common container names if env var is not set.
  */
 export async function flushRateLimits(): Promise<void> {
   const { execSync } = await import('child_process');
+  const containerName = process.env.REDIS_CONTAINER ?? 'koulu_redis';
   try {
-    execSync('docker compose exec -T redis redis-cli FLUSHALL', { stdio: 'pipe' });
+    execSync(`docker exec ${containerName} redis-cli FLUSHALL`, { stdio: 'pipe' });
   } catch {
-    // Redis might not be running via docker, ignore
+    // Fall back to docker compose (works when run from project root with COMPOSE_PROJECT_NAME)
+    try {
+      execSync('docker compose exec -T redis redis-cli FLUSHALL', { stdio: 'pipe' });
+    } catch {
+      // Redis might not be running via docker, ignore
+    }
   }
 }
 
@@ -35,7 +42,9 @@ export function generateTestEmail(): string {
 
 /**
  * Register a user via the backend API.
- * Retries once after flushing Redis if rate-limited (429).
+ * Retries up to 3 times after flushing Redis if rate-limited (429).
+ * Adds a short delay between retries to avoid re-triggering limits
+ * when multiple parallel workers are registering simultaneously.
  */
 async function registerUser(email: string, password: string): Promise<void> {
   const doRegister = async (): Promise<Response> =>
@@ -45,15 +54,21 @@ async function registerUser(email: string, password: string): Promise<void> {
       body: JSON.stringify({ email, password }),
     });
 
-  let response = await doRegister();
+  const maxRetries = 3;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await doRegister();
 
-  if (response.status === 429) {
-    await flushRateLimits();
-    response = await doRegister();
-  }
+    if (response.status === 429 && attempt < maxRetries) {
+      await flushRateLimits();
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      continue;
+    }
 
-  if (!response.ok && response.status !== 202) {
-    throw new Error(`Registration failed: ${response.status}`);
+    if (!response.ok && response.status !== 202) {
+      throw new Error(`Registration failed: ${response.status}`);
+    }
+
+    return;
   }
 }
 

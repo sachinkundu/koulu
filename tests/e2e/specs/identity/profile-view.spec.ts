@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../../fixtures/pages/auth/login-page';
+import { HomePage } from '../../fixtures/pages/home-page';
 import { ProfileViewPage } from '../../fixtures/pages/profile/profile-view-page';
 import { createUserWithProfile } from '../../helpers/api-helpers';
 
@@ -18,8 +19,10 @@ test.describe('Profile View', () => {
     // Step 2: Wait for homepage redirect
     await page.waitForURL(/^\/$|.*\/$/, { timeout: 10_000 });
 
-    // Step 3: Navigate to own profile via header link
-    await page.click('[data-testid="header-profile-link"]');
+    // Step 3: Navigate to own profile via user dropdown
+    const homePage = new HomePage(page);
+    await homePage.waitForPage();
+    await homePage.navigateToProfile();
 
     // Step 4: Verify profile page loads
     const profilePage = new ProfileViewPage(page);

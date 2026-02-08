@@ -20,15 +20,12 @@ test.describe('Login', () => {
     // Step 3: Should be redirected to homepage
     await page.waitForURL(/^\/$|.*\/$/, { timeout: 10_000 });
 
-    // Step 4: Verify homepage shows the user's display name
+    // Step 4: Verify homepage shows user's avatar with display name
     const homePage = new HomePage(page);
     await homePage.waitForPage();
 
-    const headerName = await homePage.getDisplayedName();
-    expect(headerName).toBe(displayName);
-
-    const welcomeMessage = await homePage.getWelcomeMessage();
-    expect(welcomeMessage).toContain(displayName);
+    const avatarAlt = await homePage.getAvatarAltText();
+    expect(avatarAlt).toBe(displayName);
   });
 
   test('should show error message for invalid credentials', async ({
