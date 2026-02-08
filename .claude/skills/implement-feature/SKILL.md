@@ -89,6 +89,49 @@ Read PRD, TDD, and BDD specs to assess feature complexity.
 - ✅ User-facing functionality available incrementally
 - ✅ Low risk of integration issues
 
+### Step 2.5: Pre-Implementation Phase Analysis (CRITICAL)
+
+**⚠️ MANDATORY: Before starting ANY phase, verify frontend requirements:**
+
+1. **Is this a user-facing feature?**
+   - User-facing = Community posts, classroom lessons, member profiles, calendar events
+   - NOT user-facing = Background sync jobs, admin migrations, internal APIs
+
+2. **If user-facing, does phase scope include frontend?**
+   - Read phase plan → check for "Frontend" section
+   - If missing: **STOP and ask user:**
+     ```
+     ⚠️  Phase plan has no frontend section.
+
+     This appears to be a user-facing feature but phase scope
+     only includes backend (domain → API).
+
+     Options:
+     1. Add frontend to this phase (recommended for vertical slice)
+     2. Explicitly defer frontend with documented reason
+     3. Confirm this is backend-only (background job, internal API)
+
+     Which approach should I take?
+     ```
+
+3. **If frontend included, verify UI_SPEC.md exists:**
+   - Check `docs/features/{feature}/UI_SPEC.md`
+   - If missing: **STOP and prompt:**
+     ```
+     ❌ Frontend in scope but no UI_SPEC.md found.
+
+     Cannot implement UI without design specification.
+
+     Next steps:
+     1. Generate UI_SPEC: /generate-ui-spec {feature}
+     2. OR: Remove frontend from this phase scope
+     ```
+
+**NEVER start implementation if:**
+- User-facing feature with no frontend section in plan
+- Frontend in scope but no UI_SPEC.md available
+- "Deferred pending UI design" used as excuse
+
 ### Step 3: Create Phase Plan (if complex)
 
 If feature is complex, create implementation phases document:
@@ -115,10 +158,38 @@ If feature is complex, create implementation phases document:
 
 ### Phase 1: {Name}
 **Goal:** What this phase achieves
-**Components:**
-- Domain layer: List files
-- Infrastructure: List files
-- Tests: X scenarios
+
+**Backend (Domain → API):**
+- [ ] Domain entities
+- [ ] Value objects
+- [ ] Application handlers
+- [ ] Repository implementations
+- [ ] API endpoints
+- [ ] Database migrations
+
+**Frontend (User-Facing UI) ← MANDATORY SECTION:**
+- [ ] React components (list specific files)
+- [ ] Pages/routes
+- [ ] Forms and validation
+- [ ] State management
+- [ ] API integration
+
+**IF NO FRONTEND IN THIS PHASE:**
+Explicitly state reason:
+- [ ] Background job (no user interaction)
+- [ ] Internal API (admin UI in Phase X)
+- [ ] Migration service (no UI needed)
+
+**Testing:**
+- [ ] BDD scenarios (API-level)
+- [ ] Unit tests (domain logic)
+- [ ] E2E tests (UI automation) ← Required if UI exists
+
+**Deliverable:**
+**User can:** {describe what user can DO via UI}
+**Example:** "User can create a post via CreatePostModal, see it in feed, and click to view details"
+
+**NOT acceptable:** "API endpoints allow post creation" (no user-visible value)
 
 **BDD Scenarios Covered:** List scenario titles
 **Dependencies:** None (or list)
@@ -128,6 +199,7 @@ If feature is complex, create implementation phases document:
 - [ ] X BDD scenarios passing
 - [ ] Unit tests passing
 - [ ] Verification scripts pass
+- [ ] Deployability check passes (if user-facing)
 
 ### Phase 2: {Name}
 ...
@@ -228,12 +300,20 @@ If you prefer manual verification, follow these steps:
    - ✅ Coverage must be ≥80%
    - ❌ If coverage <80%, **work is NOT complete**
 
-5. **Self-check for rationalization trap:**
+5. **Run deployability check (if user-facing feature):**
+   ```bash
+   ./scripts/check-deployability.sh {feature}
+   ```
+   - ✅ Must show: "Feature is DEPLOYABLE" with backend + frontend
+   - ❌ If check fails, **work is NOT complete** (missing frontend UI)
+   - Valid exceptions: Background jobs, internal APIs (requires documentation)
+
+6. **Self-check for rationalization trap:**
    - Ask yourself: "Am I about to say 'these failures are for Phase 2-4'?"
    - If YES → **YOU ARE MAKING A MISTAKE, DO NOT PROCEED**
    - Failing tests must be fixed OR skipped with phase markers — NEVER committed as failing
 
-6. **Only if ALL checks pass, mark phase complete:**
+7. **Only if ALL checks pass, mark phase complete:**
 
 **Mark phase complete when:**
 - ✅ All files created

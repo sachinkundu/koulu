@@ -114,16 +114,87 @@ src/
 
 ---
 
+## Vertical Slicing: True Definition
+
+A **vertical slice** delivers a complete user journey through ALL layers:
+
+```
+User → UI Component → API Endpoint → Handler → Domain Logic → Database → Response → UI Update
+```
+
+**Vertical slice includes:**
+- ✅ Domain entities and business logic
+- ✅ Application handlers (commands/queries)
+- ✅ Infrastructure (repositories, database migrations)
+- ✅ API endpoints (REST controllers)
+- ✅ **Frontend UI components** (pages, forms, displays)
+- ✅ **E2E tests** (browser automation through full journey)
+- ✅ BDD integration tests (API-level)
+- ✅ Unit tests (domain logic)
+
+**NOT vertical slicing:**
+- ❌ "All backend layers" without frontend
+- ❌ "API-first" with deferred UI
+- ❌ "Pending UI design" as reason to skip frontend
+- ❌ Backend complete, UI "to be done later"
+
+**Rare exceptions requiring explicit approval:**
+- Background jobs (no direct user interaction)
+- Internal admin APIs (UI in separate sprint)
+- Migration/sync services
+
+**For ALL other features: No UI = Not Done**
+
+---
+
 ## Workflow
 
 ### New Feature
 ```
 1. git checkout -b feature/description
-2. Write BDD spec → tests/features/*.feature
-3. Implement (match existing patterns)
-4. Run verification scripts
-5. Notify user—NEVER merge yourself
+
+2. Write phase plan → docs/features/{feature}/*-phases.md
+   ⚠️  REQUIRED: Include "Frontend" section for user-facing features
+   ⚠️  If backend-only: Document explicit reason
+
+3. Write BDD spec → tests/features/*.feature
+   - Scenarios test API behavior
+   - NOT a substitute for E2E tests (which test UI)
+
+4. Implement backend (domain → API)
+   - Domain entities, handlers, repositories
+   - API endpoints
+   - Database migrations
+
+5. Implement frontend (UI → User value)
+   - React components in frontend/src/features/{feature}/
+   - Routes in frontend/src/pages/
+   - Forms, displays, interactions
+   - ⚠️  REQUIRED for user-facing features
+
+6. Write E2E tests (browser automation)
+   - Use: /write-e2e-tests {feature}
+   - Tests complete user journeys through UI
+   - ⚠️  Will fail if no UI exists
+
+7. Run deployability check
+   ./scripts/check-deployability.sh {feature}
+   ⚠️  BLOCKING: Must pass before marking phase complete
+
+8. Run verification scripts
+   - All tests pass (0 failed)
+   - Coverage ≥80%
+   - No warnings
+
+9. Notify user—NEVER merge yourself
 ```
+
+**Valid reasons to skip frontend (rare):**
+- Background job (no user interaction)
+- Internal admin API (UI separate story)
+- Migration service (no UI needed)
+
+**ALL other features: No UI = Not Done**
 
 ### Bug Fix / Iteration
 Continue on the SAME feature branch. New branch only for new features.
@@ -172,6 +243,33 @@ Continue on the SAME feature branch. New branch only for new features.
    ./scripts/verify-frontend.sh
    ```
    - ✅ Must show: All checks pass
+
+6. **Deployability Check (Required for User-Facing Features):**
+   ```bash
+   ./scripts/check-deployability.sh {feature-name}
+   ```
+   - ✅ **REQUIRED:** Must show feature is deployable with both backend and frontend
+   - ❌ **BLOCKING:** If check fails, feature is NOT complete
+
+   **Required output:**
+   ```
+   ✅ Feature is DEPLOYABLE:
+      ✅ Backend: X controllers
+      ✅ Frontend: Y components
+      ✅ Users can interact with this feature
+   ```
+
+   **If check fails:**
+   - Feature is NOT complete
+   - Either implement frontend OR document why backend-only is acceptable
+   - Get explicit user approval for backend-only exception
+
+   **Valid exceptions (require documentation):**
+   - Background jobs (no direct user interaction)
+   - Internal admin APIs (UI tracked in separate story)
+   - Migration/sync services (no UI needed)
+
+   **For ALL other features: No UI = Not Done**
 
 **If ANY check fails, work is NOT complete. No exceptions. No rationalizations.**
 
