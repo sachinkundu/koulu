@@ -1,6 +1,7 @@
 """Shared pytest fixtures for all tests."""
 
 import asyncio
+import os
 from collections.abc import AsyncGenerator, Generator
 from typing import Any
 
@@ -21,9 +22,11 @@ from src.main import app
 from src.shared.infrastructure import Base
 
 # Test database URL (use separate test database)
+# Use project-specific database name for multi-agent isolation
 # Use rsplit to replace only the database name at the end, not the username
 _base_url, _db_name = settings.database_url.rsplit("/", 1)
-TEST_DATABASE_URL = f"{_base_url}/koulu_test"
+_test_db_name = os.getenv("KOULU_TEST_DB_NAME", "koulu_test")
+TEST_DATABASE_URL = f"{_base_url}/{_test_db_name}"
 
 
 @pytest.fixture(scope="session")

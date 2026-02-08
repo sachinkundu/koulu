@@ -215,36 +215,36 @@ Continue on the SAME feature branch. New branch only for new features.
    ```
    - ✅ Must show: All services healthy
 
-2. **Test Database Exists:**
+2. **Run ALL Tests (Unit + Integration) — MUST SHOW `0 failed` and coverage ≥80%:**
    ```bash
-   docker exec koulu-postgres psql -U koulu -c "\l" | grep koulu_test
-   ```
-   - ✅ Must show: `koulu_test` database present
-
-3. **BDD Tests — MUST SHOW `0 failed`:**
-   ```bash
-   pytest tests/features/ --tb=short
+   ./scripts/test.sh --all --ignore=tests/features/identity/
    ```
    - ✅ **REQUIRED:** `===================== X passed, Y skipped ======================`
    - ✅ **REQUIRED:** `0 failed` in output (if you see `10 failed`, work is NOT complete)
+   - ✅ **REQUIRED:** `TOTAL ... 80%` or higher in coverage report
    - ✅ **REQUIRED:** `0 warnings` in output
    - ❌ **BLOCKING:** ANY number other than `0` in "failed" count = work is NOT done
-
-4. **Python Verification — MUST SHOW coverage ≥80%:**
-   ```bash
-   ./scripts/verify.sh
-   ```
-   - ✅ **REQUIRED:** `TOTAL ... 80%` or higher in coverage report
-   - ✅ **REQUIRED:** All linting, type checking, unit tests pass
    - ❌ **BLOCKING:** Coverage <80% = work is NOT done
+   - 💡 **TIP:** Test database is created automatically and isolated per agent
 
-5. **Frontend Verification (if applicable):**
+3. **Alternative: Run test types separately (both must pass):**
+   ```bash
+   # Integration tests (BDD)
+   ./scripts/test.sh --integration --ignore=tests/features/identity/
+
+   # Unit tests
+   ./scripts/test.sh --unit
+   ```
+   - ✅ Both must show `0 failed`
+   - ✅ Combined coverage must be ≥80%
+
+4. **Frontend Verification (if applicable):**
    ```bash
    ./scripts/verify-frontend.sh
    ```
    - ✅ Must show: All checks pass
 
-6. **Deployability Check (Required for User-Facing Features):**
+5. **Deployability Check (Required for User-Facing Features):**
    ```bash
    ./scripts/check-deployability.sh {feature-name}
    ```
