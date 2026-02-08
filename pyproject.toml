@@ -63,6 +63,9 @@ dev = [
 
     # Type stubs
     "types-redis>=4.6.0",
+
+    # Development utilities
+    "faker>=22.0.0",
 ]
 
 [tool.hatch.build.targets.wheel]

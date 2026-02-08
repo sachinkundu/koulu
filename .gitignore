@@ -77,4 +77,8 @@ alembic/versions/__pycache__/
 postgres_data/
 redis_data/
 
+# Seed data credentials (local only, never commit)
+scripts/.seed-credentials.json
+scripts/.seed-credentials.txt
+
 .claude/settings.local.json
