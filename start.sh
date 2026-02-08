@@ -118,20 +118,33 @@ if [ -f .env.example ]; then
     sed -i "s|^DATABASE_URL=.*|DATABASE_URL=postgresql+asyncpg://koulu:koulu_dev_password@localhost:${KOULU_PG_PORT}/koulu|" .env
     sed -i "s|^REDIS_URL=.*|REDIS_URL=redis://localhost:${KOULU_REDIS_PORT}/0|" .env
     sed -i "s|^MAIL_PORT=.*|MAIL_PORT=${KOULU_MAIL_SMTP_PORT}|" .env
-    success "Patched .env with computed ports (PG:${KOULU_PG_PORT} Redis:${KOULU_REDIS_PORT} Mail:${KOULU_MAIL_SMTP_PORT}/${KOULU_MAIL_WEB_PORT})"
+    sed -i "s|^FRONTEND_URL=.*|FRONTEND_URL=http://localhost:${KOULU_FRONTEND_PORT}|" .env
+    success "Patched .env with computed ports (PG:${KOULU_PG_PORT} Redis:${KOULU_REDIS_PORT} Mail:${KOULU_MAIL_SMTP_PORT}/${KOULU_MAIL_WEB_PORT} Frontend:${KOULU_FRONTEND_PORT})"
 else
     error ".env.example not found. Cannot create .env file."
 fi
 
-if [ ! -f frontend/.env ]; then
-    if [ -f frontend/.env.example ]; then
+if [ -f frontend/.env.example ]; then
+    if [ ! -f frontend/.env ]; then
         cp frontend/.env.example frontend/.env
         success "Created frontend/.env from frontend/.env.example"
     else
-        warn "frontend/.env.example not found. Skipping frontend .env setup."
+        success "frontend/.env already exists"
     fi
+
+    # Patch frontend .env with correct backend API URL and project name
+    sed -i "s|^VITE_API_URL=.*|VITE_API_URL=http://localhost:${KOULU_BACKEND_PORT}/api/v1|" frontend/.env
+
+    # Add or update project name for UI display
+    if grep -q "^VITE_PROJECT_NAME=" frontend/.env 2>/dev/null; then
+        sed -i "s|^VITE_PROJECT_NAME=.*|VITE_PROJECT_NAME=${COMPOSE_PROJECT_NAME}|" frontend/.env
+    else
+        echo "VITE_PROJECT_NAME=${COMPOSE_PROJECT_NAME}" >> frontend/.env
+    fi
+
+    success "Patched frontend/.env with backend URL (http://localhost:${KOULU_BACKEND_PORT}/api/v1) and project name (${COMPOSE_PROJECT_NAME})"
 else
-    success "frontend/.env already exists"
+    warn "frontend/.env.example not found. Skipping frontend .env setup."
 fi
 
 echo ""
@@ -229,19 +242,20 @@ echo "=========================================="
 echo ""
 echo "Project: ${COMPOSE_PROJECT_NAME}"
 echo "Ports:   PG=${KOULU_PG_PORT} Redis=${KOULU_REDIS_PORT} Mail=${KOULU_MAIL_SMTP_PORT}/${KOULU_MAIL_WEB_PORT}"
+echo "         Backend=${KOULU_BACKEND_PORT} Frontend=${KOULU_FRONTEND_PORT}"
 echo ""
 echo "To start the application, run in separate terminals:"
 echo ""
 echo -e "  ${BLUE}Backend:${NC}"
-echo "    uvicorn src.main:app --reload --host 0.0.0.0 --port 8000"
+echo "    uvicorn src.main:app --reload --host 0.0.0.0 --port ${KOULU_BACKEND_PORT}"
 echo ""
 echo -e "  ${BLUE}Frontend:${NC}"
-echo "    cd frontend && npm run dev"
+echo "    cd frontend && npm run dev -- --port ${KOULU_FRONTEND_PORT}"
 echo ""
 echo "Access points:"
-echo "  - Frontend:    http://localhost:5173"
-echo "  - Backend API: http://localhost:8000"
-echo "  - API Docs:    http://localhost:8000/docs"
+echo "  - Frontend:    http://localhost:${KOULU_FRONTEND_PORT}"
+echo "  - Backend API: http://localhost:${KOULU_BACKEND_PORT}"
+echo "  - API Docs:    http://localhost:${KOULU_BACKEND_PORT}/docs"
 echo "  - MailHog:     http://localhost:${KOULU_MAIL_WEB_PORT}"
 echo ""
 
@@ -287,7 +301,7 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]; then
     (
         while IFS= read -r line; do
             echo -e "${BLUE}[BACKEND]${NC} $line"
-        done < <(uvicorn src.main:app --reload --host 0.0.0.0 --port 8000 2>&1)
+        done < <(uvicorn src.main:app --reload --host 0.0.0.0 --port ${KOULU_BACKEND_PORT} 2>&1)
     ) &
     BACKEND_PID=$!
 
@@ -299,7 +313,7 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]; then
         cd frontend
         while IFS= read -r line; do
             echo -e "${GREEN}[FRONTEND]${NC} $line"
-        done < <(npm run dev 2>&1)
+        done < <(npm run dev -- --port ${KOULU_FRONTEND_PORT} 2>&1)
     ) &
     FRONTEND_PID=$!
 

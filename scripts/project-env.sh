@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 #
-# project-env.sh — Single source of truth for per-project Docker isolation.
+# project-env.sh — Single source of truth for per-project isolation.
 #
 # Computes and exports:
-#   COMPOSE_PROJECT_NAME  — derived from folder basename
-#   KOULU_PG_PORT         — PostgreSQL host port
-#   KOULU_REDIS_PORT      — Redis host port
-#   KOULU_MAIL_SMTP_PORT  — MailHog SMTP host port
-#   KOULU_MAIL_WEB_PORT   — MailHog Web UI host port
+#   COMPOSE_PROJECT_NAME   — derived from folder basename
+#   KOULU_PG_PORT          — PostgreSQL host port
+#   KOULU_REDIS_PORT       — Redis host port
+#   KOULU_MAIL_SMTP_PORT   — MailHog SMTP host port
+#   KOULU_MAIL_WEB_PORT    — MailHog Web UI host port
+#   KOULU_BACKEND_PORT     — Backend API server port
+#   KOULU_FRONTEND_PORT    — Frontend dev server port
 #
 # Usage:
 #   source scripts/project-env.sh
@@ -24,8 +26,12 @@ export COMPOSE_PROJECT_NAME
 # Deterministic port offset from a hash of the absolute path (0–99)
 PORT_OFFSET=$(echo -n "$PROJECT_ROOT" | cksum | awk '{print $1 % 100}')
 
-# Compute per-project host ports
+# Compute per-project host ports (infrastructure)
 export KOULU_PG_PORT=${KOULU_PG_PORT:-$(( 5432 + PORT_OFFSET ))}
 export KOULU_REDIS_PORT=${KOULU_REDIS_PORT:-$(( 6379 + PORT_OFFSET ))}
 export KOULU_MAIL_SMTP_PORT=${KOULU_MAIL_SMTP_PORT:-$(( 1025 + PORT_OFFSET ))}
 export KOULU_MAIL_WEB_PORT=${KOULU_MAIL_WEB_PORT:-$(( 8025 + PORT_OFFSET ))}
+
+# Compute per-project application server ports
+export KOULU_BACKEND_PORT=${KOULU_BACKEND_PORT:-$(( 8000 + PORT_OFFSET ))}
+export KOULU_FRONTEND_PORT=${KOULU_FRONTEND_PORT:-$(( 5173 + PORT_OFFSET ))}

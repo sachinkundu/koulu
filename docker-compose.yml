@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:15-alpine
+    container_name: "${KOULU_VOLUME_PREFIX:-koulu}_postgres"
     environment:
       POSTGRES_USER: koulu
       POSTGRES_PASSWORD: koulu_dev_password
@@ -14,9 +15,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - koulu_network
 
   redis:
     image: redis:7-alpine
+    container_name: "${KOULU_VOLUME_PREFIX:-koulu}_redis"
     ports:
       - "${KOULU_REDIS_PORT:-6379}:6379"
     volumes:
@@ -26,15 +30,26 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - koulu_network
 
   mailhog:
     image: mailhog/mailhog
+    container_name: "${KOULU_VOLUME_PREFIX:-koulu}_mailhog"
     ports:
       - "${KOULU_MAIL_SMTP_PORT:-1025}:1025"  # SMTP server
       - "${KOULU_MAIL_WEB_PORT:-8025}:8025"  # Web UI
     logging:
       driver: none
+    networks:
+      - koulu_network
+
+networks:
+  koulu_network:
+    name: ${KOULU_VOLUME_PREFIX:-koulu}_network
 
 volumes:
   postgres_data:
+    name: ${KOULU_VOLUME_PREFIX:-koulu}_postgres_data
   redis_data:
+    name: ${KOULU_VOLUME_PREFIX:-koulu}_redis_data
