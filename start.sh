@@ -244,3 +244,68 @@ echo "  - Backend API: http://localhost:8000"
 echo "  - API Docs:    http://localhost:8000/docs"
 echo "  - MailHog:     http://localhost:${KOULU_MAIL_WEB_PORT}"
 echo ""
+
+# ============================================
+# STEP 7: Optional - Start Services
+# ============================================
+read -p "Do you want to start both frontend and backend now? (Y/n) " -n 1 -r
+echo ""
+
+if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+    echo ""
+    info "Starting frontend and backend services..."
+    info "Press Ctrl+C to stop both services"
+    echo ""
+
+    # PIDs for cleanup
+    BACKEND_PID=""
+    FRONTEND_PID=""
+
+    # Cleanup function
+    cleanup() {
+        echo ""
+        info "Shutting down services..."
+
+        if [ -n "$BACKEND_PID" ]; then
+            kill $BACKEND_PID 2>/dev/null || true
+            wait $BACKEND_PID 2>/dev/null || true
+        fi
+
+        if [ -n "$FRONTEND_PID" ]; then
+            kill $FRONTEND_PID 2>/dev/null || true
+            wait $FRONTEND_PID 2>/dev/null || true
+        fi
+
+        success "Services stopped"
+        exit 0
+    }
+
+    # Trap Ctrl+C
+    trap cleanup SIGINT SIGTERM
+
+    # Start backend
+    (
+        while IFS= read -r line; do
+            echo -e "${BLUE}[BACKEND]${NC} $line"
+        done < <(uvicorn src.main:app --reload --host 0.0.0.0 --port 8000 2>&1)
+    ) &
+    BACKEND_PID=$!
+
+    # Give backend a moment to start
+    sleep 2
+
+    # Start frontend
+    (
+        cd frontend
+        while IFS= read -r line; do
+            echo -e "${GREEN}[FRONTEND]${NC} $line"
+        done < <(npm run dev 2>&1)
+    ) &
+    FRONTEND_PID=$!
+
+    success "Services started (Backend PID: $BACKEND_PID, Frontend PID: $FRONTEND_PID)"
+    echo ""
+
+    # Wait for both processes
+    wait
+fi
