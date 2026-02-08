@@ -5,19 +5,17 @@ Revises: 8295c6c51028
 Create Date: 2026-02-08 09:26:09.769605
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 from uuid import uuid4
 
 from alembic import op
-import sqlalchemy as sa
 from sqlalchemy import text
 
-
 # revision identifiers, used by Alembic.
-revision: str = '66ce48aa6407'
-down_revision: Union[str, None] = '8295c6c51028'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "66ce48aa6407"
+down_revision: str | None = "8295c6c51028"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 # Default community ID (consistent across environments)
 DEFAULT_COMMUNITY_ID = "00000000-0000-0000-0000-000000000001"
@@ -29,8 +27,7 @@ def upgrade() -> None:
 
     # Check if default community already exists
     result = conn.execute(
-        text("SELECT id FROM communities WHERE id = :id"),
-        {"id": DEFAULT_COMMUNITY_ID}
+        text("SELECT id FROM communities WHERE id = :id"), {"id": DEFAULT_COMMUNITY_ID}
     )
 
     if result.fetchone() is None:
@@ -44,8 +41,8 @@ def upgrade() -> None:
                 "id": DEFAULT_COMMUNITY_ID,
                 "name": "Koulu Community",
                 "slug": "koulu",
-                "description": "The main Koulu community space"
-            }
+                "description": "The main Koulu community space",
+            },
         )
 
     # Define default categories
@@ -56,7 +53,7 @@ def upgrade() -> None:
             "name": "General",
             "slug": "general",
             "emoji": "💬",
-            "description": "General discussion and announcements"
+            "description": "General discussion and announcements",
         },
         {
             "id": str(uuid4()),
@@ -64,7 +61,7 @@ def upgrade() -> None:
             "name": "Q&A",
             "slug": "qa",
             "emoji": "❓",
-            "description": "Questions and answers"
+            "description": "Questions and answers",
         },
         {
             "id": str(uuid4()),
@@ -72,7 +69,7 @@ def upgrade() -> None:
             "name": "Roast",
             "slug": "roast",
             "emoji": "🔥",
-            "description": "Constructive feedback and critiques"
+            "description": "Constructive feedback and critiques",
         },
         {
             "id": str(uuid4()),
@@ -80,7 +77,7 @@ def upgrade() -> None:
             "name": "Wins",
             "slug": "wins",
             "emoji": "🏆",
-            "description": "Celebrate your achievements"
+            "description": "Celebrate your achievements",
         },
         {
             "id": str(uuid4()),
@@ -88,7 +85,7 @@ def upgrade() -> None:
             "name": "Tools & Resources",
             "slug": "tools-resources",
             "emoji": "🛠️",
-            "description": "Share helpful tools and resources"
+            "description": "Share helpful tools and resources",
         },
         {
             "id": str(uuid4()),
@@ -96,15 +93,15 @@ def upgrade() -> None:
             "name": "Meet & Greet",
             "slug": "meet-greet",
             "emoji": "👋",
-            "description": "Introduce yourself to the community"
-        }
+            "description": "Introduce yourself to the community",
+        },
     ]
 
     # Insert categories (only if they don't exist)
     for category in categories:
         result = conn.execute(
             text("SELECT id FROM categories WHERE slug = :slug AND community_id = :community_id"),
-            {"slug": category["slug"], "community_id": category["community_id"]}
+            {"slug": category["slug"], "community_id": category["community_id"]},
         )
 
         if result.fetchone() is None:
@@ -113,7 +110,7 @@ def upgrade() -> None:
                     INSERT INTO categories (id, community_id, name, slug, emoji, description, created_at, updated_at)
                     VALUES (:id, :community_id, :name, :slug, :emoji, :description, NOW(), NOW())
                 """),
-                category
+                category,
             )
 
 
@@ -124,11 +121,8 @@ def downgrade() -> None:
     # Delete categories associated with default community
     conn.execute(
         text("DELETE FROM categories WHERE community_id = :community_id"),
-        {"community_id": DEFAULT_COMMUNITY_ID}
+        {"community_id": DEFAULT_COMMUNITY_ID},
     )
 
     # Delete default community
-    conn.execute(
-        text("DELETE FROM communities WHERE id = :id"),
-        {"id": DEFAULT_COMMUNITY_ID}
-    )
+    conn.execute(text("DELETE FROM communities WHERE id = :id"), {"id": DEFAULT_COMMUNITY_ID})

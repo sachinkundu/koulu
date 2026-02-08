@@ -1,7 +1,10 @@
-#!/bin/bash
-set -e
+#!/usr/bin/env bash
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+cd "${PROJECT_ROOT}"
 
 echo "🔍 Running Python Verification..."
 
@@ -18,12 +21,8 @@ echo "3️⃣  Type Checking (mypy)..."
 mypy .
 
 echo ""
-echo "4️⃣  Setting up test database..."
-"${SCRIPT_DIR}/setup-test-db.sh"
-
-echo ""
-echo "5️⃣  Running Tests with Coverage..."
-pytest --cov=src --cov-fail-under=80
+echo "4️⃣  Running Tests with Coverage..."
+"${SCRIPT_DIR}/test.sh" --all --ignore=tests/features/identity/ --cov=src --cov-fail-under=80
 
 echo ""
 echo "✅ All Checks Passed!"

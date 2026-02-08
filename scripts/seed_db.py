@@ -18,6 +18,7 @@ import os
 import random
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
 from faker import Faker
@@ -132,7 +133,7 @@ async def check_already_seeded(session: AsyncSession) -> bool:
 
 async def create_users(
     session: AsyncSession, count: int = 20
-) -> tuple[list[UserModel], list[dict]]:
+) -> tuple[list[UserModel], list[dict[str, Any]]]:
     """Create users with profiles. Returns (users, credentials)."""
     print(f"Creating {count} users with profiles...")
 
@@ -225,7 +226,7 @@ async def create_communities(session: AsyncSession) -> list[CommunityModel]:
 
 async def create_memberships(
     session: AsyncSession, users: list[UserModel], communities: list[CommunityModel]
-) -> dict[str, list[dict]]:
+) -> dict[str, list[dict[str, str]]]:
     """Create community memberships - users distributed across communities.
 
     Returns dict mapping user_id -> list of {community_name, role}
@@ -233,7 +234,7 @@ async def create_memberships(
     print("Creating community memberships...")
 
     membership_count = 0
-    user_memberships: dict[str, list[dict]] = {}
+    user_memberships: dict[str, list[dict[str, str]]] = {}
 
     for community in communities:
         # First user is always admin of first community, member of others
@@ -299,10 +300,10 @@ async def create_posts_and_engagement(
             continue
 
         # Get community categories
-        result = await session.execute(
+        cat_result = await session.execute(
             select(CategoryModel).where(CategoryModel.community_id == community.id)
         )
-        categories = list(result.scalars().all())
+        categories = list(cat_result.scalars().all())
 
         if not categories:
             continue
@@ -346,7 +347,7 @@ async def create_posts_and_engagement(
 
             # Create 0-10 comments per post
             num_comments = random.randint(0, 10)
-            post_comments = []
+            post_comments: list[CommentModel] = []
 
             for _ in range(num_comments):
                 commenter = random.choice(members)
@@ -418,7 +419,7 @@ async def table_exists(session: AsyncSession, table_name: str) -> bool:
         ),
         {"table_name": table_name},
     )
-    return result.scalar()
+    return bool(result.scalar())
 
 
 async def create_courses(session: AsyncSession, users: list[UserModel]) -> None:
@@ -519,7 +520,9 @@ async def create_courses(session: AsyncSession, users: list[UserModel]) -> None:
         print(f"✅ Created {num_courses} courses (modules/lessons tables don't exist yet, skipped)")
 
 
-def write_credentials_files(credentials: list[dict], memberships: dict) -> None:
+def write_credentials_files(
+    credentials: list[dict[str, Any]], memberships: dict[str, list[dict[str, str]]]
+) -> None:
     """Write credentials to JSON and TXT files for local reference."""
     # Enhance credentials with community memberships
     enhanced_credentials = []
@@ -577,7 +580,7 @@ def write_credentials_files(credentials: list[dict], memberships: dict) -> None:
         f.write(f"Total users: {len(enhanced_credentials)}\n")
         f.write("=" * 80 + "\n")
 
-    print(f"\n📝 Credentials saved to:")
+    print("\n📝 Credentials saved to:")
     print(f"   - {CREDENTIALS_FILE} (JSON)")
     print(f"   - {CREDENTIALS_TXT_FILE} (human-readable)")
 

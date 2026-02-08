@@ -35,5 +35,7 @@ class ListCategoriesHandler:
         community_id = CommunityId(query.community_id)
         categories = await self._category_repository.list_by_community(community_id)
 
-        logger.info("list_categories_success", community_id=str(community_id), count=len(categories))
+        logger.info(
+            "list_categories_success", community_id=str(community_id), count=len(categories)
+        )
         return categories
