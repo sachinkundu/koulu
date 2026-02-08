@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Avatar } from '@/components';
 import type { Post } from '../types';
 import { deletePost } from '../api';
 
@@ -21,7 +22,7 @@ export function PostDetail({ post, currentUserId }: PostDetailProps): JSX.Elemen
     mutationFn: () => deletePost(post.id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['posts'] });
-      navigate('/community');
+      navigate('/');
     },
     onError: (error: Error) => {
       setDeleteError(error.message ?? 'Failed to delete post');
@@ -44,9 +45,12 @@ export function PostDetail({ post, currentUserId }: PostDetailProps): JSX.Elemen
       <div className="mb-6 flex items-start justify-between">
         <div className="flex items-center gap-3">
           {/* Author avatar */}
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 text-primary-700 font-medium text-lg">
-            {post.author?.display_name?.[0]?.toUpperCase() ?? 'U'}
-          </div>
+          <Avatar
+            src={post.author?.avatar_url}
+            alt={post.author?.display_name ?? 'Unknown'}
+            fallback={post.author?.display_name ?? 'Unknown'}
+            size="lg"
+          />
 
           <div>
             <div className="flex items-center gap-2">

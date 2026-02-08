@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Avatar } from '@/components';
 import type { Post } from '../types';
 
 interface FeedPostCardProps {
@@ -20,9 +21,12 @@ export function FeedPostCard({ post }: FeedPostCardProps): JSX.Element {
       <div className="mb-4 flex items-start justify-between">
         <div className="flex items-center gap-3">
           {/* Author avatar */}
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-100 text-primary-700 font-medium">
-            {post.author?.display_name?.[0]?.toUpperCase() ?? 'U'}
-          </div>
+          <Avatar
+            src={post.author?.avatar_url}
+            alt={post.author?.display_name ?? 'Unknown'}
+            fallback={post.author?.display_name ?? 'Unknown'}
+            size="md"
+          />
 
           <div>
             <div className="flex items-center gap-2">

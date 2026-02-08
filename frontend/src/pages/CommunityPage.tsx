@@ -15,7 +15,7 @@ export function CommunityPage(): JSX.Element {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const projectName = import.meta.env.VITE_PROJECT_NAME || 'koulu';
+  const projectName = import.meta.env.VITE_PROJECT_NAME ?? 'koulu';
 
   const { posts, isLoading: postsLoading, error } = usePosts(
     selectedCategoryId !== null ? { category_id: selectedCategoryId } : undefined
