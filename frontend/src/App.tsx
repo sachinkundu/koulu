@@ -10,6 +10,7 @@ import {
   ResetPasswordPage,
   VerifyEmailPage,
 } from '@/pages';
+import { CommunityPage, PostDetailPage } from '@/pages';
 
 /**
  * Home page placeholder.
@@ -17,6 +18,7 @@ import {
  */
 function HomePage(): JSX.Element {
   const { user, logout, isLoading } = useAuth();
+  const projectName = import.meta.env.VITE_PROJECT_NAME || 'koulu';
 
   if (isLoading) {
     return (
@@ -30,9 +32,21 @@ function HomePage(): JSX.Element {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Koulu</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900">Koulu</h1>
+            <span className="rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-700">
+              {projectName}
+            </span>
+          </div>
           {user !== null && (
             <div className="flex items-center space-x-4">
+              <Link
+                to="/community"
+                className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                data-testid="header-community-link"
+              >
+                Community
+              </Link>
               <Link
                 to={`/profile/${user.id}`}
                 className="text-gray-600 hover:text-gray-900"
@@ -65,8 +79,14 @@ function HomePage(): JSX.Element {
             Welcome{user?.profile?.display_name !== undefined && user.profile.display_name !== null ? `, ${user.profile.display_name}` : ''}!
           </h2>
           <p className="mt-2 text-gray-600">
-            Your account is set up and ready to go. Community features coming soon!
+            Your account is set up and ready to go.
           </p>
+          <Link
+            to="/community"
+            className="mt-4 inline-block rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
+          >
+            Visit Community Feed
+          </Link>
         </div>
       </main>
     </div>
@@ -135,6 +155,24 @@ function App(): JSX.Element {
         element={
           <ProtectedRoute>
             <ProfileViewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Community routes */}
+      <Route
+        path="/community"
+        element={
+          <ProtectedRoute>
+            <CommunityPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/community/posts/:postId"
+        element={
+          <ProtectedRoute>
+            <PostDetailPage />
           </ProtectedRoute>
         }
       />
