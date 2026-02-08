@@ -66,7 +66,7 @@ from src.community.interface.api.schemas import (
 
 logger = structlog.get_logger()
 
-router = APIRouter(prefix="/posts", tags=["Community Posts"])
+router = APIRouter(prefix="/community/posts", tags=["Community Posts"])
 
 
 # ============================================================================
@@ -78,10 +78,10 @@ async def get_default_community_id(session: SessionDep) -> UUID:
     """
     Get the default community ID.
 
-    For MVP, there's only one community with slug 'default'.
+    For MVP, there's only one community with slug 'koulu'.
     """
     result = await session.execute(
-        select(CommunityModel.id).where(CommunityModel.slug == "default")
+        select(CommunityModel.id).where(CommunityModel.slug == "koulu")
     )
     community_id = result.scalar_one_or_none()
 

@@ -54,11 +54,11 @@ from src.community.interface.api.schemas import (
 
 logger = structlog.get_logger()
 
-# Router for /api/v1/posts/{post_id}/comments
-post_comments_router = APIRouter(prefix="/posts", tags=["Comments"])
+# Router for /api/v1/community/posts/{post_id}/comments
+post_comments_router = APIRouter(prefix="/community/posts", tags=["Comments"])
 
-# Router for /api/v1/comments/{comment_id}
-comments_router = APIRouter(prefix="/comments", tags=["Comments"])
+# Router for /api/v1/community/comments/{comment_id}
+comments_router = APIRouter(prefix="/community/comments", tags=["Comments"])
 
 
 # ============================================================================
