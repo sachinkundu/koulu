@@ -16,6 +16,7 @@ from src.community.application.handlers import (
     GetPostHandler,
     LikeCommentHandler,
     LikePostHandler,
+    ListCategoriesHandler,
     LockPostHandler,
     UnlikeCommentHandler,
     UnlikePostHandler,
@@ -239,6 +240,15 @@ def get_get_post_comments_handler(
     return GetPostCommentsHandler(
         comment_repository=comment_repo,
         reaction_repository=reaction_repo,
+    )
+
+
+def get_list_categories_handler(
+    category_repo: CategoryRepositoryDep,
+) -> ListCategoriesHandler:
+    """Get list categories handler."""
+    return ListCategoriesHandler(
+        category_repository=category_repo,
     )
 
 

@@ -9,6 +9,7 @@ from src.community.application.handlers.get_post_comments_handler import GetPost
 from src.community.application.handlers.get_post_handler import GetPostHandler
 from src.community.application.handlers.like_comment_handler import LikeCommentHandler
 from src.community.application.handlers.like_post_handler import LikePostHandler
+from src.community.application.handlers.list_categories_handler import ListCategoriesHandler
 from src.community.application.handlers.lock_post_handler import LockPostHandler
 from src.community.application.handlers.unlike_comment_handler import UnlikeCommentHandler
 from src.community.application.handlers.unlike_post_handler import UnlikePostHandler
@@ -25,6 +26,7 @@ __all__ = [
     "GetPostHandler",
     "LikeCommentHandler",
     "LikePostHandler",
+    "ListCategoriesHandler",
     "LockPostHandler",
     "UnlikeCommentHandler",
     "UnlikePostHandler",

@@ -47,6 +47,21 @@ class EditCommentRequest(BaseModel):
 # ============================================================================
 
 
+class CategoryResponse(BaseModel):
+    """Category response."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    community_id: UUID
+    name: str
+    slug: str
+    emoji: str
+    description: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
 class CreatePostResponse(BaseModel):
     """Response for successful post creation."""
 
