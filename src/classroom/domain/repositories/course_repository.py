@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 
 from src.classroom.domain.entities import Course
-from src.classroom.domain.value_objects import CourseId
+from src.classroom.domain.value_objects import CourseId, LessonId, ModuleId
 
 
 class ICourseRepository(ABC):
@@ -32,4 +32,14 @@ class ICourseRepository(ABC):
         offset: int = 0,
     ) -> list[Course]:
         """List all courses."""
+        ...
+
+    @abstractmethod
+    async def get_course_by_module_id(self, module_id: ModuleId) -> Course | None:
+        """Get the course that contains a specific module (excluding deleted courses)."""
+        ...
+
+    @abstractmethod
+    async def get_course_by_lesson_id(self, lesson_id: LessonId) -> Course | None:
+        """Get the course that contains a specific lesson (excluding deleted courses)."""
         ...

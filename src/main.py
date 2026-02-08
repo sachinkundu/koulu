@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from src.classroom.interface.api import courses_router
+from src.classroom.interface.api import courses_router, lessons_router, modules_router
 from src.community.interface.api import comments_router, post_comments_router, posts_router
 from src.config import settings
 from src.identity.domain.exceptions import RateLimitExceededError
@@ -138,3 +138,5 @@ app.include_router(posts_router, prefix="/api/v1")
 app.include_router(post_comments_router, prefix="/api/v1")
 app.include_router(comments_router, prefix="/api/v1")
 app.include_router(courses_router, prefix="/api/v1")
+app.include_router(modules_router, prefix="/api/v1")
+app.include_router(lessons_router, prefix="/api/v1")

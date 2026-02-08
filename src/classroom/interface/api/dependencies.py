@@ -7,11 +7,19 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.classroom.application.handlers import (
+    AddLessonHandler,
+    AddModuleHandler,
     CreateCourseHandler,
     DeleteCourseHandler,
+    DeleteLessonHandler,
+    DeleteModuleHandler,
     GetCourseDetailsHandler,
     GetCourseListHandler,
+    ReorderLessonsHandler,
+    ReorderModulesHandler,
     UpdateCourseHandler,
+    UpdateLessonHandler,
+    UpdateModuleHandler,
 )
 from src.classroom.infrastructure.persistence import SqlAlchemyCourseRepository
 from src.config import settings
@@ -61,6 +69,52 @@ def get_course_list_handler(course_repo: CourseRepositoryDep) -> GetCourseListHa
 def get_course_details_handler(course_repo: CourseRepositoryDep) -> GetCourseDetailsHandler:
     """Get course details handler."""
     return GetCourseDetailsHandler(course_repository=course_repo)
+
+
+# Module handlers
+
+
+def get_add_module_handler(course_repo: CourseRepositoryDep) -> AddModuleHandler:
+    """Get add module handler."""
+    return AddModuleHandler(course_repository=course_repo)
+
+
+def get_update_module_handler(course_repo: CourseRepositoryDep) -> UpdateModuleHandler:
+    """Get update module handler."""
+    return UpdateModuleHandler(course_repository=course_repo)
+
+
+def get_delete_module_handler(course_repo: CourseRepositoryDep) -> DeleteModuleHandler:
+    """Get delete module handler."""
+    return DeleteModuleHandler(course_repository=course_repo)
+
+
+def get_reorder_modules_handler(course_repo: CourseRepositoryDep) -> ReorderModulesHandler:
+    """Get reorder modules handler."""
+    return ReorderModulesHandler(course_repository=course_repo)
+
+
+# Lesson handlers
+
+
+def get_add_lesson_handler(course_repo: CourseRepositoryDep) -> AddLessonHandler:
+    """Get add lesson handler."""
+    return AddLessonHandler(course_repository=course_repo)
+
+
+def get_update_lesson_handler(course_repo: CourseRepositoryDep) -> UpdateLessonHandler:
+    """Get update lesson handler."""
+    return UpdateLessonHandler(course_repository=course_repo)
+
+
+def get_delete_lesson_handler(course_repo: CourseRepositoryDep) -> DeleteLessonHandler:
+    """Get delete lesson handler."""
+    return DeleteLessonHandler(course_repository=course_repo)
+
+
+def get_reorder_lessons_handler(course_repo: CourseRepositoryDep) -> ReorderLessonsHandler:
+    """Get reorder lessons handler."""
+    return ReorderLessonsHandler(course_repository=course_repo)
 
 
 # ============================================================================

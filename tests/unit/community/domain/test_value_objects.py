@@ -78,7 +78,7 @@ class TestPostTitle:
     def test_title_is_immutable(self) -> None:
         """PostTitle should be a frozen dataclass (immutable)."""
         title = PostTitle("My Post")
-        with pytest.raises(AttributeError):
+        with pytest.raises(AttributeError):  # FrozenInstanceError
             title.value = "Modified"  # type: ignore
 
 
@@ -149,7 +149,7 @@ class TestPostContent:
     def test_content_is_immutable(self) -> None:
         """PostContent should be a frozen dataclass (immutable)."""
         content = PostContent("My content")
-        with pytest.raises(AttributeError):
+        with pytest.raises(AttributeError):  # FrozenInstanceError
             content.value = "Modified"  # type: ignore
 
     def test_content_with_newlines_is_valid(self) -> None:

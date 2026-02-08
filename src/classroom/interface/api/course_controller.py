@@ -44,7 +44,9 @@ from src.classroom.interface.api.schemas import (
     CreateCourseRequest,
     CreateCourseResponse,
     ErrorResponse,
+    LessonDetailResponse,
     MessageResponse,
+    ModuleDetailResponse,
     UpdateCourseRequest,
 )
 
@@ -129,8 +131,8 @@ async def list_courses(
                 description=c.description.value if c.description else None,
                 cover_image_url=c.cover_image_url.value if c.cover_image_url else None,
                 estimated_duration=c.estimated_duration.value if c.estimated_duration else None,
-                module_count=0,
-                lesson_count=0,
+                module_count=c.module_count,
+                lesson_count=c.lesson_count,
                 created_at=c.created_at,
                 updated_at=c.updated_at,
             )
@@ -165,6 +167,31 @@ async def get_course(
         query = GetCourseDetailsQuery(course_id=course_id, requester_id=current_user_id)
         course = await handler.handle(query)
 
+        module_responses = [
+            ModuleDetailResponse(
+                id=m.id.value,
+                title=m.title.value,
+                description=m.description.value if m.description else None,
+                position=m.position,
+                lesson_count=m.lesson_count,
+                lessons=[
+                    LessonDetailResponse(
+                        id=ls.id.value,
+                        title=ls.title.value,
+                        content_type=ls.content_type.value,
+                        content=ls.content,
+                        position=ls.position,
+                        created_at=ls.created_at,
+                        updated_at=ls.updated_at,
+                    )
+                    for ls in m.lessons
+                ],
+                created_at=m.created_at,
+                updated_at=m.updated_at,
+            )
+            for m in course.modules
+        ]
+
         return CourseDetailResponse(
             id=course.id.value,
             instructor_id=course.instructor_id.value,
@@ -174,8 +201,9 @@ async def get_course(
             estimated_duration=(
                 course.estimated_duration.value if course.estimated_duration else None
             ),
-            module_count=0,
-            lesson_count=0,
+            module_count=course.module_count,
+            lesson_count=course.lesson_count,
+            modules=module_responses,
             created_at=course.created_at,
             updated_at=course.updated_at,
         )

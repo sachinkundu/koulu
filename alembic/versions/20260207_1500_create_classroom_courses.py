@@ -1,7 +1,7 @@
 """Create courses table for Classroom context.
 
 Revision ID: 008_create_classroom_courses
-Revises: 007_seed_default_categories
+Revises: 8295c6c51028
 Create Date: 2026-02-07 15:00:00
 """
 
@@ -12,7 +12,7 @@ from alembic import op
 from sqlalchemy.dialects.postgresql import UUID
 
 revision: str = "008_create_classroom_courses"
-down_revision: str | None = "007_seed_default_categories"
+down_revision: str | None = "8295c6c51028"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
