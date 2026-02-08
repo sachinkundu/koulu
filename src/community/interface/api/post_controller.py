@@ -264,6 +264,7 @@ async def create_post(
 )
 async def get_post(
     post_id: UUID,
+    session: SessionDep,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[GetPostHandler, Depends(get_get_post_handler)],
 ) -> PostResponse:
@@ -271,6 +272,20 @@ async def get_post(
     try:
         query = GetPostQuery(post_id=post_id, requester_id=current_user_id)
         post = await handler.handle(query)
+
+        # Fetch author profile
+        author_profile_result = await session.execute(
+            select(ProfileModel).where(ProfileModel.user_id == post.author_id.value)
+        )
+        author_profile = author_profile_result.scalar_one_or_none()
+
+        author = None
+        if author_profile:
+            author = AuthorResponse(
+                id=author_profile.user_id,
+                display_name=author_profile.display_name or "Unknown",
+                avatar_url=author_profile.avatar_url,
+            )
 
         logger.info("get_post_api_success", post_id=str(post_id))
         return PostResponse(
@@ -287,6 +302,7 @@ async def get_post(
             created_at=post.created_at,
             updated_at=post.updated_at,
             edited_at=post.edited_at,
+            author=author,
         )
 
     except PostNotFoundError as e:

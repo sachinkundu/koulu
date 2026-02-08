@@ -8,9 +8,10 @@ import { deletePost } from '../api';
 interface PostDetailProps {
   post: Post;
   currentUserId?: string;
+  onNavigate?: () => void;
 }
 
-export function PostDetail({ post, currentUserId }: PostDetailProps): JSX.Element {
+export function PostDetail({ post, currentUserId, onNavigate }: PostDetailProps): JSX.Element {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -22,7 +23,11 @@ export function PostDetail({ post, currentUserId }: PostDetailProps): JSX.Elemen
     mutationFn: () => deletePost(post.id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['posts'] });
-      navigate('/');
+      if (onNavigate !== undefined) {
+        onNavigate();
+      } else {
+        navigate('/');
+      }
     },
     onError: (error: Error) => {
       setDeleteError(error.message ?? 'Failed to delete post');
@@ -158,7 +163,12 @@ export function PostDetail({ post, currentUserId }: PostDetailProps): JSX.Elemen
 
           <div className="flex gap-3">
             <button
-              onClick={() => navigate(`/community/posts/${post.id}/edit`)}
+              onClick={() => {
+                if (onNavigate !== undefined) {
+                  onNavigate();
+                }
+                navigate(`/community/posts/${post.id}/edit`);
+              }}
               className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
               data-testid="post-edit-button"
             >

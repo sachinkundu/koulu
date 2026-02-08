@@ -3,3 +3,4 @@ export * from './CreatePostInput';
 export * from './CreatePostModal';
 export * from './FeedPostCard';
 export * from './PostDetail';
+export * from './PostDetailModal';

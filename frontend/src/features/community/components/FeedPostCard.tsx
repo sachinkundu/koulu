@@ -1,22 +1,26 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import { Avatar } from '@/components';
 import type { Post } from '../types';
+import { PostDetailModal } from './PostDetailModal';
 
 interface FeedPostCardProps {
   post: Post;
 }
 
 export function FeedPostCard({ post }: FeedPostCardProps): JSX.Element {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Truncate content to ~500 characters
   const truncatedContent =
     post.content.length > 500 ? `${post.content.slice(0, 500)}...` : post.content;
 
   return (
-    <Link
-      to={`/community/posts/${post.id}`}
-      className="block rounded-lg bg-white p-6 shadow hover:shadow-md transition-shadow"
-      data-testid={`post-card-${post.id}`}
-    >
+    <>
+      <div
+        onClick={() => setIsModalOpen(true)}
+        className="cursor-pointer rounded-lg bg-white p-6 shadow hover:shadow-md transition-shadow"
+        data-testid={`post-card-${post.id}`}
+      >
       {/* Header */}
       <div className="mb-4 flex items-start justify-between">
         <div className="flex items-center gap-3">
@@ -109,6 +113,15 @@ export function FeedPostCard({ post }: FeedPostCardProps): JSX.Element {
           <span>{post.comment_count}</span>
         </div>
       </div>
-    </Link>
+    </div>
+
+    {/* Post detail modal */}
+    {isModalOpen && (
+      <PostDetailModal
+        postId={post.id}
+        onClose={() => setIsModalOpen(false)}
+      />
+    )}
+  </>
   );
 }
