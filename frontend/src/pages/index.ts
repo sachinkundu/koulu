@@ -10,3 +10,5 @@ export { ProfileViewPage } from './ProfileView';
 export { RegisterPage } from './Register';
 export { ResetPasswordPage } from './ResetPassword';
 export { VerifyEmailPage } from './VerifyEmail';
+export { CommunityPage } from './CommunityPage';
+export { PostDetailPage } from './PostDetailPage';
