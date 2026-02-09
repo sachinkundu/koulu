@@ -41,9 +41,9 @@ Read these files in order:
 5. `docs/architecture/CONTEXT_MAP.md` — Bounded context relationships
 
 Then read the relevant skills:
-- `.claude/skills/architecture.md` — DDD patterns
-- `.claude/skills/python.md` — If backend work
-- `.claude/skills/frontend.md` — If frontend work
+- `.claude/skills/architecture/SKILL.md` — DDD patterns (context sizing, aggregates, compliance checklist)
+- `.claude/skills/python/SKILL.md` — If backend work
+- `.claude/skills/frontend/SKILL.md` — If frontend work
 
 ---
 

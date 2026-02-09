@@ -89,8 +89,13 @@ This means:
 
 ## Architecture: Hexagonal + DDD
 
+**For DDD design decisions (context sizing, aggregates, integration patterns), read `.claude/skills/architecture/SKILL.md` FIRST.**
+
+Reference docs: `docs/domain/GLOSSARY.md` (ubiquitous language) | `docs/architecture/CONTEXT_MAP.md` (bounded contexts)
+
+### Folder Structure (per context)
 ```
-src/
+src/{context}/
 ├── domain/           # Pure business logic, NO external deps
 │   ├── entities/
 │   ├── value_objects/
@@ -106,11 +111,13 @@ src/
 └── interface/        # Controllers, CLI
 ```
 
-**Rules:**
+### Non-Negotiable Rules
 - Domain layer has ZERO external imports
 - No anemic models—entities contain behavior
 - Aggregates protect their own consistency
 - Cross-context communication via events only
+- Each context owns its data—no shared database tables
+- Use ubiquitous language from GLOSSARY.md in all code
 
 ---
 
@@ -153,40 +160,39 @@ User → UI Component → API Endpoint → Handler → Domain Logic → Database
 ```
 1. git checkout -b feature/description
 
-2. Write phase plan → docs/features/{feature}/*-phases.md
-   ⚠️  REQUIRED: Include "Frontend" section for user-facing features
-   ⚠️  If backend-only: Document explicit reason
+2. Write PRD + BDD spec
+   - Use: /write-feature-spec {context}/{feature}
+   - Output: docs/features/{context}/{feature}-prd.md
+   - Output: tests/features/{context}/{feature}.feature
 
-3. Write BDD spec → tests/features/*.feature
-   - Scenarios test API behavior
-   - NOT a substitute for E2E tests (which test UI)
+3. Write Technical Design Document (TDD)
+   - Use: /write-technical-design {context}/{feature}
+   - Output: docs/features/{context}/{feature}-tdd.md
+   - ⚠️  TDD MUST define: bounded context, aggregates, value objects, events
+   - ⚠️  Read architecture skill for DDD compliance before writing TDD
+   - ⚠️  TDD drives ALL implementation decisions
 
-4. Implement backend (domain → API)
-   - Domain entities, handlers, repositories
-   - API endpoints
-   - Database migrations
+4. Implement feature from approved TDD
+   - Use: /implement-feature {context}/{feature}
+   - Implementation MUST match TDD architecture
+   - Domain → Application → Infrastructure → Interface → Frontend
+   - ⚠️  REQUIRED: Frontend for user-facing features
 
-5. Implement frontend (UI → User value)
-   - React components in frontend/src/features/{feature}/
-   - Routes in frontend/src/pages/
-   - Forms, displays, interactions
-   - ⚠️  REQUIRED for user-facing features
-
-6. Write E2E tests (browser automation)
+5. Write E2E tests (browser automation)
    - Use: /write-e2e-tests {feature}
    - Tests complete user journeys through UI
    - ⚠️  Will fail if no UI exists
 
-7. Run deployability check
+6. Run deployability check
    ./scripts/check-deployability.sh {feature}
    ⚠️  BLOCKING: Must pass before marking phase complete
 
-8. Run verification scripts
+7. Run verification scripts
    - All tests pass (0 failed)
    - Coverage ≥80%
    - No warnings
 
-9. Notify user—NEVER merge yourself
+8. Notify user—NEVER merge yourself
 ```
 
 **Valid reasons to skip frontend (rare):**
@@ -412,42 +418,38 @@ async def create_user(user_repository, password_hasher):
 
 ### BDD Step Implementation Rules
 
-```python
-# ❌ NEVER write steps like this
-@then('a verification email should be sent')
-def email_sent(context):
-    pass  # ALWAYS FAILS REVIEW
+**For complete BDD patterns, Gherkin syntax, anti-patterns, and verification checklists, read `.claude/skills/bdd/SKILL.md`.**
 
-# ✅ ALWAYS verify the outcome
-@then('a verification email should be sent to "{email}"')
-async def email_sent(email: str):
-    response = httpx.get(f"http://localhost:8025/api/v2/search?query=to:{email}")
-    assert len(response.json()["items"]) > 0
-```
+Critical rules (enforced in all reviews):
+- Every `@then` step MUST have at least one assertion — `pass` is NEVER acceptable
+- Verify actual side effects (query MailHog, check DB state) — don't mock without purpose
+- Fixtures MUST use domain layer (see Test Fixture Standards above)
 
 ---
 
-Read the appropriate skill BEFORE implementation:
+## Skills and Workflows
+
+### Reference Skills (read BEFORE implementation)
 
 | Task | Skill |
 |------|-------|
-| Frontend code | `.claude/skills/frontend.md` |
-| Python code | `.claude/skills/python.md` |
-| DDD/Architecture | `.claude/skills/architecture.md` |
-| BDD specs | `.claude/skills/bdd.md` |
-| Security review | `.claude/skills/security.md` |
-| UI components | `.claude/skills/ui-design.md` |
-| Generate UI spec from screenshots | `/generate-ui-spec` |
+| DDD/Architecture | `.claude/skills/architecture/SKILL.md` — **Read first for any new context or feature** |
+| BDD specs | `.claude/skills/bdd/SKILL.md` |
+| Python code | `.claude/skills/python/SKILL.md` |
+| Frontend code | `.claude/skills/frontend/SKILL.md` |
+| Security review | `.claude/skills/security/SKILL.md` |
+| UI components | `.claude/skills/ui-design/SKILL.md` |
 
----
+### Feature Development Workflow
 
-## Prompts (Workflows)
-
-| Workflow | Prompt File | When to Use |
-|----------|-------------|-------------|
-| Write Feature Spec | `prompts/write-feature-spec.md` | Creating PRD + BDD from OVERVIEW_PRD |
-| Generate UI Spec | `/generate-ui-spec` skill | Analyzing Skool.com screenshots to create UI_SPEC.md |
-| Implement Feature | `prompts/implement-feature.md` | Building code from completed spec |
+| Step | Command | Output |
+|------|---------|--------|
+| 1. Spec | `/write-feature-spec {context}/{feature}` | PRD + BDD feature file |
+| 2. UI Spec | `/generate-ui-spec` | UI_SPEC.md from Skool screenshots |
+| 3. Design | `/write-technical-design {context}/{feature}` | TDD (defines DDD architecture) |
+| 4. Build | `/implement-feature {context}/{feature}` | Implementation matching TDD |
+| 5. E2E | `/write-e2e-tests {feature}` | Playwright test specs |
+| 6. Document | `/document-work {context}/{feature}` | Summary + PRD status update |
 
 ---
 

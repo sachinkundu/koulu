@@ -44,8 +44,8 @@ Before asking me ANY questions, thoroughly research the existing codebase and do
 - `docs/OVERVIEW_PRD.md` — Find the feature in Section 3 and Appendix A
 - `docs/domain/GLOSSARY.md` — Load ubiquitous language
 - `docs/architecture/CONTEXT_MAP.md` — Identify which bounded context(s) this belongs to
-- `.claude/skills/architecture.md` — Review DDD patterns
-- `.claude/skills/bdd.md` — Review Gherkin standards
+- `.claude/skills/architecture/SKILL.md` — Review DDD patterns (context sizing, aggregates, compliance checklist)
+- `.claude/skills/bdd/SKILL.md` — Review Gherkin standards
 
 ### 1.2 Check Existing Implementation
 Search the codebase for:
@@ -158,7 +158,7 @@ Must include:
 Save to: `tests/features/[context]/[feature].feature`
 
 Must follow:
-- `.claude/skills/bdd.md` standards
+- `.claude/skills/bdd/SKILL.md` standards
 - Declarative style (WHAT not HOW)
 - Ubiquitous language from GLOSSARY
 - Tags: @happy_path, @error, @edge_case, @security

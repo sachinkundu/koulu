@@ -171,18 +171,12 @@ grep -A2 '@then' tests/features/**/*.py | grep -B1 'pass$'
 
 If this returns ANY results, the tests are incomplete. Fix them before marking done.
 
-## Test Fixture Rules
+## DDD Alignment
 
-**Fixtures MUST use domain layer, not bypass it:**
+BDD scenarios should reflect domain language and architecture:
 
-```python
-# ❌ WRONG - Bypasses domain layer
-user = UserModel(id=uuid4(), email=email, hashed_password=hash)
-db_session.add(user)
-
-# ✅ CORRECT - Uses domain factory
-user = User.register(EmailAddress(email), hashed_password)
-await user_repository.save(user)
-```
-
-See CLAUDE.md "Test Fixture Standards" for details.
+- **Given** steps create domain state via repositories/factories — NEVER bypass the domain layer (see CLAUDE.md "Test Fixture Standards")
+- **When** steps invoke application commands/queries — matching the application layer's use cases
+- **Then** steps assert domain outcomes — entity state, events published, repository state
+- Use ubiquitous language from `docs/domain/GLOSSARY.md` in all scenario text
+- Scenarios test behavior within a single bounded context — cross-context side effects are tested via events
