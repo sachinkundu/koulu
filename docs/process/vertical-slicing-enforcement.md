@@ -548,7 +548,7 @@ Already handles this correctly:
 - `CLAUDE.md` - Project-wide implementation rules
 - `docs/testing/e2e-testing-design.md` - E2E test strategy
 - `.claude/skills/write-e2e-tests/SKILL.md` - E2E test generation
-- `.claude/skills/implement-feature.md` - Feature implementation workflow
+- `.claude/skills/implement-feature/SKILL.md` - Feature implementation workflow
 - `docs/FEATURE_STATUS.md` - Current implementation status dashboard
 
 ---

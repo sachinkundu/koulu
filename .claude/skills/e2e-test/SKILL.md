@@ -1,6 +1,7 @@
 ---
 name: e2e-test
 description: Run, debug, and fix end-to-end browser tests using Playwright
+user_invocable: true
 model: opus
 ---
 

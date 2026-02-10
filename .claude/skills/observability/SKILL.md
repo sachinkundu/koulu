@@ -6,6 +6,8 @@ model: sonnet
 
 # Skill: Observability
 
+**Status:** Reference patterns only. structlog is in use; OpenTelemetry tracing infrastructure is not yet set up. Apply these patterns when adding observability to new features.
+
 ## Core Principles
 - **Structured Logging**: JSON in production
 - **Distributed Tracing**: W3C Trace Context propagation

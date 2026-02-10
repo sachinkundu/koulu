@@ -1,6 +1,7 @@
 ---
 name: write-e2e-tests
 description: Design and write E2E tests for implemented features with UI
+user_invocable: true
 ---
 
 # Write E2E Tests Skill

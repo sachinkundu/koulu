@@ -1,58 +1,67 @@
 ---
 name: document-work
 description: Document completed work, create summary, update PRDs, and commit changes
+user_invocable: true
 model: sonnet
 ---
 
-# Usage
-`/document-work <context>/<feature-name>`
+# Document Work
 
-Example: `/document-work identity/registration-authentication`
+## Purpose
+
+Document completed implementation work: create a summary, update PRDs, update OVERVIEW_PRD.md, and commit changes.
 
 ---
 
-When invoked, execute the documentation workflow from `prompts/document-work.md` with these substitutions:
+## Usage
+
+`/document-work <context>/<feature-name>`
+
+Example: `/document-work identity/registration-authentication`
 
 **Parse the argument:**
 - Split on `/` to get `<context>` and `<feature-name>`
 - If no `/` found, ask user to provide format: `context/feature-name`
 
-**Substitutions:**
-- `[feature-name]` → Feature slug (e.g., "registration-authentication")
-- `[context]` → Context directory name (e.g., "identity")
-- `[Feature Name]` → Title-cased version (e.g., "Registration Authentication")
+---
 
-**Expected file paths after substitution:**
-- Summary: `docs/summaries/{feature-name}-summary.md`
-- PRD: `docs/features/{context}/{feature-name}-prd.md`
-- BDD: `tests/features/{context}/{feature-name}.feature`
+## Pre-Documentation Verification
+
+Before documenting as "Complete", verify:
+
+1. **No stub test steps** — Search test files for `pass` statements in step definitions:
+   ```bash
+   grep -n "^    pass$" tests/features/{context}/test_*.py
+   ```
+   If found, these are likely untested functionality!
+
+2. **Side effects work** — For features with:
+   - Email sending: Manually trigger and check MailHog
+   - Events: Check logs for event publication
+   - External integrations: Verify they actually connect
+
+3. **Integration wiring complete** — If domain events exist, verify handlers are registered and called
+
+A feature is NOT complete if tests pass but functionality doesn't work. Stub tests (`pass` statements) hide missing implementations.
 
 ---
 
-## Instructions
+## Documentation Workflow
 
-1. Parse the provided argument to extract context and feature name
-2. Execute the following documentation workflow:
-
-### Step 1: Write a feature summary document
+### Step 1: Write Feature Summary
 
 Save to: `docs/summaries/{feature-name}-summary.md`
+(For multi-phase features: `docs/summaries/{context}/{feature-name}-phase{X}-summary.md`)
 
-Include:
-- What was built (reference the PRD at `docs/features/{context}/{feature-name}-prd.md`)
-- Key implementation decisions and why
-- Files created or modified (grouped by layer: domain, application, infrastructure, frontend)
-- BDD scenarios that now pass (from `tests/features/{context}/{feature-name}.feature`)
-- How to verify it works (manual steps if needed)
-- Any issues encountered and how they were resolved
-- Known limitations or deferred items
+Read all relevant files before writing (PRD, BDD spec, implementation files).
 
-Use this template structure:
+**Template:**
+
 ```markdown
 # {Feature Name} - Implementation Summary
 
 **Date:** YYYY-MM-DD
-**Status:** Complete
+**Status:** Complete | Phase X of Y
 **PRD:** `docs/features/{context}/{feature-name}-prd.md`
 **BDD Spec:** `tests/features/{context}/{feature-name}.feature`
 
@@ -60,7 +69,7 @@ Use this template structure:
 
 ## What Was Built
 
-[2-3 sentence overview of what this feature delivered]
+[2-3 sentence overview of what this feature/phase delivered]
 
 ---
 
@@ -96,6 +105,7 @@ Use this template structure:
 
 - [x] Scenario: [name]
 - [x] Scenario: [name]
+- [ ] Scenario: [name] (deferred to phase Y)
 
 ---
 
@@ -104,7 +114,7 @@ Use this template structure:
 1. [Step to test manually]
 2. [Another verification step]
 
-Or run: `pytest tests/features/{context}/{feature-name}.feature`
+Or run: `pytest tests/features/{context}/`
 
 ---
 
@@ -135,8 +145,8 @@ Check if `docs/features/{context}/{feature-name}-prd.md` exists. If so:
 
 ### Step 3: Update OVERVIEW_PRD.md
 
-In `docs/OVERVIEW_PRD.md`, find Appendix A and mark the feature as implemented:
-- Change `[ ] Feature Name` to `[x] Feature Name`
+In `docs/prd_summary/PRD/OVERVIEW_PRD.md`, find Appendix A and mark the feature as implemented:
+- Change status to `Complete`
 
 ### Step 4: Commit all changes
 
@@ -147,7 +157,7 @@ feat({context}): implement {feature-name}
 - Implements [brief description from summary]
 - See docs/summaries/{feature-name}-summary.md for details
 
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
 
 ### Step 5: Notify user
@@ -158,29 +168,30 @@ Report that the feature branch is ready for review.
 
 ---
 
-## Critical Notes
+## Multi-Phase Variant
 
-- Read all relevant files before writing the summary (PRD, BDD spec, implementation files)
-- Be thorough in documenting what was built
-- Stay on the feature branch
+For features split across multiple implementation phases, adapt the workflow:
+
+1. **Summary file:** `docs/summaries/{context}/{feature-name}-phase{X}-summary.md`
+2. **Include phase-specific info:** Which BDD scenarios now pass vs total, blockers for next phase
+3. **Update implementation plan:** Mark completed steps, add discovered tasks
+4. **Commit message:**
+   ```
+   feat({context}): {feature-name} phase {X} - [brief description]
+
+   Phase X of Y complete.
+   - [What this phase accomplished]
+   - See docs/summaries/{context}/{feature-name}-phase{X}-summary.md
+   ```
+5. **Do NOT start next phase** — wait for user go-ahead
 
 ---
 
-## Pre-Documentation Verification
+## After Documentation
 
-Before documenting as "Complete", verify:
-
-1. **No stub test steps** — Search test files for `pass` statements in step definitions:
-   ```bash
-   grep -n "^    pass$" tests/features/{context}/test_*.py
-   ```
-   If found, these are likely untested functionality!
-
-2. **Side effects work** — For features with:
-   - Email sending → Manually trigger and check MailHog
-   - Events → Check logs for event publication
-   - External integrations → Verify they actually connect
-
-3. **Integration wiring complete** — If domain events exist, verify handlers are registered and called
-
-⚠️ A feature is NOT complete if tests pass but functionality doesn't work. Stub tests (`pass` statements) hide missing implementations.
+Verify:
+1. Summary was created in `docs/summaries/`
+2. OVERVIEW_PRD.md was updated
+3. Changes were committed
+4. You're still on the feature branch (not main)
+5. STOP — notify user the branch is ready for review

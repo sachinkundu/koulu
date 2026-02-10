@@ -1,6 +1,7 @@
 ---
 name: implement-feature
 description: Implement a feature from completed PRD and BDD specs
+user_invocable: true
 model: opus
 ---
 

@@ -907,8 +907,8 @@ use: {
 ## 16. Related Documents
 
 - `CLAUDE.md` - Development rules and scope management
-- `.claude/skills/implement-feature.md` - Feature implementation workflow
-- `.claude/skills/e2e-test.md` - E2E test execution and debugging (NEW)
+- `.claude/skills/implement-feature/SKILL.md` - Feature implementation workflow
+- `.claude/skills/e2e-test/SKILL.md` - E2E test execution and debugging
 - `docs/testing/bdd-testing-guide.md` - BDD test specifications
 - `tests/e2e/README.md` - E2E test setup and usage guide
 

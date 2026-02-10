@@ -838,6 +838,6 @@ See screenshots in `/docs/ui/references/` for visual design guidance:
 ### Appendix C: Related Documents
 
 - `CLAUDE.md` - Development rules and scope management
-- `.claude/skills/ui-design.md` - Visual design system
+- `.claude/skills/ui-design/SKILL.md` - Visual design system
 - `docs/domain/GLOSSARY.md` - Ubiquitous language
 - `docs/architecture/CONTEXT_MAP.md` - Bounded contexts

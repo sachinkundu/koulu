@@ -148,6 +148,6 @@ Step text variations like `"a user has..."` vs `"the user has..."` weren't cover
 ## Related
 
 - `docs/summaries/registration-authentication-summary.md` - Implementation summary (update needed)
-- `.claude/skills/bdd.md` - BDD skill (add async guidance)
-- `.claude/skills/implement-feature.md` - Feature implementation (strengthen verification)
+- `.claude/skills/bdd/SKILL.md` - BDD skill (add async guidance)
+- `.claude/skills/implement-feature/SKILL.md` - Feature implementation (strengthen verification)
 - `CLAUDE.md` - Project instructions (add explicit test requirement)

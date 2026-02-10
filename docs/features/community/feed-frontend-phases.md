@@ -675,8 +675,8 @@ Phase 4 (Polish & E2E Tests)
 - `docs/features/community/UI_SPEC.md` - Component specifications from Skool screenshots
 - `docs/features/community/feed-implementation-phases.md` - Backend implementation phases
 - `docs/features/community/feed-tdd.md` - Technical design document
-- `.claude/skills/frontend.md` - Frontend coding standards
-- `.claude/skills/ui-design.md` - UI design system standards
+- `.claude/skills/frontend/SKILL.md` - Frontend coding standards
+- `.claude/skills/ui-design/SKILL.md` - UI design system standards
 
 ---
 
