@@ -4,6 +4,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Avatar } from '@/components';
 import type { Post } from '../types';
 import { deletePost } from '../api';
+import { useLikePost } from '../hooks';
+import { LikeButton } from './LikeButton';
+import { CommentThread } from './CommentThread';
+import { EditPostModal } from './EditPostModal';
 
 interface PostDetailProps {
   post: Post;
@@ -16,6 +20,8 @@ export function PostDetail({ post, currentUserId, onNavigate }: PostDetailProps)
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { like, unlike, isLiking } = useLikePost(post.id);
 
   const canEdit = currentUserId !== undefined && post.created_by === currentUserId;
 
@@ -127,17 +133,13 @@ export function PostDetail({ post, currentUserId, onNavigate }: PostDetailProps)
 
       {/* Engagement stats */}
       <div className="mb-6 flex items-center gap-6 border-t pt-4 text-sm text-gray-600">
-        <div className="flex items-center gap-2">
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"
-            />
-          </svg>
-          <span>{post.like_count} likes</span>
-        </div>
+        <LikeButton
+          likeCount={post.like_count}
+          isLiked={post.liked_by_current_user === true}
+          isLoading={isLiking}
+          onLike={like}
+          onUnlike={unlike}
+        />
 
         <div className="flex items-center gap-2">
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,12 +165,7 @@ export function PostDetail({ post, currentUserId, onNavigate }: PostDetailProps)
 
           <div className="flex gap-3">
             <button
-              onClick={() => {
-                if (onNavigate !== undefined) {
-                  onNavigate();
-                }
-                navigate(`/community/posts/${post.id}/edit`);
-              }}
+              onClick={() => setIsEditModalOpen(true)}
               className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
               data-testid="post-edit-button"
             >
@@ -185,6 +182,25 @@ export function PostDetail({ post, currentUserId, onNavigate }: PostDetailProps)
             </button>
           </div>
         </div>
+      )}
+
+      {/* Comments */}
+      <div className="border-t pt-6">
+        <CommentThread
+          postId={post.id}
+          currentUserId={currentUserId}
+          isLocked={post.is_locked}
+        />
+      </div>
+
+      {/* Edit modal */}
+      {canEdit && (
+        <EditPostModal
+          post={post}
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={() => void 0}
+        />
       )}
     </div>
   );

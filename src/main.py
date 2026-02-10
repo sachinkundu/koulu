@@ -16,6 +16,7 @@ from src.classroom.interface.api import courses_router, lessons_router, modules_
 from src.community.interface.api import (
     categories_router,
     comments_router,
+    members_router,
     post_comments_router,
     posts_router,
 )
@@ -140,6 +141,7 @@ async def health_check() -> dict[str, str]:
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(user_router, prefix="/api/v1")
 app.include_router(categories_router, prefix="/api/v1")
+app.include_router(members_router, prefix="/api/v1")
 app.include_router(posts_router, prefix="/api/v1")
 app.include_router(post_comments_router, prefix="/api/v1")
 app.include_router(comments_router, prefix="/api/v1")

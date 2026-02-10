@@ -57,8 +57,12 @@ class GetFeedHandler:
                 raise NotCommunityMemberError()
 
         # Get posts for the feed
+        from src.community.domain.value_objects import CategoryId
+
+        category_id = CategoryId(query.category_id) if query.category_id is not None else None
         posts = await self._post_repository.list_by_community(
             community_id=community_id,
+            category_id=category_id,
             limit=query.limit,
             offset=query.offset,
         )

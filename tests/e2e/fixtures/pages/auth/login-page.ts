@@ -1,5 +1,6 @@
 import { type Page } from '@playwright/test';
 import { BasePage } from '../base-page';
+import { flushRateLimits } from '../../../helpers/api-helpers';
 
 export class LoginPage extends BasePage {
   private readonly emailInput = '#email';
@@ -31,6 +32,9 @@ export class LoginPage extends BasePage {
   async login(email: string, password: string): Promise<void> {
     await this.fillEmail(email);
     await this.fillPassword(password);
+    // Flush rate limits right before submitting to prevent 429s
+    // when parallel workers have accumulated API calls
+    await flushRateLimits();
     await this.submit();
   }
 

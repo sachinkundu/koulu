@@ -3,9 +3,12 @@ import { LoginPage } from '../../fixtures/pages/auth/login-page';
 import { HomePage } from '../../fixtures/pages/home-page';
 import { ProfileEditPage } from '../../fixtures/pages/profile/profile-edit-page';
 import { ProfileViewPage } from '../../fixtures/pages/profile/profile-view-page';
-import { createUserWithProfile } from '../../helpers/api-helpers';
+import { cleanTestState, createUserWithProfile } from '../../helpers/api-helpers';
 
 test.describe('Profile Edit', () => {
+  test.beforeEach(async () => {
+    await cleanTestState();
+  });
   test('should edit profile and see changes on profile view', async ({
     page,
   }) => {

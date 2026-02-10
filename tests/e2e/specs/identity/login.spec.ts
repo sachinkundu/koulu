@@ -1,9 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../../fixtures/pages/auth/login-page';
 import { HomePage } from '../../fixtures/pages/home-page';
-import { createUserWithProfile } from '../../helpers/api-helpers';
+import { cleanTestState, createUserWithProfile } from '../../helpers/api-helpers';
 
 test.describe('Login', () => {
+  test.beforeEach(async () => {
+    await cleanTestState();
+  });
   test('should login successfully and see homepage with display name', async ({
     page,
   }) => {

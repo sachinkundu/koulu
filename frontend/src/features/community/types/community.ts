@@ -68,3 +68,33 @@ export interface PostsResponse {
   cursor: string | null;
   has_more: boolean;
 }
+
+// Comment types
+
+export interface Comment {
+  id: string;
+  post_id: string;
+  author_id: string | null;
+  content: string;
+  parent_comment_id: string | null;
+  is_deleted: boolean;
+  like_count: number;
+  is_edited: boolean;
+  created_at: string;
+  updated_at: string;
+  edited_at: string | null;
+  author?: {
+    id: string;
+    display_name: string;
+    avatar_url: string | null;
+  };
+}
+
+export interface AddCommentRequest {
+  content: string;
+  parent_comment_id?: string | null;
+}
+
+export interface EditCommentRequest {
+  content: string;
+}

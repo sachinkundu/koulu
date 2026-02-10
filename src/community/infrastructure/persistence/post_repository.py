@@ -89,17 +89,23 @@ class SqlAlchemyPostRepository(IPostRepository):
     async def list_by_community(
         self,
         community_id: CommunityId,
+        category_id: CategoryId | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> list[Post]:
         """List posts in a community (excluding deleted)."""
-        result = await self._session.execute(
+        stmt = (
             select(PostModel)
             .where(PostModel.community_id == community_id.value, PostModel.is_deleted.is_(False))
             .order_by(PostModel.is_pinned.desc(), PostModel.created_at.desc())
             .limit(limit)
             .offset(offset)
         )
+
+        if category_id is not None:
+            stmt = stmt.where(PostModel.category_id == category_id.value)
+
+        result = await self._session.execute(stmt)
         post_models = result.scalars().all()
 
         return [self._to_entity(model) for model in post_models]

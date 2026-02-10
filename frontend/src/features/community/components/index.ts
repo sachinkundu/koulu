@@ -4,3 +4,8 @@ export * from './CreatePostModal';
 export * from './FeedPostCard';
 export * from './PostDetail';
 export * from './PostDetailModal';
+export * from './LikeButton';
+export * from './AddCommentForm';
+export * from './CommentCard';
+export * from './CommentThread';
+export * from './EditPostModal';

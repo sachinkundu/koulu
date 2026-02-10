@@ -5,6 +5,7 @@ from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 
 from src.community.application.commands import (
     AddCommentCommand,
@@ -36,6 +37,7 @@ from src.community.domain.exceptions import (
 )
 from src.community.interface.api.dependencies import (
     CurrentUserIdDep,
+    SessionDep,
     get_add_comment_handler,
     get_delete_comment_handler,
     get_edit_comment_handler,
@@ -45,12 +47,14 @@ from src.community.interface.api.dependencies import (
 )
 from src.community.interface.api.schemas import (
     AddCommentRequest,
+    AuthorResponse,
     CommentResponse,
     CreateCommentResponse,
     EditCommentRequest,
     ErrorResponse,
     LikeResponse,
 )
+from src.identity.infrastructure.persistence.models import ProfileModel
 
 logger = structlog.get_logger()
 
@@ -135,6 +139,7 @@ async def add_comment(
 )
 async def get_post_comments(
     post_id: UUID,
+    session: SessionDep,
     handler: Annotated[GetPostCommentsHandler, Depends(get_get_post_comments_handler)],
     limit: int = 100,
     offset: int = 0,
@@ -143,24 +148,47 @@ async def get_post_comments(
     query = GetPostCommentsQuery(post_id=post_id, limit=limit, offset=offset)
     comments_with_likes = await handler.handle(query)
 
-    return [
-        CommentResponse(
-            id=cwl.comment.id.value,
-            post_id=cwl.comment.post_id.value,
-            author_id=cwl.comment.author_id.value,
-            content=str(cwl.comment.content),
-            parent_comment_id=cwl.comment.parent_comment_id.value
-            if cwl.comment.parent_comment_id
-            else None,
-            is_deleted=cwl.comment.is_deleted,
-            like_count=cwl.like_count,
-            is_edited=cwl.comment.is_edited,
-            created_at=cwl.comment.created_at,
-            updated_at=cwl.comment.updated_at,
-            edited_at=cwl.comment.edited_at,
+    # Fetch author profiles
+    author_ids = [cwl.comment.author_id.value for cwl in comments_with_likes if cwl.comment.author_id]
+    profiles_map: dict[UUID, ProfileModel] = {}
+    if author_ids:
+        profiles_result = await session.execute(
+            select(ProfileModel).where(ProfileModel.user_id.in_(author_ids))
         )
-        for cwl in comments_with_likes
-    ]
+        profiles_map = {p.user_id: p for p in profiles_result.scalars().all()}
+
+    responses = []
+    for cwl in comments_with_likes:
+        author = None
+        if cwl.comment.author_id:
+            profile = profiles_map.get(cwl.comment.author_id.value)
+            if profile:
+                author = AuthorResponse(
+                    id=profile.user_id,
+                    display_name=profile.display_name or "Unknown",
+                    avatar_url=profile.avatar_url,
+                )
+
+        responses.append(
+            CommentResponse(
+                id=cwl.comment.id.value,
+                post_id=cwl.comment.post_id.value,
+                author_id=cwl.comment.author_id.value if cwl.comment.author_id else None,
+                content=str(cwl.comment.content),
+                parent_comment_id=cwl.comment.parent_comment_id.value
+                if cwl.comment.parent_comment_id
+                else None,
+                is_deleted=cwl.comment.is_deleted,
+                like_count=cwl.like_count,
+                is_edited=cwl.comment.is_edited,
+                created_at=cwl.comment.created_at,
+                updated_at=cwl.comment.updated_at,
+                edited_at=cwl.comment.edited_at,
+                author=author,
+            )
+        )
+
+    return responses
 
 
 # ============================================================================

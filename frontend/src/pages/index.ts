@@ -12,3 +12,5 @@ export { ResetPasswordPage } from './ResetPassword';
 export { VerifyEmailPage } from './VerifyEmail';
 export { CommunityPage } from './CommunityPage';
 export { PostDetailPage } from './PostDetailPage';
+export { ClassroomPage } from './ClassroomPage';
+export { CourseDetailPage } from './CourseDetailPage';

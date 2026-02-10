@@ -43,8 +43,11 @@ from src.community.domain.exceptions import (
     PostTitleTooLongError,
 )
 from src.community.infrastructure.persistence.models import CommunityModel
+from src.community.domain.value_objects import PostId
 from src.community.interface.api.dependencies import (
+    CommentRepositoryDep,
     CurrentUserIdDep,
+    ReactionRepositoryDep,
     SessionDep,
     get_create_post_handler,
     get_delete_post_handler,
@@ -67,6 +70,7 @@ from src.community.interface.api.schemas import (
     PostResponse,
     UpdatePostRequest,
 )
+from src.identity.domain.value_objects import UserId
 from src.identity.infrastructure.persistence.models import ProfileModel
 
 logger = structlog.get_logger()
@@ -120,14 +124,18 @@ async def get_feed(
     current_user_id: CurrentUserIdDep,
     community_id: DefaultCommunityIdDep,
     handler: Annotated[GetFeedHandler, Depends(get_get_feed_handler)],
+    reaction_repo: ReactionRepositoryDep,
+    comment_repo: CommentRepositoryDep,
     limit: int = 20,
     offset: int = 0,
+    category_id: UUID | None = None,
 ) -> FeedResponse:
     """Get the community feed (list of posts)."""
     try:
         query = GetFeedQuery(
             community_id=community_id,
             requester_id=current_user_id,
+            category_id=category_id,
             limit=min(limit, 100),  # Cap at 100 posts
             offset=offset,
         )
@@ -142,6 +150,16 @@ async def get_feed(
         )
         profiles_map = {p.user_id: p for p in profiles_result.scalars().all()}
 
+        # Check which posts current user has liked
+        user_id = UserId(value=current_user_id)
+        liked_post_ids: set[UUID] = set()
+        for post in posts:
+            reaction = await reaction_repo.find_by_user_and_target(
+                user_id, "post", post.id.value
+            )
+            if reaction is not None:
+                liked_post_ids.add(post.id.value)
+
         # Convert domain entities to response models with author info
         post_responses = []
         for post in posts:
@@ -153,6 +171,9 @@ async def get_feed(
                     display_name=author_profile.display_name or "Unknown",
                     avatar_url=author_profile.avatar_url,
                 )
+
+            like_count = await reaction_repo.count_by_target("post", post.id.value)
+            c_count = await comment_repo.count_by_post(PostId(value=post.id.value))
 
             post_responses.append(
                 PostResponse(
@@ -166,10 +187,13 @@ async def get_feed(
                     is_pinned=post.is_pinned,
                     is_locked=post.is_locked,
                     is_edited=post.is_edited,
+                    like_count=like_count,
+                    comment_count=c_count,
                     created_at=post.created_at,
                     updated_at=post.updated_at,
                     edited_at=post.edited_at,
                     author=author,
+                    liked_by_current_user=post.id.value in liked_post_ids,
                 )
             )
 
@@ -267,6 +291,8 @@ async def get_post(
     session: SessionDep,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[GetPostHandler, Depends(get_get_post_handler)],
+    reaction_repo: ReactionRepositoryDep,
+    comment_repo: CommentRepositoryDep,
 ) -> PostResponse:
     """Get a post by ID."""
     try:
@@ -287,6 +313,14 @@ async def get_post(
                 avatar_url=author_profile.avatar_url,
             )
 
+        # Check if current user liked this post and get counts
+        user_id = UserId(value=current_user_id)
+        reaction = await reaction_repo.find_by_user_and_target(
+            user_id, "post", post.id.value
+        )
+        like_count = await reaction_repo.count_by_target("post", post.id.value)
+        c_count = await comment_repo.count_by_post(post.id)
+
         logger.info("get_post_api_success", post_id=str(post_id))
         return PostResponse(
             id=post.id.value,
@@ -299,10 +333,13 @@ async def get_post(
             is_pinned=post.is_pinned,
             is_locked=post.is_locked,
             is_edited=post.is_edited,
+            like_count=like_count,
+            comment_count=c_count,
             created_at=post.created_at,
             updated_at=post.updated_at,
             edited_at=post.edited_at,
             author=author,
+            liked_by_current_user=reaction is not None,
         )
 
     except PostNotFoundError as e:

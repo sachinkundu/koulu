@@ -34,5 +34,6 @@ class GetFeedQuery:
 
     community_id: UUID
     requester_id: UUID | None = None  # For permission checking
+    category_id: UUID | None = None
     limit: int = 20
     offset: int = 0

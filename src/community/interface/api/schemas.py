@@ -97,6 +97,7 @@ class PostResponse(BaseModel):
     updated_at: datetime
     edited_at: datetime | None
     author: AuthorResponse | None = None  # Optional author information
+    liked_by_current_user: bool = False
 
 
 class CommentResponse(BaseModel):
@@ -115,6 +116,7 @@ class CommentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     edited_at: datetime | None
+    author: AuthorResponse | None = None
 
 
 class CreateCommentResponse(BaseModel):

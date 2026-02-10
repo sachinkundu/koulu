@@ -10,6 +10,8 @@ import {
   RegisterPage,
   ResetPasswordPage,
   VerifyEmailPage,
+  ClassroomPage,
+  CourseDetailPage,
 } from '@/pages';
 import { PostDetailPage } from '@/pages';
 import {
@@ -49,7 +51,10 @@ function HomePage(): JSX.Element {
     navigate(`/community/posts/${post.id}`);
   };
 
-  const tabs = [{ label: 'Community', path: '/' }];
+  const tabs = [
+    { label: 'Community', path: '/' },
+    { label: 'Classroom', path: '/classroom' },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -170,6 +175,53 @@ function ProtectedRoute({ children }: { children: JSX.Element }): JSX.Element {
   return children;
 }
 
+/**
+ * Layout wrapper for classroom pages.
+ * Provides consistent header, tabs, and content area.
+ */
+function ClassroomLayout({ children }: { children: JSX.Element }): JSX.Element {
+  const { user, logout, isLoading } = useAuth();
+  const projectName = import.meta.env.VITE_PROJECT_NAME ?? 'koulu';
+
+  const tabs = [
+    { label: 'Community', path: '/' },
+    { label: 'Classroom', path: '/classroom' },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900">Koulu</h1>
+            <span className="rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-700">
+              {projectName}
+            </span>
+          </div>
+          {user !== null && (
+            <div className="flex items-center space-x-4">
+              <UserDropdown user={user} onLogout={() => void logout()} />
+            </div>
+          )}
+        </div>
+      </header>
+
+      <TabBar tabs={tabs} />
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        {children}
+      </main>
+    </div>
+  );
+}
+
 function App(): JSX.Element {
   return (
     <Routes>
@@ -216,6 +268,24 @@ function App(): JSX.Element {
         element={
           <ProtectedRoute>
             <PostDetailPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Classroom routes */}
+      <Route
+        path="/classroom"
+        element={
+          <ProtectedRoute>
+            <ClassroomLayout><ClassroomPage /></ClassroomLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/classroom/courses/:courseId"
+        element={
+          <ProtectedRoute>
+            <ClassroomLayout><CourseDetailPage /></ClassroomLayout>
           </ProtectedRoute>
         }
       />

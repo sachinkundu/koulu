@@ -3,7 +3,7 @@
 from abc import ABC, abstractmethod
 
 from src.community.domain.entities import Post
-from src.community.domain.value_objects import CommunityId, PostId
+from src.community.domain.value_objects import CategoryId, CommunityId, PostId
 
 
 class IPostRepository(ABC):
@@ -53,6 +53,7 @@ class IPostRepository(ABC):
     async def list_by_community(
         self,
         community_id: CommunityId,
+        category_id: CategoryId | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> list[Post]:
@@ -61,6 +62,7 @@ class IPostRepository(ABC):
 
         Args:
             community_id: The community ID
+            category_id: Optional category filter
             limit: Maximum number of posts to return
             offset: Number of posts to skip
 
