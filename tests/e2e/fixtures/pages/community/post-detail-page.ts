@@ -129,6 +129,50 @@ export class PostDetailPage extends BasePage {
     return (await comment.textContent()) ?? '';
   }
 
+  // Comment reply interactions
+  async replyToComment(commentId: string, content: string): Promise<void> {
+    const comment = this.page.locator(`[data-testid="comment-${commentId}"]`);
+    await comment.locator('[data-testid="comment-reply-button"]').click();
+    const replyForm = comment.locator('[data-testid="add-comment-form"]');
+    await replyForm.waitFor({ state: 'visible', timeout: 5_000 });
+    await replyForm.locator('[data-testid="comment-content-input"]').fill(content);
+    await replyForm.locator('[data-testid="comment-submit-button"]').click();
+    await this.page.waitForTimeout(1000);
+  }
+
+  // Comment edit interactions
+  async editComment(commentId: string, newContent: string): Promise<void> {
+    const comment = this.page.locator(`[data-testid="comment-${commentId}"]`).first();
+    await comment.locator('[data-testid="comment-edit-button"]').click();
+    const editForm = comment.locator('[data-testid="edit-comment-form"]');
+    await editForm.waitFor({ state: 'visible', timeout: 5_000 });
+    await editForm.locator('[data-testid="edit-comment-input"]').fill(newContent);
+    await editForm.locator('[data-testid="edit-comment-save"]').click();
+    await this.page.waitForTimeout(1000);
+  }
+
+  // Comment delete interactions
+  async deleteComment(commentId: string): Promise<void> {
+    this.page.on('dialog', (dialog) => void dialog.accept());
+    const comment = this.page.locator(`[data-testid="comment-${commentId}"]`).first();
+    await comment.locator('[data-testid="comment-delete-button"]').click();
+    await this.page.waitForTimeout(1000);
+  }
+
+  // Comment like interactions
+  async clickCommentLikeButton(commentId: string): Promise<void> {
+    const comment = this.page.locator(`[data-testid="comment-${commentId}"]`).first();
+    await comment.locator('[data-testid="comment-like-button"]').click();
+  }
+
+  async getCommentLikeText(commentId: string): Promise<string> {
+    const comment = this.page.locator(`[data-testid="comment-${commentId}"]`).first();
+    const btn = comment.locator('[data-testid="comment-like-button"]');
+    const span = btn.locator('span');
+    await span.waitFor({ state: 'visible' });
+    return (await span.textContent()) ?? '';
+  }
+
   // Edit post interactions
   async clickEditButton(): Promise<void> {
     await this.page.click(this.editButton);
