@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Avatar } from '@/components';
 import type { Post } from '../types';
 import { useLikePost } from '../hooks';
@@ -12,6 +13,14 @@ interface FeedPostCardProps {
 export function FeedPostCard({ post }: FeedPostCardProps): JSX.Element {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { like, unlike, isLiking } = useLikePost(post.id);
+  const navigate = useNavigate();
+
+  const handleAuthorClick = (e: React.MouseEvent): void => {
+    e.stopPropagation();
+    if (post.author?.id !== undefined) {
+      navigate(`/profile/${post.author.id}`);
+    }
+  };
 
   // Truncate content to ~500 characters
   const truncatedContent =
@@ -28,18 +37,20 @@ export function FeedPostCard({ post }: FeedPostCardProps): JSX.Element {
       <div className="mb-4 flex items-start justify-between">
         <div className="flex items-center gap-3">
           {/* Author avatar */}
-          <Avatar
-            src={post.author?.avatar_url}
-            alt={post.author?.display_name ?? 'Unknown'}
-            fallback={post.author?.display_name ?? 'Unknown'}
-            size="md"
-          />
+          <button type="button" onClick={handleAuthorClick} className="shrink-0" data-testid="post-author-avatar">
+            <Avatar
+              src={post.author?.avatar_url}
+              alt={post.author?.display_name ?? 'Unknown'}
+              fallback={post.author?.display_name ?? 'Unknown'}
+              size="md"
+            />
+          </button>
 
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-medium text-gray-900">
+              <button type="button" onClick={handleAuthorClick} className="font-medium text-gray-900 hover:underline" data-testid="post-author-name">
                 {post.author?.display_name ?? 'Unknown'}
-              </span>
+              </button>
               {post.is_edited && (
                 <span className="text-xs text-gray-500">(edited)</span>
               )}

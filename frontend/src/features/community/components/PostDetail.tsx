@@ -25,6 +25,12 @@ export function PostDetail({ post, currentUserId, onNavigate }: PostDetailProps)
 
   const canEdit = currentUserId !== undefined && post.created_by === currentUserId;
 
+  const handleAuthorClick = (): void => {
+    if (post.author?.id !== undefined) {
+      navigate(`/profile/${post.author.id}`);
+    }
+  };
+
   const deleteMutation = useMutation({
     mutationFn: () => deletePost(post.id),
     onSuccess: () => {
@@ -56,18 +62,20 @@ export function PostDetail({ post, currentUserId, onNavigate }: PostDetailProps)
       <div className="mb-6 flex items-start justify-between">
         <div className="flex items-center gap-3">
           {/* Author avatar */}
-          <Avatar
-            src={post.author?.avatar_url}
-            alt={post.author?.display_name ?? 'Unknown'}
-            fallback={post.author?.display_name ?? 'Unknown'}
-            size="lg"
-          />
+          <button type="button" onClick={handleAuthorClick} className="shrink-0" data-testid="post-author-avatar">
+            <Avatar
+              src={post.author?.avatar_url}
+              alt={post.author?.display_name ?? 'Unknown'}
+              fallback={post.author?.display_name ?? 'Unknown'}
+              size="lg"
+            />
+          </button>
 
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-900">
+              <button type="button" onClick={handleAuthorClick} className="font-semibold text-gray-900 hover:underline" data-testid="post-author-name">
                 {post.author?.display_name ?? 'Unknown'}
-              </span>
+              </button>
               {post.is_edited && (
                 <span className="text-sm text-gray-500">(edited)</span>
               )}
