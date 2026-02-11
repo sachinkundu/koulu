@@ -154,15 +154,19 @@ echo ""
 # ============================================
 info "Starting Docker containers (project: ${COMPOSE_PROJECT_NAME})..."
 
-# Check if all services are already running for this compose project
-SERVICES_RUNNING=$($COMPOSE_CMD ps --status running --format '{{.Service}}' 2>/dev/null | wc -l)
+# Remove any stale containers with our names (e.g., left over from E2E tests or a different compose project).
+# Data is preserved in named volumes — only the container instances are removed.
+VOLUME_PREFIX="${KOULU_VOLUME_PREFIX:-koulu}"
+for svc in postgres redis mailhog; do
+    cname="${VOLUME_PREFIX}_${svc}"
+    if docker container inspect "$cname" &>/dev/null 2>&1; then
+        warn "Removing stale container: $cname"
+        docker rm -f "$cname" 2>/dev/null || true
+    fi
+done
 
-if [ "$SERVICES_RUNNING" -ge 3 ]; then
-    success "Containers already running"
-else
-    $COMPOSE_CMD up -d --remove-orphans
-    success "Containers started"
-fi
+$COMPOSE_CMD up -d --remove-orphans
+success "Containers started"
 
 # Wait for PostgreSQL to be healthy
 info "Waiting for PostgreSQL to be ready..."
