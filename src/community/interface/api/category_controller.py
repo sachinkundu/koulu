@@ -131,6 +131,7 @@ async def create_category(
             description=body.description,
         )
         category = await handler.handle(command)
+        await session.commit()
         logger.info("create_category_api_success", category_id=str(category.id))
         return CreateCategoryResponse(id=category.id.value)
     except CannotManageCategoriesError as e:
@@ -171,6 +172,7 @@ async def update_category(
             description=body.description,
         )
         await handler.handle(command)
+        await session.commit()
         logger.info("update_category_api_success", category_id=str(category_id))
         return MessageResponse(message="Category updated successfully")
     except CategoryNotFoundError as e:
@@ -209,6 +211,7 @@ async def delete_category(
             community_id=community_id,
         )
         await handler.handle(command)
+        await session.commit()
         logger.info("delete_category_api_success", category_id=str(category_id))
     except CategoryNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e

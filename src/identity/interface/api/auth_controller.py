@@ -41,6 +41,7 @@ from src.identity.infrastructure.services import (
     limiter,
 )
 from src.identity.interface.api.dependencies import (
+    SessionDep,
     get_login_handler,
     get_logout_handler,
     get_refresh_token_handler,
@@ -82,6 +83,7 @@ async def register(
     request: Request,  # noqa: ARG001
     body: RegisterRequest,
     handler: Annotated[RegisterUserHandler, Depends(get_register_handler)],
+    session: SessionDep,
 ) -> RegisterResponse:
     """
     Register a new user.
@@ -102,6 +104,7 @@ async def register(
             detail={"code": e.code, "message": e.message},
         ) from e
 
+    await session.commit()
     # Always return success message (prevents email enumeration)
     return RegisterResponse()
 
@@ -116,6 +119,7 @@ async def register(
 async def verify_email(
     body: VerifyEmailRequest,
     handler: Annotated[VerifyEmailHandler, Depends(get_verify_email_handler)],
+    session: SessionDep,
 ) -> TokenResponse:
     """Verify email with token from verification link."""
     try:
@@ -132,6 +136,7 @@ async def verify_email(
             detail={"code": e.code, "message": e.message},
         ) from e
 
+    await session.commit()
     return TokenResponse(
         access_token=tokens.access_token,
         refresh_token=tokens.refresh_token,
@@ -153,6 +158,7 @@ async def resend_verification(
     request: Request,  # noqa: ARG001
     body: ResendVerificationRequest,
     handler: Annotated[ResendVerificationHandler, Depends(get_resend_verification_handler)],
+    session: SessionDep,
 ) -> MessageResponse:
     """
     Resend verification email.
@@ -161,6 +167,7 @@ async def resend_verification(
     """
     command = ResendVerificationCommand(email=body.email)
     await handler.handle(command)
+    await session.commit()
     return MessageResponse(message="If the email exists, a verification link has been sent")
 
 
@@ -267,6 +274,7 @@ async def forgot_password(
     request: Request,  # noqa: ARG001
     body: ForgotPasswordRequest,
     handler: Annotated[RequestPasswordResetHandler, Depends(get_request_password_reset_handler)],
+    session: SessionDep,
 ) -> MessageResponse:
     """
     Request password reset email.
@@ -275,6 +283,7 @@ async def forgot_password(
     """
     command = RequestPasswordResetCommand(email=body.email)
     await handler.handle(command)
+    await session.commit()
     return MessageResponse(message="If the email exists, a password reset link has been sent")
 
 
@@ -288,6 +297,7 @@ async def forgot_password(
 async def reset_password(
     body: ResetPasswordRequest,
     handler: Annotated[ResetPasswordHandler, Depends(get_reset_password_handler)],
+    session: SessionDep,
 ) -> MessageResponse:
     """Reset password using reset token."""
     try:
@@ -307,4 +317,5 @@ async def reset_password(
             detail={"code": e.code, "message": e.message},
         ) from e
 
+    await session.commit()
     return MessageResponse(message="Password successfully reset")

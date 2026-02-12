@@ -46,18 +46,24 @@ export function CommentCard({
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteComment(comment.id),
-    onSuccess: invalidateComments,
+    onSuccess: () => {
+      invalidateComments();
+    },
     onError: () => setError('Failed to delete comment.'),
   });
 
   const likeMutation = useMutation({
     mutationFn: () => likeComment(comment.id),
-    onSuccess: invalidateComments,
+    onSuccess: () => {
+      invalidateComments();
+    },
   });
 
   const unlikeMutation = useMutation({
     mutationFn: () => unlikeComment(comment.id),
-    onSuccess: invalidateComments,
+    onSuccess: () => {
+      invalidateComments();
+    },
   });
 
   const handleDelete = (): void => {

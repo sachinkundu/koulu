@@ -254,6 +254,7 @@ async def create_post(
     current_user_id: CurrentUserIdDep,
     community_id: DefaultCommunityIdDep,
     handler: Annotated[CreatePostHandler, Depends(get_create_post_handler)],
+    session: SessionDep,
 ) -> CreatePostResponse:
     """Create a new post in the community."""
     try:
@@ -267,6 +268,7 @@ async def create_post(
             image_url=body.image_url,
         )
         post_id = await handler.handle(command)
+        await session.commit()
 
         logger.info("create_post_api_success", post_id=str(post_id))
         return CreatePostResponse(id=post_id.value)
@@ -400,6 +402,7 @@ async def update_post(
     body: UpdatePostRequest,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[UpdatePostHandler, Depends(get_update_post_handler)],
+    session: SessionDep,
 ) -> MessageResponse:
     """Update a post."""
     try:
@@ -412,6 +415,7 @@ async def update_post(
             category_id=body.category_id,
         )
         await handler.handle(command)
+        await session.commit()
 
         logger.info("update_post_api_success", post_id=str(post_id))
         return MessageResponse(message="Post updated successfully")
@@ -462,6 +466,7 @@ async def delete_post(
     post_id: UUID,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[DeletePostHandler, Depends(get_delete_post_handler)],
+    session: SessionDep,
 ) -> None:
     """Delete a post."""
     try:
@@ -470,6 +475,7 @@ async def delete_post(
             deleter_id=current_user_id,
         )
         await handler.handle(command)
+        await session.commit()
 
         logger.info("delete_post_api_success", post_id=str(post_id))
 
@@ -509,11 +515,13 @@ async def lock_post(
     post_id: UUID,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[LockPostHandler, Depends(get_lock_post_handler)],
+    session: SessionDep,
 ) -> None:
     """Lock a post to prevent new comments."""
     try:
         command = LockPostCommand(post_id=post_id, locker_id=current_user_id)
         await handler.handle(command)
+        await session.commit()
 
         logger.info("lock_post_api_success", post_id=str(post_id))
 
@@ -548,11 +556,13 @@ async def unlock_post(
     post_id: UUID,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[UnlockPostHandler, Depends(get_unlock_post_handler)],
+    session: SessionDep,
 ) -> None:
     """Unlock a post to allow comments again."""
     try:
         command = UnlockPostCommand(post_id=post_id, unlocker_id=current_user_id)
         await handler.handle(command)
+        await session.commit()
 
         logger.info("unlock_post_api_success", post_id=str(post_id))
 
@@ -592,11 +602,13 @@ async def pin_post(
     post_id: UUID,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[PinPostHandler, Depends(get_pin_post_handler)],
+    session: SessionDep,
 ) -> None:
     """Pin a post to the top of the feed."""
     try:
         command = PinPostCommand(post_id=post_id, pinner_id=current_user_id)
         await handler.handle(command)
+        await session.commit()
 
         logger.info("pin_post_api_success", post_id=str(post_id))
 
@@ -631,11 +643,13 @@ async def unpin_post_endpoint(
     post_id: UUID,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[UnpinPostHandler, Depends(get_unpin_post_handler)],
+    session: SessionDep,
 ) -> None:
     """Unpin a post."""
     try:
         command = UnpinPostCommand(post_id=post_id, unpinner_id=current_user_id)
         await handler.handle(command)
+        await session.commit()
 
         logger.info("unpin_post_api_success", post_id=str(post_id))
 
@@ -675,11 +689,13 @@ async def like_post(
     post_id: UUID,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[LikePostHandler, Depends(get_like_post_handler)],
+    session: SessionDep,
 ) -> LikeResponse:
     """Like a post."""
     try:
         command = LikePostCommand(post_id=post_id, user_id=current_user_id)
         await handler.handle(command)
+        await session.commit()
 
         logger.info("like_post_api_success", post_id=str(post_id))
         return LikeResponse(message="Post liked successfully")
@@ -709,10 +725,12 @@ async def unlike_post(
     post_id: UUID,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[UnlikePostHandler, Depends(get_unlike_post_handler)],
+    session: SessionDep,
 ) -> LikeResponse:
     """Unlike a post."""
     command = UnlikePostCommand(post_id=post_id, user_id=current_user_id)
     await handler.handle(command)
+    await session.commit()
 
     logger.info("unlike_post_api_success", post_id=str(post_id))
     return LikeResponse(message="Post unliked successfully")

@@ -85,6 +85,7 @@ async def add_comment(
     body: AddCommentRequest,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[AddCommentHandler, Depends(get_add_comment_handler)],
+    session: SessionDep,
 ) -> CreateCommentResponse:
     """Add a comment to a post."""
     try:
@@ -95,6 +96,7 @@ async def add_comment(
             parent_comment_id=body.parent_comment_id,
         )
         comment_id = await handler.handle(command)
+        await session.commit()
 
         logger.info("add_comment_api_success", post_id=str(post_id), comment_id=str(comment_id))
         return CreateCommentResponse(comment_id=comment_id.value)
@@ -214,6 +216,7 @@ async def edit_comment(
     body: EditCommentRequest,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[EditCommentHandler, Depends(get_edit_comment_handler)],
+    session: SessionDep,
 ) -> LikeResponse:
     """Edit a comment."""
     try:
@@ -223,6 +226,7 @@ async def edit_comment(
             content=body.content,
         )
         await handler.handle(command)
+        await session.commit()
 
         logger.info("edit_comment_api_success", comment_id=str(comment_id))
         return LikeResponse(message="Comment edited successfully")
@@ -263,11 +267,13 @@ async def delete_comment(
     comment_id: UUID,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[DeleteCommentHandler, Depends(get_delete_comment_handler)],
+    session: SessionDep,
 ) -> None:
     """Delete a comment."""
     try:
         command = DeleteCommentCommand(comment_id=comment_id, deleter_id=current_user_id)
         await handler.handle(command)
+        await session.commit()
 
         logger.info("delete_comment_api_success", comment_id=str(comment_id))
 
@@ -307,11 +313,13 @@ async def like_comment(
     comment_id: UUID,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[LikeCommentHandler, Depends(get_like_comment_handler)],
+    session: SessionDep,
 ) -> LikeResponse:
     """Like a comment."""
     try:
         command = LikeCommentCommand(comment_id=comment_id, user_id=current_user_id)
         await handler.handle(command)
+        await session.commit()
 
         logger.info("like_comment_api_success", comment_id=str(comment_id))
         return LikeResponse(message="Comment liked successfully")
@@ -341,10 +349,12 @@ async def unlike_comment(
     comment_id: UUID,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[UnlikeCommentHandler, Depends(get_unlike_comment_handler)],
+    session: SessionDep,
 ) -> LikeResponse:
     """Unlike a comment."""
     command = UnlikeCommentCommand(comment_id=comment_id, user_id=current_user_id)
     await handler.handle(command)
+    await session.commit()
 
     logger.info("unlike_comment_api_success", comment_id=str(comment_id))
     return LikeResponse(message="Comment unliked successfully")

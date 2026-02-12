@@ -28,6 +28,7 @@ from src.identity.infrastructure.services import PROFILE_UPDATE_LIMIT, limiter
 from src.identity.interface.api.dependencies import (
     CurrentUserDep,
     CurrentUserIdDep,
+    SessionDep,
     get_complete_profile_handler,
     get_profile_activity_handler,
     get_profile_handler,
@@ -97,6 +98,7 @@ async def complete_profile(
     body: CompleteProfileRequest,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[CompleteProfileHandler, Depends(get_complete_profile_handler)],
+    session: SessionDep,
 ) -> ProfileResponse:
     """Complete or update user profile."""
     try:
@@ -117,6 +119,7 @@ async def complete_profile(
             detail={"code": "user_not_found", "message": "User not found"},
         ) from e
 
+    await session.commit()
     return ProfileResponse(
         display_name=body.display_name,
         avatar_url=body.avatar_url,
@@ -141,6 +144,7 @@ async def update_profile(
     body: UpdateProfileRequest,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[UpdateProfileHandler, Depends(get_update_profile_handler)],
+    session: SessionDep,
 ) -> ProfileDetailResponse:
     """Update user profile fields."""
     try:
@@ -178,6 +182,7 @@ async def update_profile(
             detail={"code": "user_not_found", "message": "User not found"},
         ) from e
 
+    await session.commit()
     # Return updated profile by fetching it
     from src.identity.domain.value_objects import UserId
 
