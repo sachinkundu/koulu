@@ -1,0 +1,19 @@
+# Add to .claude/settings.json:
+{
+  "hooks": {
+    "postToolUse": [
+      {
+        "matcher": "Bash",
+        "pattern": "git commit",
+        "command": "echo '⚠️  Remember: verify.sh must pass before committing'"
+      }
+    ],
+    "postToolUse": [
+      {
+        "matcher": "Edit",
+        "pattern": "*.py",
+        "command": "cd $(git rev-parse --show-toplevel) && python -m mypy --no-error-summary $CLAUDE_FILE 2>&1 | tail -5"
+      }
+    ]
+  }
+}
