@@ -272,16 +272,19 @@ echo ""
 if [[ ! $REPLY =~ ^[Nn]$ ]]; then
     echo ""
     info "Starting frontend and backend services..."
-    info "Press Ctrl+C to stop both services"
     echo ""
 
     # PIDs for cleanup
     BACKEND_PID=""
     FRONTEND_PID=""
 
-    # Cleanup function
+    # Sticky header is 10 lines tall
+    HEADER_LINE_COUNT=10
+
+    # Cleanup function — reset scroll region before exiting
     cleanup() {
-        echo ""
+        echo -en "\033[r"          # reset scroll region
+        echo -en "\033[2J\033[H"   # clear screen, cursor to top
         info "Shutting down services..."
 
         if [ -n "$BACKEND_PID" ]; then
@@ -298,8 +301,17 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]; then
         exit 0
     }
 
-    # Trap Ctrl+C
+    # Recompute scroll region on terminal resize
+    handle_resize() {
+        local term_lines
+        term_lines=$(tput lines 2>/dev/null || echo 24)
+        # Save cursor, update scroll region, restore cursor
+        echo -en "\033[s\033[$((HEADER_LINE_COUNT + 1));${term_lines}r\033[u"
+    }
+
+    # Trap signals
     trap cleanup SIGINT SIGTERM
+    trap handle_resize SIGWINCH
 
     # Start backend
     (
@@ -321,8 +333,32 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]; then
     ) &
     FRONTEND_PID=$!
 
-    success "Services started (Backend PID: $BACKEND_PID, Frontend PID: $FRONTEND_PID)"
+    # Let services emit initial startup output before taking over the screen
+    sleep 3
+
+    # ── Sticky header: URLs pinned at top, logs scroll below ──
+    TERM_LINES=$(tput lines 2>/dev/null || echo 24)
+
+    # Clear screen, cursor to row 1
+    echo -en "\033[2J\033[H"
+
+    # Print the 10-line header
+    echo "══════════════════════════════════════════════════"
+    echo -e "  ${GREEN}Koulu Development Environment${NC}"
     echo ""
+    echo -e "  Frontend:     ${YELLOW}http://localhost:${KOULU_FRONTEND_PORT}${NC}"
+    echo -e "  Backend API:  ${YELLOW}http://localhost:${KOULU_BACKEND_PORT}${NC}"
+    echo -e "  API Docs:     ${YELLOW}http://localhost:${KOULU_BACKEND_PORT}/docs${NC}"
+    echo -e "  MailHog:      ${YELLOW}http://localhost:${KOULU_MAIL_WEB_PORT}${NC}"
+    echo ""
+    echo -e "  ${BLUE}Ctrl+C to stop all services${NC}"
+    echo "══════════════════════════════════════════════════"
+
+    # Confine scrolling to lines below the header
+    echo -en "\033[$((HEADER_LINE_COUNT + 1));${TERM_LINES}r"
+
+    # Move cursor into the scroll region
+    echo -en "\033[$((HEADER_LINE_COUNT + 1));1H"
 
     # Wait for both processes
     wait
