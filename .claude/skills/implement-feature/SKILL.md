@@ -413,6 +413,65 @@ After phase completion, consider if E2E tests would add value:
 
 **See:** `docs/testing/e2e-testing-design.md` for E2E testing strategy and best practices.
 
+### Step 8: Manual Testing Guide
+
+**MANDATORY: After every phase/slice completion, provide a concise manual testing guide.**
+
+The user wants to see what was built and how the UI looks. After all verification passes, print a guide with:
+
+1. **What was implemented** (1-3 sentence summary of user-visible changes)
+2. **How to start the app** (commands to run backend + frontend if not already running)
+3. **Step-by-step testing instructions** — concrete actions the user can perform in the browser:
+   - Which URL to open
+   - What to click / fill in
+   - What they should see as a result
+4. **Expected behavior** for each action (so the user knows if it's working)
+
+**Format:**
+
+```markdown
+## Manual Testing Guide
+
+**What's new:** [1-3 sentence summary]
+
+**Start the app** (if not running):
+```bash
+./start.sh  # or docker compose up + uvicorn + npm run dev
+```
+
+**Test it:**
+
+1. Open http://localhost:5173/community
+2. [Action] → [Expected result]
+3. [Action] → [Expected result]
+...
+```
+
+**Guidelines:**
+- Keep it short — 5-10 steps max
+- Focus on user-visible functionality, not backend internals
+- Include both happy path and one error case if relevant
+- If feature is backend-only (no UI), show a curl command instead
+- If multiple slices were implemented, cover all of them in one guide
+
+**Example:**
+
+```markdown
+## Manual Testing Guide
+
+**What's new:** Posts can now be pinned by admins/moderators, feed supports
+Hot/New/Top sorting, and admins can create/edit/delete categories.
+
+**Test it:**
+
+1. Open http://localhost:5173/community
+2. Log in as an admin user
+3. Click the sort pills (Hot / New / Top) above the feed → posts reorder
+4. Create a post → click "Create Post", fill in title + content, submit
+5. Try creating 11 posts rapidly → 11th should show "Rate limit exceeded"
+6. Pin a post (admin menu) → pinned post jumps to top of feed with pin icon
+```
+
 ---
 
 ## Phasing Strategies

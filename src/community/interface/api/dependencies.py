@@ -8,7 +8,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from src.community.application.handlers import (
     AddCommentHandler,
+    CreateCategoryHandler,
     CreatePostHandler,
+    DeleteCategoryHandler,
     DeleteCommentHandler,
     DeletePostHandler,
     EditCommentHandler,
@@ -19,9 +21,12 @@ from src.community.application.handlers import (
     LikePostHandler,
     ListCategoriesHandler,
     LockPostHandler,
+    PinPostHandler,
     UnlikeCommentHandler,
     UnlikePostHandler,
     UnlockPostHandler,
+    UnpinPostHandler,
+    UpdateCategoryHandler,
     UpdatePostHandler,
 )
 from src.community.infrastructure.persistence import (
@@ -31,6 +36,7 @@ from src.community.infrastructure.persistence import (
     SqlAlchemyPostRepository,
     SqlAlchemyReactionRepository,
 )
+from src.community.infrastructure.services import InMemoryRateLimiter
 from src.config import settings
 from src.identity.infrastructure.services import JWTService
 
@@ -80,6 +86,11 @@ ReactionRepositoryDep = Annotated[SqlAlchemyReactionRepository, Depends(get_reac
 # ============================================================================
 
 
+def get_rate_limiter() -> InMemoryRateLimiter:
+    """Get rate limiter."""
+    return InMemoryRateLimiter()
+
+
 def get_create_post_handler(
     post_repo: PostRepositoryDep,
     category_repo: CategoryRepositoryDep,
@@ -90,6 +101,7 @@ def get_create_post_handler(
         post_repository=post_repo,
         category_repository=category_repo,
         member_repository=member_repo,
+        rate_limiter=get_rate_limiter(),
     )
 
 
@@ -149,6 +161,28 @@ def get_unlock_post_handler(
 ) -> UnlockPostHandler:
     """Get unlock post handler."""
     return UnlockPostHandler(
+        post_repository=post_repo,
+        member_repository=member_repo,
+    )
+
+
+def get_pin_post_handler(
+    post_repo: PostRepositoryDep,
+    member_repo: MemberRepositoryDep,
+) -> PinPostHandler:
+    """Get pin post handler."""
+    return PinPostHandler(
+        post_repository=post_repo,
+        member_repository=member_repo,
+    )
+
+
+def get_unpin_post_handler(
+    post_repo: PostRepositoryDep,
+    member_repo: MemberRepositoryDep,
+) -> UnpinPostHandler:
+    """Get unpin post handler."""
+    return UnpinPostHandler(
         post_repository=post_repo,
         member_repository=member_repo,
     )
@@ -250,6 +284,41 @@ def get_list_categories_handler(
     """Get list categories handler."""
     return ListCategoriesHandler(
         category_repository=category_repo,
+    )
+
+
+def get_create_category_handler(
+    category_repo: CategoryRepositoryDep,
+    member_repo: MemberRepositoryDep,
+) -> CreateCategoryHandler:
+    """Get create category handler."""
+    return CreateCategoryHandler(
+        category_repository=category_repo,
+        member_repository=member_repo,
+    )
+
+
+def get_update_category_handler(
+    category_repo: CategoryRepositoryDep,
+    member_repo: MemberRepositoryDep,
+) -> UpdateCategoryHandler:
+    """Get update category handler."""
+    return UpdateCategoryHandler(
+        category_repository=category_repo,
+        member_repository=member_repo,
+    )
+
+
+def get_delete_category_handler(
+    category_repo: CategoryRepositoryDep,
+    post_repo: PostRepositoryDep,
+    member_repo: MemberRepositoryDep,
+) -> DeleteCategoryHandler:
+    """Get delete category handler."""
+    return DeleteCategoryHandler(
+        category_repository=category_repo,
+        post_repository=post_repo,
+        member_repository=member_repo,
     )
 
 

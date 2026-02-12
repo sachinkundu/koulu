@@ -10,10 +10,13 @@ from src.community.domain.events import (
     PostDeleted,
     PostEdited,
     PostLocked,
+    PostPinned,
     PostUnlocked,
+    PostUnpinned,
 )
 from src.community.domain.exceptions import (
     CannotLockPostError,
+    CannotPinPostError,
     InvalidImageUrlError,
     NotPostAuthorError,
     PostAlreadyDeletedError,
@@ -693,3 +696,118 @@ class TestPostUnlock:
 
         with pytest.raises(PostAlreadyDeletedError):
             post.unlock(unlocker_id=admin_id, unlocker_role=MemberRole.ADMIN)
+
+
+class TestPostPin:
+    """Tests for Post.pin() method."""
+
+    def test_pin_post_by_admin(self, post: Post) -> None:
+        """Post.pin() by admin should set is_pinned to True."""
+        admin_id = UserId(value=uuid4())
+
+        post.pin(pinner_id=admin_id, pinner_role=MemberRole.ADMIN)
+
+        assert post.is_pinned is True
+        assert post.pinned_at is not None
+
+    def test_pin_post_by_moderator(self, post: Post) -> None:
+        """Post.pin() by moderator should set is_pinned to True."""
+        mod_id = UserId(value=uuid4())
+
+        post.pin(pinner_id=mod_id, pinner_role=MemberRole.MODERATOR)
+
+        assert post.is_pinned is True
+
+    def test_pin_post_by_member_raises_error(self, post: Post) -> None:
+        """Post.pin() by regular member should raise CannotPinPostError."""
+        member_id = UserId(value=uuid4())
+
+        with pytest.raises(CannotPinPostError):
+            post.pin(pinner_id=member_id, pinner_role=MemberRole.MEMBER)
+
+    def test_pin_post_publishes_post_pinned_event(self, post: Post) -> None:
+        """Post.pin() should publish PostPinned event."""
+        post.clear_events()
+        admin_id = UserId(value=uuid4())
+
+        post.pin(pinner_id=admin_id, pinner_role=MemberRole.ADMIN)
+
+        events = post.events
+        assert len(events) == 1
+        assert isinstance(events[0], PostPinned)
+        assert events[0].post_id == post.id
+        assert events[0].pinned_by == admin_id
+
+    def test_pin_already_pinned_post_is_idempotent(self, post: Post) -> None:
+        """Post.pin() on already pinned post should be idempotent (no event)."""
+        admin_id = UserId(value=uuid4())
+        post.pin(pinner_id=admin_id, pinner_role=MemberRole.ADMIN)
+        post.clear_events()
+
+        post.pin(pinner_id=admin_id, pinner_role=MemberRole.ADMIN)
+
+        assert post.is_pinned is True
+        assert len(post.events) == 0
+
+    def test_pin_deleted_post_raises_error(self, post: Post, author_id: UserId) -> None:
+        """Post.pin() on deleted post should raise PostAlreadyDeletedError."""
+        post.delete(deleter_id=author_id)
+        admin_id = UserId(value=uuid4())
+
+        with pytest.raises(PostAlreadyDeletedError):
+            post.pin(pinner_id=admin_id, pinner_role=MemberRole.ADMIN)
+
+
+class TestPostUnpin:
+    """Tests for Post.unpin() method."""
+
+    def test_unpin_pinned_post(self, post: Post) -> None:
+        """Post.unpin() should set is_pinned to False."""
+        admin_id = UserId(value=uuid4())
+        post.pin(pinner_id=admin_id, pinner_role=MemberRole.ADMIN)
+
+        post.unpin(unpinner_id=admin_id, unpinner_role=MemberRole.ADMIN)
+
+        assert post.is_pinned is False
+        assert post.pinned_at is None
+
+    def test_unpin_post_by_member_raises_error(self, post: Post) -> None:
+        """Post.unpin() by regular member should raise CannotPinPostError."""
+        admin_id = UserId(value=uuid4())
+        post.pin(pinner_id=admin_id, pinner_role=MemberRole.ADMIN)
+
+        member_id = UserId(value=uuid4())
+        with pytest.raises(CannotPinPostError):
+            post.unpin(unpinner_id=member_id, unpinner_role=MemberRole.MEMBER)
+
+    def test_unpin_post_publishes_post_unpinned_event(self, post: Post) -> None:
+        """Post.unpin() should publish PostUnpinned event."""
+        admin_id = UserId(value=uuid4())
+        post.pin(pinner_id=admin_id, pinner_role=MemberRole.ADMIN)
+        post.clear_events()
+
+        post.unpin(unpinner_id=admin_id, unpinner_role=MemberRole.ADMIN)
+
+        events = post.events
+        assert len(events) == 1
+        assert isinstance(events[0], PostUnpinned)
+        assert events[0].post_id == post.id
+        assert events[0].unpinned_by == admin_id
+
+    def test_unpin_already_unpinned_post_is_idempotent(self, post: Post) -> None:
+        """Post.unpin() on already unpinned post should be idempotent (no event)."""
+        admin_id = UserId(value=uuid4())
+        post.clear_events()
+
+        post.unpin(unpinner_id=admin_id, unpinner_role=MemberRole.ADMIN)
+
+        assert post.is_pinned is False
+        assert len(post.events) == 0
+
+    def test_unpin_deleted_post_raises_error(self, post: Post, author_id: UserId) -> None:
+        """Post.unpin() on deleted post should raise PostAlreadyDeletedError."""
+        post.delete(deleter_id=author_id)
+        admin_id = UserId(value=uuid4())
+
+        with pytest.raises(PostAlreadyDeletedError):
+            post.unpin(unpinner_id=admin_id, unpinner_role=MemberRole.ADMIN)

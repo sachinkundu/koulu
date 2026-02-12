@@ -37,3 +37,5 @@ class GetFeedQuery:
     category_id: UUID | None = None
     limit: int = 20
     offset: int = 0
+    sort: str = "new"
+    cursor: str | None = None

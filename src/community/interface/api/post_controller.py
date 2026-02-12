@@ -12,8 +12,10 @@ from src.community.application.commands import (
     DeletePostCommand,
     LikePostCommand,
     LockPostCommand,
+    PinPostCommand,
     UnlikePostCommand,
     UnlockPostCommand,
+    UnpinPostCommand,
     UpdatePostCommand,
 )
 from src.community.application.handlers import (
@@ -23,14 +25,17 @@ from src.community.application.handlers import (
     GetPostHandler,
     LikePostHandler,
     LockPostHandler,
+    PinPostHandler,
     UnlikePostHandler,
     UnlockPostHandler,
+    UnpinPostHandler,
     UpdatePostHandler,
 )
 from src.community.application.queries import GetFeedQuery, GetPostQuery
 from src.community.domain.exceptions import (
     CannotDeletePostError,
     CannotLockPostError,
+    CannotPinPostError,
     CategoryNotFoundError,
     CommunityDomainError,
     NotCommunityMemberError,
@@ -41,9 +46,10 @@ from src.community.domain.exceptions import (
     PostNotFoundError,
     PostTitleRequiredError,
     PostTitleTooLongError,
+    RateLimitExceededError,
 )
-from src.community.infrastructure.persistence.models import CommunityModel
 from src.community.domain.value_objects import PostId
+from src.community.infrastructure.persistence.models import CommunityModel
 from src.community.interface.api.dependencies import (
     CommentRepositoryDep,
     CurrentUserIdDep,
@@ -55,8 +61,10 @@ from src.community.interface.api.dependencies import (
     get_get_post_handler,
     get_like_post_handler,
     get_lock_post_handler,
+    get_pin_post_handler,
     get_unlike_post_handler,
     get_unlock_post_handler,
+    get_unpin_post_handler,
     get_update_post_handler,
 )
 from src.community.interface.api.schemas import (
@@ -129,8 +137,18 @@ async def get_feed(
     limit: int = 20,
     offset: int = 0,
     category_id: UUID | None = None,
+    sort: str = "hot",
+    cursor: str | None = None,
 ) -> FeedResponse:
     """Get the community feed (list of posts)."""
+    # Validate sort parameter
+    valid_sorts = ("hot", "new", "top")
+    if sort not in valid_sorts:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid sort parameter. Must be one of: {', '.join(valid_sorts)}",
+        )
+
     try:
         query = GetFeedQuery(
             community_id=community_id,
@@ -138,13 +156,19 @@ async def get_feed(
             category_id=category_id,
             limit=min(limit, 100),  # Cap at 100 posts
             offset=offset,
+            sort=sort,
+            cursor=cursor,
         )
-        posts = await handler.handle(query)
+        feed_result = await handler.handle(query)
 
-        logger.info("get_feed_api_success", community_id=str(community_id), count=len(posts))
+        logger.info(
+            "get_feed_api_success",
+            community_id=str(community_id),
+            count=len(feed_result.posts),
+        )
 
         # Fetch author profiles for all posts
-        author_ids = [post.author_id.value for post in posts]
+        author_ids = [post.author_id.value for post in feed_result.posts]
         profiles_result = await session.execute(
             select(ProfileModel).where(ProfileModel.user_id.in_(author_ids))
         )
@@ -153,16 +177,14 @@ async def get_feed(
         # Check which posts current user has liked
         user_id = UserId(value=current_user_id)
         liked_post_ids: set[UUID] = set()
-        for post in posts:
-            reaction = await reaction_repo.find_by_user_and_target(
-                user_id, "post", post.id.value
-            )
+        for post in feed_result.posts:
+            reaction = await reaction_repo.find_by_user_and_target(user_id, "post", post.id.value)
             if reaction is not None:
                 liked_post_ids.add(post.id.value)
 
         # Convert domain entities to response models with author info
         post_responses = []
-        for post in posts:
+        for post in feed_result.posts:
             author_profile = profiles_map.get(post.author_id.value)
             author = None
             if author_profile:
@@ -198,9 +220,9 @@ async def get_feed(
             )
 
         return FeedResponse(
-            items=post_responses,  # Frontend expects 'items'
-            cursor=None,  # TODO: Implement cursor-based pagination
-            has_more=False,  # TODO: Calculate based on total posts available
+            items=post_responses,
+            cursor=feed_result.cursor,
+            has_more=feed_result.has_more,
         )
 
     except NotCommunityMemberError as e:
@@ -249,6 +271,11 @@ async def create_post(
         logger.info("create_post_api_success", post_id=str(post_id))
         return CreatePostResponse(id=post_id.value)
 
+    except RateLimitExceededError as e:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=str(e),
+        ) from e
     except NotCommunityMemberError as e:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -315,9 +342,7 @@ async def get_post(
 
         # Check if current user liked this post and get counts
         user_id = UserId(value=current_user_id)
-        reaction = await reaction_repo.find_by_user_and_target(
-            user_id, "post", post.id.value
-        )
+        reaction = await reaction_repo.find_by_user_and_target(user_id, "post", post.id.value)
         like_count = await reaction_repo.count_by_target("post", post.id.value)
         c_count = await comment_repo.count_by_post(post.id)
 
@@ -543,6 +568,89 @@ async def unlock_post(
         ) from e
     except CommunityDomainError as e:
         logger.error("unlock_post_domain_error", error=str(e), post_id=str(post_id))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+
+
+# ============================================================================
+# Pin/Unpin Endpoints
+# ============================================================================
+
+
+@router.post(
+    "/{post_id}/pin",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        401: {"model": ErrorResponse, "description": "Not authenticated"},
+        403: {"model": ErrorResponse, "description": "Not authorized to pin"},
+        404: {"model": ErrorResponse, "description": "Post not found"},
+    },
+)
+async def pin_post(
+    post_id: UUID,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[PinPostHandler, Depends(get_pin_post_handler)],
+) -> None:
+    """Pin a post to the top of the feed."""
+    try:
+        command = PinPostCommand(post_id=post_id, pinner_id=current_user_id)
+        await handler.handle(command)
+
+        logger.info("pin_post_api_success", post_id=str(post_id))
+
+    except PostNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        ) from e
+    except (NotCommunityMemberError, CannotPinPostError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        ) from e
+    except CommunityDomainError as e:
+        logger.error("pin_post_domain_error", error=str(e), post_id=str(post_id))
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+
+
+@router.delete(
+    "/{post_id}/pin",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        401: {"model": ErrorResponse, "description": "Not authenticated"},
+        403: {"model": ErrorResponse, "description": "Not authorized to unpin"},
+        404: {"model": ErrorResponse, "description": "Post not found"},
+    },
+)
+async def unpin_post_endpoint(
+    post_id: UUID,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[UnpinPostHandler, Depends(get_unpin_post_handler)],
+) -> None:
+    """Unpin a post."""
+    try:
+        command = UnpinPostCommand(post_id=post_id, unpinner_id=current_user_id)
+        await handler.handle(command)
+
+        logger.info("unpin_post_api_success", post_id=str(post_id))
+
+    except PostNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        ) from e
+    except (NotCommunityMemberError, CannotPinPostError) as e:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(e),
+        ) from e
+    except CommunityDomainError as e:
+        logger.error("unpin_post_domain_error", error=str(e), post_id=str(post_id))
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),

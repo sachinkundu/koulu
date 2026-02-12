@@ -75,5 +75,7 @@ async def join_community(
     await member_repo.save(member)
     await session.commit()
 
-    logger.info("community_join_success", user_id=str(current_user_id), community_id=str(community_id))
+    logger.info(
+        "community_join_success", user_id=str(current_user_id), community_id=str(community_id)
+    )
     return MessageResponse(message="Joined community successfully")

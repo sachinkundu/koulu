@@ -149,7 +149,9 @@ async def get_post_comments(
     comments_with_likes = await handler.handle(query)
 
     # Fetch author profiles
-    author_ids = [cwl.comment.author_id.value for cwl in comments_with_likes if cwl.comment.author_id]
+    author_ids = [
+        cwl.comment.author_id.value for cwl in comments_with_likes if cwl.comment.author_id
+    ]
     profiles_map: dict[UUID, ProfileModel] = {}
     if author_ids:
         profiles_result = await session.execute(

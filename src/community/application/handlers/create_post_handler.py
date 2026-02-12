@@ -13,6 +13,7 @@ from src.community.domain.repositories import (
     IMemberRepository,
     IPostRepository,
 )
+from src.community.domain.services import IRateLimiter
 from src.community.domain.value_objects import (
     CategoryId,
     CommunityId,
@@ -34,11 +35,13 @@ class CreatePostHandler:
         post_repository: IPostRepository,
         category_repository: ICategoryRepository,
         member_repository: IMemberRepository,
+        rate_limiter: IRateLimiter,
     ) -> None:
         """Initialize with dependencies."""
         self._post_repository = post_repository
         self._category_repository = category_repository
         self._member_repository = member_repository
+        self._rate_limiter = rate_limiter
 
     async def handle(self, command: CreatePostCommand) -> PostId:
         """
@@ -66,6 +69,9 @@ class CreatePostHandler:
         # Convert to value objects
         community_id = CommunityId(command.community_id)
         author_id = UserId(command.author_id)
+
+        # Check rate limit before proceeding
+        await self._rate_limiter.check_rate_limit(author_id, "create_post")
 
         # Check author is a member of the community
         member = await self._member_repository.get_by_user_and_community(author_id, community_id)

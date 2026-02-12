@@ -1,13 +1,12 @@
 """BDD step definitions for community feed.
 
-Total: 70 scenarios (39 active, 31 skipped)
+Total: 70 scenarios (58 active, 12 skipped)
 
-Phase 1 (15 active, 1 skipped):
+Phase 1 (15 active):
 - Post creation (8 scenarios)
 - Post editing (2 scenarios)
 - Post deletion (4 scenarios: own, admin, moderator, cannot-delete)
 - Cascade delete (1 scenario)
-- Skipped: Rate limit prevents excessive posting (1 - not yet implemented)
 
 Phase 2 (24 active):
 - Post locking (4 scenarios)
@@ -16,14 +15,20 @@ Phase 2 (24 active):
 - Reactions: like/unlike posts & comments (8 scenarios)
 - Unauthenticated like (1 scenario)
 
-Phase 3 (8 skipped):
+Phase 3 (19 active):
 - Pinning (4 scenarios)
-- Rate limiting for posting (1 scenario)
-- Permissions summary (3 scenarios: admin, moderator, member)
+- Rate limiting (1 scenario)
+- Feed sorting: Hot, New, Top (3 scenarios)
+- Pinned posts always first (1 scenario)
+- Filter by category (1 scenario)
+- Cursor pagination (1 scenario)
+- Empty feed (1 scenario)
+- Category CRUD (7 scenarios)
 
-Phase 4 (23 skipped):
-- Categories (8 scenarios)
-- Feed display & sorting (9 scenarios)
+Phase 4 (12 skipped):
+- Permissions summary (3 scenarios: admin, moderator, member)
+- Admin moves post to different category (1 scenario)
+- Unauthenticated/non-member feed access (2 scenarios)
 - Post detail view (2 scenarios)
 - Edge cases (4 scenarios)
 
@@ -40,154 +45,143 @@ from httpx import AsyncClient
 from pytest_bdd import given, parsers, scenario, scenarios, then, when
 
 # ============================================================================
-# PHASE 3 SCENARIOS - SKIPPED (Pinning & Permissions Summary)
+# PHASE 3 SCENARIOS (Pinning, Rate Limiting, Permissions Summary)
 # These must be declared BEFORE scenarios() so they don't auto-generate.
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 3: Pinning endpoints not yet implemented")
 @scenario("feed.feature", "Admin pins an important post")
 def test_admin_pins_an_important_post() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Pinning endpoints not yet implemented")
 @scenario("feed.feature", "Moderator pins a post")
 def test_moderator_pins_a_post() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Pinning endpoints not yet implemented")
 @scenario("feed.feature", "Admin unpins a post")
 def test_admin_unpins_a_post() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Pinning endpoints not yet implemented")
 @scenario("feed.feature", "Regular member cannot pin posts")
 def test_regular_member_cannot_pin_posts() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Permissions summary testing requires comprehensive role checks")
+@pytest.mark.skip(reason="Phase 4: Permissions summary testing requires comprehensive role checks")
 @scenario("feed.feature", "Admin role has full permissions")
 def test_admin_role_has_full_permissions() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Permissions summary testing requires comprehensive role checks")
+@pytest.mark.skip(reason="Phase 4: Permissions summary testing requires comprehensive role checks")
 @scenario("feed.feature", "Moderator has moderation permissions")
 def test_moderator_has_moderation_permissions() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Permissions summary testing requires comprehensive role checks")
+@pytest.mark.skip(reason="Phase 4: Permissions summary testing requires comprehensive role checks")
 @scenario("feed.feature", "Member has basic permissions")
 def test_member_has_basic_permissions() -> None:
     pass
 
 
 # ============================================================================
-# PHASE 3 - Rate Limiting (not yet implemented)
+# PHASE 3 - Rate Limiting
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 3: Rate limiting not yet implemented with Redis")
 @scenario("feed.feature", "Rate limit prevents excessive posting")
 def test_rate_limit_prevents_excessive_posting() -> None:
     pass
 
 
 # ============================================================================
-# PHASE 4 SCENARIOS - SKIPPED (Categories, Feed, Post Detail, Edge Cases)
+# SLICE 3 SCENARIOS - Category CRUD (7 active, 1 skipped)
+# These must be declared BEFORE scenarios() so they don't auto-generate.
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD not yet implemented")
 @scenario("feed.feature", "Admin creates a new category")
 def test_admin_creates_a_new_category() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD not yet implemented")
 @scenario("feed.feature", "Admin updates a category")
 def test_admin_updates_a_category() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD not yet implemented")
 @scenario("feed.feature", "Admin deletes empty category")
 def test_admin_deletes_empty_category() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD not yet implemented")
 @scenario("feed.feature", "Cannot delete category with posts")
 def test_cannot_delete_category_with_posts() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD not yet implemented")
 @scenario("feed.feature", "Category name must be unique")
 def test_category_name_must_be_unique() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD not yet implemented")
 @scenario("feed.feature", "Member cannot create categories")
 def test_member_cannot_create_categories() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD not yet implemented")
 @scenario("feed.feature", "Moderator cannot create categories")
 def test_moderator_cannot_create_categories() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD not yet implemented")
+@pytest.mark.skip(
+    reason="Phase 4: Move post to category requires post update with category_id by name lookup"
+)
 @scenario("feed.feature", "Admin moves post to different category")
 def test_admin_moves_post_to_different_category() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Feed display not yet implemented")
+# ============================================================================
+# PHASE 4 SCENARIOS - SKIPPED (Feed Display, Post Detail, Edge Cases)
+# ============================================================================
+
+
 @scenario("feed.feature", "View feed with Hot sorting (default)")
 def test_view_feed_with_hot_sorting_default() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Feed display not yet implemented")
 @scenario("feed.feature", "View feed with New sorting")
 def test_view_feed_with_new_sorting() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Feed display not yet implemented")
 @scenario("feed.feature", "View feed with Top sorting")
 def test_view_feed_with_top_sorting() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Feed display not yet implemented")
 @scenario("feed.feature", "Pinned posts always appear first")
 def test_pinned_posts_always_appear_first() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Feed display not yet implemented")
 @scenario("feed.feature", "Filter feed by category")
 def test_filter_feed_by_category() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Feed display not yet implemented")
 @scenario("feed.feature", "Paginate feed with cursor")
 def test_paginate_feed_with_cursor() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Feed display not yet implemented")
 @scenario("feed.feature", "Empty feed shows appropriate message")
 def test_empty_feed_shows_appropriate_message() -> None:
     pass
@@ -708,6 +702,21 @@ async def event_published(event_name: str, client: AsyncClient, context: dict[st
     elif event_name == "CommentUnliked":
         response = context.get("unlike_comment_response")
         assert response is not None and response.status_code == 200
+    elif event_name == "PostPinned":
+        response = context.get("pin_response")
+        assert response is not None and response.status_code == 204
+    elif event_name == "PostUnpinned":
+        response = context.get("unpin_response")
+        assert response is not None and response.status_code == 204
+    elif event_name == "CategoryCreated":
+        response = context.get("category_response")
+        assert response is not None and response.status_code == 201
+    elif event_name == "CategoryUpdated":
+        response = context.get("category_response")
+        assert response is not None and response.status_code == 200
+    elif event_name == "CategoryDeleted":
+        response = context.get("delete_response")
+        assert response is not None and response.status_code == 204
 
 
 @then(parsers.parse('the post should have an image at "{url}"'))
@@ -725,7 +734,7 @@ async def post_creation_fails(
 ) -> None:
     """Verify post creation failed with specific error."""
     response = context["post_response"]
-    assert response.status_code in (400, 401, 404), (
+    assert response.status_code in (400, 401, 404, 429), (
         f"Expected error status, got {response.status_code}"
     )
 
@@ -822,29 +831,50 @@ async def deletion_fails(error_message: str, client: AsyncClient, context: dict[
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 2: Rate limiting will be implemented with Redis integration")
 @given("I have created 10 posts in the last hour")
 async def given_created_10_posts(client: AsyncClient, context: dict[str, Any]) -> None:
     """Create 10 posts for rate limiting test - given variant."""
-    pass
+    token = context["auth_token"]
+    for i in range(10):
+        response = await client.post(
+            "/api/v1/community/posts",
+            json={"title": f"Rate limit post {i + 1}", "content": f"Content {i + 1}"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 201, (
+            f"Post {i + 1} creation failed: {response.status_code} {response.text}"
+        )
 
 
-@pytest.mark.skip(reason="Phase 2: Rate limiting will be implemented with Redis integration")
 @when("I have created 10 posts in the last hour")
 async def created_10_posts(client: AsyncClient, context: dict[str, Any]) -> None:
     """Create 10 posts for rate limiting test."""
-    pass
+    token = context["auth_token"]
+    for i in range(10):
+        response = await client.post(
+            "/api/v1/community/posts",
+            json={"title": f"Rate limit post {i + 1}", "content": f"Content {i + 1}"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 201, (
+            f"Post {i + 1} creation failed: {response.status_code} {response.text}"
+        )
 
 
-@pytest.mark.skip(reason="Phase 2: Rate limiting will be implemented with Redis integration")
 @when("I attempt to create another post")
 async def attempt_create_another_post(client: AsyncClient, context: dict[str, Any]) -> None:
     """Attempt to create post when rate limited."""
-    pass
+    token = context["auth_token"]
+    response = await client.post(
+        "/api/v1/community/posts",
+        json={"title": "One more post", "content": "Should be rate limited"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["post_response"] = response
 
 
 @pytest.mark.skip(
-    reason="Phase 2: Admin permissions will be implemented with role-based authorization"
+    reason="Phase 4: Admin permissions will be implemented with role-based authorization"
 )
 @when("I delete the member's post")
 async def delete_member_post(client: AsyncClient, context: dict[str, Any]) -> None:
@@ -860,7 +890,7 @@ async def delete_member_post(client: AsyncClient, context: dict[str, Any]) -> No
 
 
 @pytest.mark.skip(
-    reason="Phase 2: Admin permissions will be implemented with role-based authorization"
+    reason="Phase 4: Admin permissions will be implemented with role-based authorization"
 )
 @then(parsers.parse('a "{event}" event should be published with admin user_id'))
 async def event_published_with_admin(
@@ -916,6 +946,39 @@ async def post_locked(client: AsyncClient, context: dict[str, Any]) -> None:
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert lock_response.status_code == 204, f"Lock failed: {lock_response.text}"
+
+
+@given("a post exists and is pinned")
+async def post_pinned(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Create a pinned post (requires an admin user in context)."""
+    # Create a post first using the first user available
+    first_email = list(context["users"].keys())[0]
+    token = await _get_auth_token(client, first_email)
+
+    response = await client.post(
+        "/api/v1/posts",
+        json={"title": "Pinned Post", "content": "This post will be pinned"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 201, f"Post creation failed: {response.text}"
+    post_id = response.json()["id"]
+    context["post_id"] = post_id
+
+    # Find an admin to pin it
+    admin_email = None
+    for email, data in context["users"].items():
+        if data["member"].role == "ADMIN":
+            admin_email = email
+            break
+
+    assert admin_email is not None, "Need an admin user to pin"
+
+    admin_token = await _get_auth_token(client, admin_email)
+    pin_response = await client.post(
+        f"/api/v1/posts/{post_id}/pin",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert pin_response.status_code == 204, f"Pin failed: {pin_response.text}"
 
 
 @given(parsers.parse('a post exists with title "{title}"'))
@@ -1202,6 +1265,48 @@ async def attempt_lock_post(client: AsyncClient, context: dict[str, Any]) -> Non
         headers={"Authorization": f"Bearer {token}"},
     )
     context["lock_response"] = response
+
+
+# -------------- WHEN STEPS (Pinning) ------------------
+
+
+@when("I pin the post")
+async def pin_the_post(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Pin a post."""
+    token = context["auth_token"]
+    post_id = context["post_id"]
+
+    response = await client.post(
+        f"/api/v1/posts/{post_id}/pin",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["pin_response"] = response
+
+
+@when("I unpin the post")
+async def unpin_the_post(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Unpin a post."""
+    token = context["auth_token"]
+    post_id = context["post_id"]
+
+    response = await client.delete(
+        f"/api/v1/posts/{post_id}/pin",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["unpin_response"] = response
+
+
+@when("I attempt to pin the post")
+async def attempt_pin_the_post(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Attempt to pin a post (may fail)."""
+    token = context["auth_token"]
+    post_id = context["post_id"]
+
+    response = await client.post(
+        f"/api/v1/posts/{post_id}/pin",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["pin_response"] = response
 
 
 @when(parsers.parse('I add a comment with content "{content}"'))
@@ -1550,6 +1655,73 @@ async def lock_fails(error_message: str, client: AsyncClient, context: dict[str,
     )
 
 
+# -------------- THEN STEPS (Pinning) ------------------
+
+
+@then("the post should be pinned successfully")
+async def post_pinned_successfully(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify post was pinned."""
+    response = context["pin_response"]
+    assert response.status_code == 204, f"Expected 204, got {response.status_code}: {response.text}"
+
+
+@then("the post should appear at the top of the feed")
+async def post_at_top_of_feed(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify pinned post appears first in feed."""
+    token = context["auth_token"]
+
+    response = await client.get(
+        "/api/v1/posts",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    items = response.json()["items"]
+    assert len(items) > 0
+    # The pinned post should be first
+    post_id = context["post_id"]
+    assert items[0]["id"] == post_id
+    assert items[0]["is_pinned"] is True
+
+
+@then("the post should no longer be pinned")
+async def post_no_longer_pinned(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify post was unpinned."""
+    response = context["unpin_response"]
+    assert response.status_code == 204, f"Expected 204, got {response.status_code}: {response.text}"
+
+
+@then("the post should appear in normal feed order")
+async def post_in_normal_order(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify unpinned post is in normal order."""
+    token = context["auth_token"]
+    post_id = context["post_id"]
+
+    response = await client.get(
+        "/api/v1/posts",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    items = response.json()["items"]
+    # Find the post - it should not be pinned
+    post = next((p for p in items if p["id"] == post_id), None)
+    if post:
+        assert post["is_pinned"] is False
+
+
+@then(parsers.parse('the pin should fail with error "{error_message}"'))
+async def pin_fails(error_message: str, client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify pin failed with specific error."""
+    response = context["pin_response"]
+    assert response.status_code in (400, 403, 404), (
+        f"Expected error status, got {response.status_code}: {response.text}"
+    )
+    error_data = response.json()
+    error_text = error_data.get("detail", str(error_data))
+    assert error_message.lower() in error_text.lower(), (
+        f"Expected '{error_message}' in error, got: {error_text}"
+    )
+
+
 @then(parsers.parse('the reply should fail with error "{error_message}"'))
 async def reply_fails(error_message: str, client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify reply failed."""
@@ -1861,77 +2033,255 @@ async def like_fails(error_message: str, client: AsyncClient, context: dict[str,
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with sorting strategies")
 @when('I view the feed with "Hot" sorting')
 async def view_feed_hot(client: AsyncClient, context: dict[str, Any]) -> None:
     """View feed with Hot sorting."""
-    pass
+    token = context["auth_token"]
+    response = await client.get(
+        "/api/v1/community/posts?sort=hot",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, f"Feed request failed: {response.text}"
+    context["feed_response"] = response.json()
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with admin permissions")
 @when("I create a category with:")
-async def create_category(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Create a category."""
-    pass
+async def create_category_with_data(
+    client: AsyncClient, context: dict[str, Any], datatable: list[dict[str, str]]
+) -> None:
+    """Create a category with data from datatable."""
+    token = context["auth_token"]
+    cat_data: dict[str, str] = {}
+    for row in datatable:
+        key = row.get("field") or list(row.keys())[0]
+        value = row.get("value") or list(row.values())[0]
+        cat_data[key] = value
+
+    response = await client.post(
+        "/api/v1/community/categories",
+        json=cat_data,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["category_response"] = response
+    if response.status_code == 201:
+        context["created_category_id"] = response.json()["id"]
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with pagination")
 @when("I view the feed")
 async def view_feed(client: AsyncClient, context: dict[str, Any]) -> None:
     """View the feed."""
-    pass
+    token = context["auth_token"]
+    response = await client.get(
+        "/api/v1/community/posts",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, f"Feed request failed: {response.text}"
+    context["feed_response"] = response.json()
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with sorting strategies")
 @then("posts should be ordered")
 async def posts_ordered(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify post order."""
-    pass
+    """Verify post order - generic step (order checked by specific steps)."""
+    feed = context["feed_response"]
+    assert len(feed["items"]) > 0, "Feed should not be empty"
 
 
 # Additional Phase 4 steps - Category management, feed sorting, pagination
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with admin permissions")
 @given(parsers.parse('a category exists with name "{name}"'))
-async def category_exists(name: str, client: AsyncClient, context: dict[str, Any]) -> None:
-    """Create a category."""
-    pass
+async def category_exists_with_name(
+    name: str, client: AsyncClient, context: dict[str, Any]
+) -> None:
+    """Ensure a category with given name exists; look up existing or create via API."""
+    # First check if category already exists (e.g. from Background)
+    categories_resp = await client.get("/api/v1/community/categories")
+    if categories_resp.status_code == 200:
+        for cat in categories_resp.json():
+            if cat["name"] == name:
+                context["category_id"] = cat["id"]
+                context["category_name"] = name
+                return
+
+    # Category doesn't exist yet - create via API
+    admin_email = None
+    for email, data in context.get("users", {}).items():
+        if data["member"].role == "ADMIN":
+            admin_email = email
+            break
+    assert admin_email is not None, "Need an admin user to create category"
+
+    token = await _get_auth_token(client, admin_email)
+    slug = name.lower().replace(" ", "-").replace("&", "and")
+    response = await client.post(
+        "/api/v1/community/categories",
+        json={"name": name, "slug": slug, "emoji": "📁"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 201, f"Category creation failed: {response.text}"
+    context["category_id"] = response.json()["id"]
+    context["category_name"] = name
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with admin permissions")
 @given("the category has no posts")
 async def category_has_no_posts(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify category is empty."""
-    pass
+    """Category has no posts - just verify state (category was just created)."""
+    pass  # Category was just created, so no posts
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with admin permissions")
 @given(parsers.parse("the category has {count:d} posts"))
 async def category_has_posts(count: int, client: AsyncClient, context: dict[str, Any]) -> None:
-    """Create posts in category."""
-    pass
+    """Create posts in the category."""
+    first_email = list(context["users"].keys())[0]
+    token = await _get_auth_token(client, first_email)
+    category_name = context.get("category_name", "General")
+
+    for i in range(count):
+        response = await client.post(
+            "/api/v1/community/posts",
+            json={
+                "title": f"Post {i + 1} in category",
+                "content": f"Content for post {i + 1}",
+                "category_name": category_name,
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 201, f"Post {i + 1} creation failed: {response.text}"
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with sorting strategies")
 @given("the following posts exist:")
-async def posts_exist(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Create multiple posts from datatable."""
-    pass
+async def posts_exist(
+    client: AsyncClient,
+    db_session: Any,
+    context: dict[str, Any],
+    datatable: list[list[str]],
+) -> None:
+    """Create multiple posts from datatable.
+
+    Datatable format: first row is headers, subsequent rows are data.
+    Supported columns: title, created_hours_ago, like_count, comment_count, is_pinned, category
+    """
+    from datetime import UTC, datetime, timedelta
+    from uuid import uuid4
+
+    from sqlalchemy import select
+
+    from src.community.infrastructure.persistence.models import (
+        CommentModel,
+        PostModel,
+        ReactionModel,
+    )
+    from src.identity.infrastructure.persistence.models import UserModel
+
+    # Get auth token for the first user
+    first_email = list(context["users"].keys())[0]
+    token = await _get_auth_token(client, first_email)
+
+    # Parse datatable: handle both list[list[str]] (raw) and list[dict[str, str]] formats
+    if isinstance(datatable[0], dict):
+        rows = datatable
+    else:
+        headers = datatable[0]
+        rows = [dict(zip(headers, row, strict=False)) for row in datatable[1:]]
+
+    created_post_ids = []
+    for row in rows:
+        title = row.get("title", "Test Post")
+        category_name = row.get("category")
+        if not category_name:
+            # Use first available category
+            categories = context.get("categories", {})
+            category_name = list(categories.keys())[0] if categories else "General"
+
+        # Create post via API
+        response = await client.post(
+            "/api/v1/community/posts",
+            json={
+                "title": title,
+                "content": f"Content for {title}",
+                "category_name": category_name,
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 201, f"Post creation failed: {response.text}"
+        post_id = response.json()["id"]
+        created_post_ids.append(post_id)
+
+        # Now manipulate DB directly for metadata
+        result = await db_session.execute(select(PostModel).where(PostModel.id == post_id))
+        post_model = result.scalar_one()
+
+        # Set created_hours_ago
+        if row.get("created_hours_ago"):
+            hours = float(row["created_hours_ago"])
+            post_model.created_at = datetime.now(UTC) - timedelta(hours=hours)
+
+        # Set is_pinned
+        if row.get("is_pinned"):
+            pinned = str(row["is_pinned"]).lower() == "true"
+            post_model.is_pinned = pinned
+            if pinned:
+                post_model.pinned_at = datetime.now(UTC)
+
+        await db_session.flush()
+
+        # Create reactions (likes) directly in DB
+        if row.get("like_count"):
+            like_count = int(row["like_count"])
+            # Get existing users to create reactions from, or create fake ones
+            users_result = await db_session.execute(select(UserModel))
+            existing_users = list(users_result.scalars().all())
+
+            for i in range(like_count):
+                liker_id = existing_users[i].id if i < len(existing_users) else uuid4()
+                reaction = ReactionModel(
+                    id=uuid4(),
+                    user_id=liker_id,
+                    target_type="post",
+                    target_id=post_id,
+                )
+                db_session.add(reaction)
+
+        # Create comments directly in DB
+        if row.get("comment_count"):
+            comment_count = int(row["comment_count"])
+            first_user_id = context["users"][first_email]["user"].id
+            for i in range(comment_count):
+                comment = CommentModel(
+                    id=uuid4(),
+                    post_id=post_id,
+                    author_id=first_user_id,
+                    content=f"Auto-generated comment {i + 1}",
+                )
+                db_session.add(comment)
+
+        await db_session.commit()
+
+    context["created_post_ids"] = created_post_ids
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with pagination")
 @given(parsers.parse("{count:d} posts exist in the community"))
 async def many_posts_exist(count: int, client: AsyncClient, context: dict[str, Any]) -> None:
     """Create many posts."""
-    pass
+    first_email = list(context["users"].keys())[0]
+    token = await _get_auth_token(client, first_email)
+
+    for i in range(count):
+        response = await client.post(
+            "/api/v1/community/posts",
+            json={
+                "title": f"Post {i + 1}",
+                "content": f"Content for post {i + 1}",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 201, f"Post {i + 1} creation failed: {response.text}"
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with empty state")
 @given("no posts exist in the community")
 async def no_posts_exist(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Ensure no posts exist."""
-    pass
+    """Ensure no posts exist - fresh DB has no posts."""
+    pass  # Each test gets a clean DB, so no posts exist by default
 
 
 @pytest.mark.skip(reason="Phase 4: Non-member access will be implemented with membership checks")
@@ -1941,13 +2291,25 @@ async def user_not_member(email: str, client: AsyncClient, context: dict[str, An
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with sorting strategies")
 @given(parsers.parse('a post exists in category "{category}"'))
 async def post_in_category_given(
     category: str, client: AsyncClient, context: dict[str, Any]
 ) -> None:
-    """Create post in specific category."""
-    pass
+    """Create a post in a specific category."""
+    first_email = list(context["users"].keys())[0]
+    token = await _get_auth_token(client, first_email)
+
+    response = await client.post(
+        "/api/v1/community/posts",
+        json={
+            "title": "Post in category",
+            "content": "Content",
+            "category_name": category,
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 201, f"Post creation failed: {response.text}"
+    context["post_id"] = response.json()["id"]
 
 
 @pytest.mark.skip(reason="Phase 4: Comments will be implemented in Phase 3")
@@ -2006,44 +2368,79 @@ async def concurrent_edits(client: AsyncClient, context: dict[str, Any]) -> None
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with admin permissions")
 @when("I update the category with:")
-async def update_category(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Update a category."""
-    pass
+async def update_category_with_data(
+    client: AsyncClient, context: dict[str, Any], datatable: list[dict[str, str]]
+) -> None:
+    """Update a category with data from datatable."""
+    token = context["auth_token"]
+    category_id = context["category_id"]
+    update_data: dict[str, str] = {}
+    for row in datatable:
+        key = row.get("field") or list(row.keys())[0]
+        value = row.get("value") or list(row.values())[0]
+        update_data[key] = value
+
+    response = await client.patch(
+        f"/api/v1/community/categories/{category_id}",
+        json=update_data,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["category_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with admin permissions")
 @when("I delete the category")
-async def delete_category(client: AsyncClient, context: dict[str, Any]) -> None:
+async def delete_the_category(client: AsyncClient, context: dict[str, Any]) -> None:
     """Delete a category."""
-    pass
+    token = context["auth_token"]
+    category_id = context["category_id"]
+    response = await client.delete(
+        f"/api/v1/community/categories/{category_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["delete_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with admin permissions")
 @when("I attempt to delete the category")
 async def attempt_delete_category(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Attempt to delete category."""
-    pass
+    """Attempt to delete a category (may fail)."""
+    await delete_the_category(client, context)
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with uniqueness validation")
 @when(parsers.parse('I attempt to create a category with name "{name}"'))
 async def attempt_create_category_with_name(
     name: str, client: AsyncClient, context: dict[str, Any]
 ) -> None:
-    """Attempt to create category with specific name."""
-    pass
+    """Attempt to create a category with specific name."""
+    token = context["auth_token"]
+    slug = name.lower().replace(" ", "-").replace("&", "and")
+    response = await client.post(
+        "/api/v1/community/categories",
+        json={"name": name, "slug": slug, "emoji": "📝"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["category_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with admin permissions")
 @when("I attempt to create a category")
 async def attempt_create_category(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Attempt to create category (may fail)."""
-    pass
+    """Attempt to create a category (may fail due to permissions)."""
+    token = context["auth_token"]
+    response = await client.post(
+        "/api/v1/community/categories",
+        json={
+            "name": "Test Category",
+            "slug": "test-category",
+            "emoji": "📝",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["category_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 4: Category management will be implemented with post moving")
+@pytest.mark.skip(
+    reason="Phase 4: Move post to category requires post update with category_id by name lookup"
+)
 @when(parsers.parse('I move the post to category "{category}"'))
 async def move_post_to_category(
     category: str, client: AsyncClient, context: dict[str, Any]
@@ -2052,34 +2449,69 @@ async def move_post_to_category(
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with sorting strategies")
 @when(parsers.parse('I view the feed with "{sort}" sorting'))
 async def view_feed_with_sort(sort: str, client: AsyncClient, context: dict[str, Any]) -> None:
     """View feed with specific sorting."""
-    pass
+    token = context["auth_token"]
+    response = await client.get(
+        f"/api/v1/community/posts?sort={sort.lower()}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, f"Feed request failed: {response.text}"
+    context["feed_response"] = response.json()
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with category filtering")
 @when(parsers.parse('I filter the feed by category "{category}"'))
 async def filter_feed_by_category(
     category: str, client: AsyncClient, context: dict[str, Any]
 ) -> None:
     """Filter feed by category."""
-    pass
+    token = context["auth_token"]
+
+    # Look up category_id from context
+    categories = context.get("categories", {})
+    cat = categories.get(category)
+    assert cat is not None, (
+        f"Category '{category}' not found in context. Available: {list(categories.keys())}"
+    )
+    category_id = cat.id
+
+    response = await client.get(
+        f"/api/v1/community/posts?category_id={category_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, f"Feed request failed: {response.text}"
+    context["feed_response"] = response.json()
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with pagination")
 @when(parsers.parse("I view the feed with limit {limit:d}"))
 async def view_feed_with_limit(limit: int, client: AsyncClient, context: dict[str, Any]) -> None:
     """View feed with pagination limit."""
-    pass
+    token = context["auth_token"]
+    response = await client.get(
+        f"/api/v1/community/posts?limit={limit}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, f"Feed request failed: {response.text}"
+    context["feed_response"] = response.json()
+    # Store cursor for next page requests
+    context["feed_cursor"] = response.json().get("cursor")
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with pagination")
 @when("I request the next page with the cursor")
 async def request_next_page(client: AsyncClient, context: dict[str, Any]) -> None:
     """Request next page of feed."""
-    pass
+    token = context["auth_token"]
+    cursor = context["feed_cursor"]
+    assert cursor is not None, "No cursor available from previous request"
+
+    response = await client.get(
+        f"/api/v1/community/posts?cursor={cursor}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, f"Feed request failed: {response.text}"
+    context["feed_response"] = response.json()
+    context["feed_cursor"] = response.json().get("cursor")
 
 
 @pytest.mark.skip(reason="Phase 4: Feed will be implemented with authentication check")
@@ -2117,120 +2549,151 @@ async def view_post(client: AsyncClient, context: dict[str, Any]) -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with admin permissions")
 @then("the category should be created successfully")
 async def category_created(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify category was created."""
-    pass
+    response = context["category_response"]
+    assert response.status_code == 201, f"Expected 201, got {response.status_code}: {response.text}"
+    assert "id" in response.json()
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with admin permissions")
 @then("the category should appear in the category list")
 async def category_in_list(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify category appears in list."""
-    pass
+    response = await client.get("/api/v1/community/categories")
+    assert response.status_code == 200
+    categories = response.json()
+    category_id = context.get("created_category_id")
+    cat_ids = [c["id"] for c in categories]
+    assert category_id in cat_ids, f"Category {category_id} not found in list"
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with admin permissions")
 @then("the category should be updated successfully")
 async def category_updated(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify category was updated."""
-    pass
+    response = context["category_response"]
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with admin permissions")
 @then("the category should be deleted successfully")
 async def category_deleted(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify category was deleted."""
-    pass
+    response = context["delete_response"]
+    assert response.status_code == 204, f"Expected 204, got {response.status_code}: {response.text}"
 
 
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with validation")
-@then(parsers.parse('the deletion should fail with error "{error_message}"'))
-async def deletion_fails_alt(
-    error_message: str, client: AsyncClient, context: dict[str, Any]
-) -> None:
-    """Verify deletion failed (alt)."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 4: Category CRUD will be implemented with validation")
 @then(parsers.parse('the creation should fail with error "{error_message}"'))
 async def creation_fails(error_message: str, client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify creation failed."""
-    pass
+    """Verify category creation failed."""
+    response = context["category_response"]
+    assert response.status_code in (400, 403, 409), (
+        f"Expected error status, got {response.status_code}"
+    )
+    error_data = response.json()
+    error_text = error_data.get("detail", str(error_data))
+    assert error_message.lower() in error_text.lower(), (
+        f"Expected '{error_message}' in error, got: {error_text}"
+    )
 
 
-@pytest.mark.skip(reason="Phase 4: Category management will be implemented with post moving")
-@then(parsers.parse('the post should be in category "{category}"'))
-async def post_in_category_check(
-    category: str, client: AsyncClient, context: dict[str, Any]
+@then(parsers.re(r'posts should be ordered: "(?P<titles>.+)"'))
+async def posts_ordered_with_titles(
+    client: AsyncClient, context: dict[str, Any], titles: str
 ) -> None:
-    """Verify post is in category."""
-    pass
+    """Verify post order matches expected titles."""
+    expected = [t.strip().strip('"') for t in titles.split('",')]
+    expected = [t.strip('" ') for t in expected]
+    # Clean up: split by '", "' pattern
+    expected = [t.strip() for t in titles.replace('"', "").split(",")]
+    feed = context["feed_response"]
+    actual = [item["title"] for item in feed["items"]]
+    assert actual == expected, f"Expected order {expected}, got {actual}"
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with sorting strategies")
-@then("posts should be ordered:")
-async def posts_ordered_list(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify post order."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with pinned posts")
-@then("pinned posts should appear first:")
-async def pinned_posts_first(client: AsyncClient, context: dict[str, Any]) -> None:
+@then(parsers.re(r'pinned posts should appear first: "(?P<titles>.+)"'))
+async def pinned_posts_first(client: AsyncClient, context: dict[str, Any], titles: str) -> None:
     """Verify pinned posts at top."""
-    pass
+    expected = [t.strip() for t in titles.replace('"', "").split(",")]
+    feed = context["feed_response"]
+    items = feed["items"]
+
+    # Check the first N posts are pinned and match expected titles
+    for i, expected_title in enumerate(expected):
+        assert i < len(items), f"Not enough posts in feed to verify pinned post {i}"
+        assert items[i]["is_pinned"] is True, f"Post at position {i} should be pinned"
+        assert items[i]["title"] == expected_title, (
+            f"Expected pinned post at position {i} to be '{expected_title}', got '{items[i]['title']}'"
+        )
+
+    # Store the count of pinned posts for the next step
+    context["pinned_count"] = len(expected)
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with pinned posts")
-@then("then regular posts:")
-async def then_regular_posts(client: AsyncClient, context: dict[str, Any]) -> None:
+@then(parsers.re(r'then regular posts: "(?P<titles>.+)"'))
+async def then_regular_posts(client: AsyncClient, context: dict[str, Any], titles: str) -> None:
     """Verify regular posts after pinned."""
-    pass
+    expected = [t.strip() for t in titles.replace('"', "").split(",")]
+    feed = context["feed_response"]
+    items = feed["items"]
+    pinned_count = context.get("pinned_count", 0)
+
+    # Check regular posts after the pinned ones
+    for i, expected_title in enumerate(expected):
+        idx = pinned_count + i
+        assert idx < len(items), f"Not enough posts in feed at index {idx}"
+        assert items[idx]["is_pinned"] is False, f"Post at position {idx} should not be pinned"
+        assert items[idx]["title"] == expected_title, (
+            f"Expected regular post at position {idx} to be '{expected_title}', got '{items[idx]['title']}'"
+        )
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with category filtering")
-@then("I should see only posts:")
-async def see_only_posts(client: AsyncClient, context: dict[str, Any]) -> None:
+@then(parsers.re(r'I should see only posts: "(?P<titles>.+)"'))
+async def see_only_posts(client: AsyncClient, context: dict[str, Any], titles: str) -> None:
     """Verify filtered posts."""
-    pass
+    expected = [t.strip() for t in titles.replace('"', "").split(",")]
+    feed = context["feed_response"]
+    actual = [item["title"] for item in feed["items"]]
+    assert set(actual) == set(expected), f"Expected posts {expected}, got {actual}"
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with pagination")
 @then(parsers.parse("I should see {count:d} posts"))
 async def see_n_posts(count: int, client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify post count."""
-    pass
+    feed = context["feed_response"]
+    actual = len(feed["items"])
+    assert actual == count, f"Expected {count} posts, got {actual}"
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with pagination")
 @then("I should receive a cursor for the next page")
 async def receive_cursor(client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify cursor received."""
-    pass
+    feed = context["feed_response"]
+    assert feed["cursor"] is not None, "Expected a cursor for the next page"
+    assert feed["has_more"] is True, "Expected has_more to be True"
+    context["feed_cursor"] = feed["cursor"]
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with pagination")
 @then(parsers.parse("I should see the remaining {count:d} posts"))
 async def see_remaining_posts(count: int, client: AsyncClient, context: dict[str, Any]) -> None:
     """Verify remaining posts."""
-    pass
+    feed = context["feed_response"]
+    actual = len(feed["items"])
+    assert actual == count, f"Expected {count} remaining posts, got {actual}"
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with empty state")
 @then("I should see an empty state message")
 async def see_empty_state(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify empty state shown."""
-    pass
+    """Verify empty state - feed returns empty items list."""
+    feed = context["feed_response"]
+    assert len(feed["items"]) == 0, f"Expected empty feed, got {len(feed['items'])} posts"
 
 
-@pytest.mark.skip(reason="Phase 4: Feed will be implemented with empty state")
 @then(parsers.parse('the message should say "{message}"'))
 async def message_says(message: str, client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify message content."""
-    pass
+    """Verify message content - for API tests, we just verify the feed is empty.
+    The actual message is a frontend concern."""
+    feed = context["feed_response"]
+    assert len(feed["items"]) == 0, "Feed should be empty for empty state message"
 
 
 @pytest.mark.skip(reason="Phase 4: Feed will be implemented with authentication check")
@@ -2418,11 +2881,11 @@ async def see_5_pinned_posts(client: AsyncClient, context: dict[str, Any]) -> No
 
 
 # ============================================================================
-# MISSING STEP DEFINITIONS FOR PHASE 3-4 (Stub implementations)
+# MISSING STEP DEFINITIONS FOR PHASE 4 (Stub implementations)
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 3: Comment threading not yet implemented")
+@pytest.mark.skip(reason="Phase 4: Comment threading not yet implemented")
 @then(parsers.parse('a "{event}" event should be published with parent_comment_id'))
 async def event_with_parent_comment_id(
     event: str, client: AsyncClient, context: dict[str, Any]
@@ -2432,33 +2895,8 @@ async def event_with_parent_comment_id(
     assert response is not None and response.status_code == 201
 
 
-@pytest.mark.skip(reason="Phase 4: Feed sorting not yet implemented")
-@then(parsers.parse("posts should be ordered: {posts}"))
-async def posts_ordered_with_arg(posts: str, client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify posts are in specified order (Phase 4)."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 4: Feed with pinning not yet implemented")
-@then(parsers.parse("pinned posts should appear first: {posts}"))
-async def pinned_posts_first_with_arg(
-    posts: str, client: AsyncClient, context: dict[str, Any]
-) -> None:
-    """Verify pinned posts appear first (Phase 4)."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 4: Feed filtering not yet implemented")
-@then(parsers.parse("I should see only posts: {posts}"))
-async def see_only_posts_with_arg(posts: str, client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify only specified posts are visible (Phase 4)."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 4: Feed with pinning not yet implemented")
-@then(parsers.parse("then regular posts: {posts}"))
-async def then_regular_posts_with_arg(
-    posts: str, client: AsyncClient, context: dict[str, Any]
-) -> None:
-    """Verify regular posts order after pinned posts (Phase 4)."""
-    pass
+# Phase 4 duplicate step stubs removed - replaced by implemented versions above:
+# - posts_ordered_with_titles (parsers.re: posts should be ordered: "...")
+# - pinned_posts_first (parsers.re: pinned posts should appear first: "...")
+# - see_only_posts (parsers.re: I should see only posts: "...")
+# - then_regular_posts (parsers.re: then regular posts: "...")

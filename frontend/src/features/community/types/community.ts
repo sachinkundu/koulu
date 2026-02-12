@@ -61,6 +61,7 @@ export interface PostsQueryParams {
   category_id?: string;
   limit?: number;
   cursor?: string;
+  sort?: 'hot' | 'new' | 'top';
 }
 
 export interface PostsResponse {

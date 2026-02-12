@@ -71,6 +71,18 @@ export async function unlikePost(postId: string): Promise<void> {
 }
 
 // ============================================================================
+// Post Pinning
+// ============================================================================
+
+export async function pinPost(postId: string): Promise<void> {
+  await apiClient.post(`/community/posts/${postId}/pin`);
+}
+
+export async function unpinPost(postId: string): Promise<void> {
+  await apiClient.delete(`/community/posts/${postId}/pin`);
+}
+
+// ============================================================================
 // Comments
 // ============================================================================
 
@@ -98,4 +110,29 @@ export async function likeComment(commentId: string): Promise<void> {
 
 export async function unlikeComment(commentId: string): Promise<void> {
   await apiClient.delete(`/community/comments/${commentId}/like`);
+}
+
+// ============================================================================
+// Category Management
+// ============================================================================
+
+export async function createCategory(data: {
+  name: string;
+  slug: string;
+  emoji: string;
+  description?: string;
+}): Promise<{ id: string }> {
+  const response = await apiClient.post<{ id: string }>('/community/categories', data);
+  return response.data;
+}
+
+export async function updateCategory(
+  id: string,
+  data: { name?: string; emoji?: string; description?: string },
+): Promise<void> {
+  await apiClient.patch(`/community/categories/${id}`, data);
+}
+
+export async function deleteCategory(id: string): Promise<void> {
+  await apiClient.delete(`/community/categories/${id}`);
 }

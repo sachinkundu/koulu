@@ -1,9 +1,10 @@
 """Pytest fixtures for Community BDD tests."""
 
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable, Coroutine, Generator
 from typing import Any
 from uuid import UUID, uuid4
 
+import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +13,7 @@ from src.community.infrastructure.persistence.models import (
     CommunityMemberModel,
     CommunityModel,
 )
+from src.community.infrastructure.services import InMemoryRateLimiter
 from src.identity.infrastructure.persistence.models import ProfileModel, UserModel
 from src.identity.infrastructure.services import Argon2PasswordHasher
 
@@ -19,6 +21,14 @@ from src.identity.infrastructure.services import Argon2PasswordHasher
 CreateCommunityFactory = Callable[..., Coroutine[Any, Any, CommunityModel]]
 CreateCategoryFactory = Callable[..., Coroutine[Any, Any, CategoryModel]]
 CreateMemberFactory = Callable[..., Coroutine[Any, Any, CommunityMemberModel]]
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter() -> Generator[None, None, None]:
+    """Reset rate limiter state between tests."""
+    InMemoryRateLimiter.reset()
+    yield
+    InMemoryRateLimiter.reset()
 
 
 @pytest_asyncio.fixture

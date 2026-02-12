@@ -1,5 +1,9 @@
 """Get feed query handler."""
 
+import base64
+import json
+from dataclasses import dataclass
+
 import structlog
 
 from src.community.application.queries import GetFeedQuery
@@ -10,6 +14,15 @@ from src.community.domain.value_objects import CommunityId
 from src.identity.domain.value_objects import UserId
 
 logger = structlog.get_logger()
+
+
+@dataclass
+class FeedResult:
+    """Result of a feed query with pagination metadata."""
+
+    posts: list[Post]
+    cursor: str | None
+    has_more: bool
 
 
 class GetFeedHandler:
@@ -24,7 +37,7 @@ class GetFeedHandler:
         self._post_repository = post_repository
         self._member_repository = member_repository
 
-    async def handle(self, query: GetFeedQuery) -> list[Post]:
+    async def handle(self, query: GetFeedQuery) -> FeedResult:
         """
         Handle getting the community feed.
 
@@ -32,7 +45,7 @@ class GetFeedHandler:
             query: The get feed query
 
         Returns:
-            List of posts in the feed
+            FeedResult with posts and pagination metadata
 
         Raises:
             NotCommunityMemberError: If requester is not a member
@@ -42,6 +55,7 @@ class GetFeedHandler:
             community_id=str(query.community_id),
             limit=query.limit,
             offset=query.offset,
+            sort=query.sort,
         )
 
         community_id = CommunityId(query.community_id)
@@ -56,16 +70,43 @@ class GetFeedHandler:
                 logger.warning("get_feed_not_member", requester_id=str(requester_id))
                 raise NotCommunityMemberError()
 
-        # Get posts for the feed
+        # Get posts for the feed - request limit + 1 to determine has_more
         from src.community.domain.value_objects import CategoryId
 
         category_id = CategoryId(query.category_id) if query.category_id is not None else None
+        fetch_limit = query.limit + 1
         posts = await self._post_repository.list_by_community(
             community_id=community_id,
             category_id=category_id,
-            limit=query.limit,
+            limit=fetch_limit,
             offset=query.offset,
+            sort=query.sort,
+            cursor=query.cursor,
         )
 
-        logger.info("get_feed_success", community_id=str(community_id), post_count=len(posts))
-        return posts
+        # Determine pagination
+        has_more = len(posts) > query.limit
+        if has_more:
+            posts = posts[: query.limit]
+
+        # Build next cursor
+        next_cursor: str | None = None
+        if has_more:
+            # Decode current offset from cursor or use query offset
+            current_offset = query.offset
+            if query.cursor is not None:
+                try:
+                    cursor_data = json.loads(base64.b64decode(query.cursor).decode())
+                    current_offset = cursor_data.get("offset", 0)
+                except (json.JSONDecodeError, ValueError, KeyError):
+                    pass
+            new_offset = current_offset + query.limit
+            next_cursor = base64.b64encode(json.dumps({"offset": new_offset}).encode()).decode()
+
+        logger.info(
+            "get_feed_success",
+            community_id=str(community_id),
+            post_count=len(posts),
+            has_more=has_more,
+        )
+        return FeedResult(posts=posts, cursor=next_cursor, has_more=has_more)

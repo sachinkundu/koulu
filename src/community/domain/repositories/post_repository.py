@@ -56,6 +56,8 @@ class IPostRepository(ABC):
         category_id: CategoryId | None = None,
         limit: int = 20,
         offset: int = 0,
+        sort: str = "new",
+        cursor: str | None = None,
     ) -> list[Post]:
         """
         List posts in a community.
@@ -65,9 +67,24 @@ class IPostRepository(ABC):
             category_id: Optional category filter
             limit: Maximum number of posts to return
             offset: Number of posts to skip
+            sort: Sort order - "new", "top", or "hot"
+            cursor: Base64-encoded cursor for pagination
 
         Returns:
             List of posts (excluding deleted)
+        """
+        ...
+
+    @abstractmethod
+    async def count_by_category(self, category_id: CategoryId) -> int:
+        """
+        Count posts in a category.
+
+        Args:
+            category_id: The category ID
+
+        Returns:
+            Number of non-deleted posts in the category
         """
         ...
 

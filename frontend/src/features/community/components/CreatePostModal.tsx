@@ -79,8 +79,12 @@ export function CreatePostModal({ isOpen, onClose, onSuccess }: CreatePostModalP
       onSuccess(post);
       onClose();
     } catch (err) {
-      const apiError = err as { response?: { data?: { message?: string } } };
-      setError(apiError.response?.data?.message ?? 'Failed to create post. Please try again.');
+      const apiError = err as { response?: { status?: number; data?: { detail?: string; message?: string } } };
+      if (apiError.response?.status === 429) {
+        setError(apiError.response.data?.detail ?? 'Rate limit exceeded. Try again later.');
+      } else {
+        setError(apiError.response?.data?.detail ?? apiError.response?.data?.message ?? 'Failed to create post. Please try again.');
+      }
     }
   };
 

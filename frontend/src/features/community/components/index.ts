@@ -9,3 +9,4 @@ export * from './AddCommentForm';
 export * from './CommentCard';
 export * from './CommentThread';
 export * from './EditPostModal';
+export * from './SortDropdown';

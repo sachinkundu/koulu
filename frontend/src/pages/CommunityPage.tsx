@@ -6,20 +6,25 @@ import {
   CreatePostInput,
   CreatePostModal,
   FeedPostCard,
+  SortDropdown,
 } from '@/features/community/components';
 import { usePosts } from '@/features/community/hooks';
-import type { Post } from '@/features/community/types';
+import type { Post, PostsQueryParams } from '@/features/community/types';
 
 export function CommunityPage(): JSX.Element {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [selectedSort, setSelectedSort] = useState<'hot' | 'new' | 'top'>('hot');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const projectName = import.meta.env.VITE_PROJECT_NAME ?? 'koulu';
 
-  const { posts, isLoading: postsLoading, error } = usePosts(
-    selectedCategoryId !== null ? { category_id: selectedCategoryId } : undefined
-  );
+  const postsParams: PostsQueryParams = { sort: selectedSort };
+  if (selectedCategoryId !== null) {
+    postsParams.category_id = selectedCategoryId;
+  }
+
+  const { posts, isLoading: postsLoading, error } = usePosts(postsParams);
 
   // Auth check
   if (authLoading) {
@@ -63,6 +68,12 @@ export function CommunityPage(): JSX.Element {
           <CategoryTabs
             selectedCategoryId={selectedCategoryId}
             onCategoryChange={setSelectedCategoryId}
+          />
+
+          {/* Sort dropdown */}
+          <SortDropdown
+            selectedSort={selectedSort}
+            onSortChange={setSelectedSort}
           />
 
           {/* Posts list */}

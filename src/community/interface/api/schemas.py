@@ -42,6 +42,23 @@ class EditCommentRequest(BaseModel):
     content: str = Field(..., min_length=1, max_length=2000)
 
 
+class CreateCategoryRequest(BaseModel):
+    """Request body for creating a category."""
+
+    name: str = Field(..., min_length=1, max_length=100)
+    slug: str = Field(..., min_length=1, max_length=100)
+    emoji: str = Field(..., min_length=1, max_length=10)
+    description: str | None = None
+
+
+class UpdateCategoryRequest(BaseModel):
+    """Request body for updating a category."""
+
+    name: str | None = Field(None, min_length=1, max_length=100)
+    emoji: str | None = Field(None, min_length=1, max_length=10)
+    description: str | None = None
+
+
 # ============================================================================
 # Response Schemas
 # ============================================================================
@@ -60,6 +77,12 @@ class CategoryResponse(BaseModel):
     description: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class CreateCategoryResponse(BaseModel):
+    """Response for successful category creation."""
+
+    id: UUID
 
 
 class CreatePostResponse(BaseModel):

@@ -54,6 +54,22 @@ class UnlockPostCommand:
 
 
 @dataclass(frozen=True)
+class PinPostCommand:
+    """Command to pin a post."""
+
+    post_id: UUID
+    pinner_id: UUID
+
+
+@dataclass(frozen=True)
+class UnpinPostCommand:
+    """Command to unpin a post."""
+
+    post_id: UUID
+    unpinner_id: UUID
+
+
+@dataclass(frozen=True)
 class AddCommentCommand:
     """Command to add a comment to a post."""
 
@@ -110,3 +126,36 @@ class UnlikeCommentCommand:
 
     comment_id: UUID
     user_id: UUID
+
+
+@dataclass(frozen=True)
+class CreateCategoryCommand:
+    """Command to create a new category."""
+
+    community_id: UUID
+    creator_id: UUID
+    name: str
+    slug: str
+    emoji: str
+    description: str | None = None
+
+
+@dataclass(frozen=True)
+class UpdateCategoryCommand:
+    """Command to update a category."""
+
+    category_id: UUID
+    updater_id: UUID
+    community_id: UUID
+    name: str | None = None
+    emoji: str | None = None
+    description: str | None = None
+
+
+@dataclass(frozen=True)
+class DeleteCategoryCommand:
+    """Command to delete a category."""
+
+    category_id: UUID
+    deleter_id: UUID
+    community_id: UUID

@@ -1,6 +1,9 @@
 """SQLAlchemy implementation of post repository."""
 
-from sqlalchemy import select
+import base64
+import json
+
+from sqlalchemy import Float, cast, func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.community.domain.entities import Post
@@ -12,7 +15,11 @@ from src.community.domain.value_objects import (
     PostId,
     PostTitle,
 )
-from src.community.infrastructure.persistence.models import PostModel
+from src.community.infrastructure.persistence.models import (
+    CommentModel,
+    PostModel,
+    ReactionModel,
+)
 from src.identity.domain.value_objects import UserId
 
 
@@ -92,23 +99,106 @@ class SqlAlchemyPostRepository(IPostRepository):
         category_id: CategoryId | None = None,
         limit: int = 20,
         offset: int = 0,
+        sort: str = "new",
+        cursor: str | None = None,
     ) -> list[Post]:
         """List posts in a community (excluding deleted)."""
-        stmt = (
-            select(PostModel)
-            .where(PostModel.community_id == community_id.value, PostModel.is_deleted.is_(False))
-            .order_by(PostModel.is_pinned.desc(), PostModel.created_at.desc())
-            .limit(limit)
-            .offset(offset)
+        # Decode cursor if provided
+        effective_offset = offset
+        if cursor is not None:
+            try:
+                cursor_data = json.loads(base64.b64decode(cursor).decode())
+                effective_offset = cursor_data.get("offset", 0)
+            except (json.JSONDecodeError, ValueError, KeyError):
+                pass
+
+        stmt = select(PostModel).where(
+            PostModel.community_id == community_id.value,
+            PostModel.is_deleted.is_(False),
         )
 
         if category_id is not None:
             stmt = stmt.where(PostModel.category_id == category_id.value)
 
+        # Build sort order - pinned posts always first
+        if sort == "top":
+            # Sort by like_count (reaction count) descending
+            like_count_subq = (
+                select(func.count())
+                .select_from(ReactionModel)
+                .where(
+                    ReactionModel.target_type == "post",
+                    ReactionModel.target_id == PostModel.id,
+                )
+                .correlate(PostModel)
+                .scalar_subquery()
+            )
+            stmt = stmt.order_by(
+                PostModel.is_pinned.desc(),
+                like_count_subq.desc(),
+                PostModel.created_at.desc(),
+            )
+        elif sort == "hot":
+            # Wilson-style hot ranking:
+            # (like_count + comment_count * 2) / (hours_since_creation + 2)^1.5
+            like_count_subq = (
+                select(func.count())
+                .select_from(ReactionModel)
+                .where(
+                    ReactionModel.target_type == "post",
+                    ReactionModel.target_id == PostModel.id,
+                )
+                .correlate(PostModel)
+                .scalar_subquery()
+            )
+            comment_count_subq = (
+                select(func.count())
+                .select_from(CommentModel)
+                .where(
+                    CommentModel.post_id == PostModel.id,
+                    CommentModel.is_deleted.is_(False),
+                )
+                .correlate(PostModel)
+                .scalar_subquery()
+            )
+            hours_since = func.extract(
+                "epoch",
+                func.now() - PostModel.created_at,
+            ) / literal(3600)
+            hot_score = cast(
+                (like_count_subq + comment_count_subq * literal(2)),
+                Float,
+            ) / func.power(hours_since + literal(2), literal(1.5))
+            stmt = stmt.order_by(
+                PostModel.is_pinned.desc(),
+                hot_score.desc(),
+                PostModel.created_at.desc(),
+            )
+        else:
+            # Default "new" sort - by creation date
+            stmt = stmt.order_by(
+                PostModel.is_pinned.desc(),
+                PostModel.created_at.desc(),
+            )
+
+        stmt = stmt.limit(limit).offset(effective_offset)
+
         result = await self._session.execute(stmt)
         post_models = result.scalars().all()
 
         return [self._to_entity(model) for model in post_models]
+
+    async def count_by_category(self, category_id: CategoryId) -> int:
+        """Count non-deleted posts in a category."""
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(PostModel)
+            .where(
+                PostModel.category_id == category_id.value,
+                PostModel.is_deleted.is_(False),
+            )
+        )
+        return result.scalar_one()
 
     async def delete(self, post_id: PostId) -> None:
         """Delete a post by ID (hard delete)."""

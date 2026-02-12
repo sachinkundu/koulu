@@ -9,10 +9,13 @@ from src.community.domain.events import (
     PostDeleted,
     PostEdited,
     PostLocked,
+    PostPinned,
     PostUnlocked,
+    PostUnpinned,
 )
 from src.community.domain.exceptions import (
     CannotLockPostError,
+    CannotPinPostError,
     InvalidImageUrlError,
     NotPostAuthorError,
     PostAlreadyDeletedError,
@@ -243,6 +246,54 @@ class Post:
             self.is_locked = False
             self._update_timestamp()
             self._add_event(PostUnlocked(post_id=self.id, unlocked_by=unlocker_id))
+
+    def pin(self, pinner_id: UserId, pinner_role: MemberRole) -> None:
+        """
+        Pin the post to the top of the feed.
+
+        Args:
+            pinner_id: The user pinning the post
+            pinner_role: The role of the pinner
+
+        Raises:
+            PostAlreadyDeletedError: If post is deleted
+            CannotPinPostError: If user doesn't have permission
+        """
+        if self.is_deleted:
+            raise PostAlreadyDeletedError()
+
+        if not pinner_role.can_pin_posts():
+            raise CannotPinPostError()
+
+        if not self.is_pinned:
+            self.is_pinned = True
+            self.pinned_at = datetime.now(UTC)
+            self._update_timestamp()
+            self._add_event(PostPinned(post_id=self.id, pinned_by=pinner_id))
+
+    def unpin(self, unpinner_id: UserId, unpinner_role: MemberRole) -> None:
+        """
+        Unpin the post.
+
+        Args:
+            unpinner_id: The user unpinning the post
+            unpinner_role: The role of the unpinner
+
+        Raises:
+            PostAlreadyDeletedError: If post is deleted
+            CannotPinPostError: If user doesn't have permission
+        """
+        if self.is_deleted:
+            raise PostAlreadyDeletedError()
+
+        if not unpinner_role.can_pin_posts():
+            raise CannotPinPostError()
+
+        if self.is_pinned:
+            self.is_pinned = False
+            self.pinned_at = None
+            self._update_timestamp()
+            self._add_event(PostUnpinned(post_id=self.id, unpinned_by=unpinner_id))
 
     @property
     def is_edited(self) -> bool:
