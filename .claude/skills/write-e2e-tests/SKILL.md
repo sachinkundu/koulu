@@ -382,6 +382,58 @@ Add a "Test IDs" section to component specs:
 
 ---
 
+## Test Data Cleanup (MANDATORY)
+
+**Every E2E test MUST clean up resources it creates.** The E2E database is truncated at the start of each run, but individual test cleanup prevents data leakage between tests running in parallel.
+
+### Pattern: Cleanup Array
+
+```typescript
+test.describe('Feature', () => {
+  const cleanupFns: Array<() => Promise<void>> = [];
+
+  test.afterEach(async () => {
+    for (const fn of cleanupFns.reverse()) {
+      await fn().catch(() => {}); // Best-effort, reverse order
+    }
+    cleanupFns.length = 0;
+  });
+
+  test('creates resource', async ({ page }) => {
+    const { id } = await createCourseApi(token, title);
+    cleanupFns.push(() => deleteCourseApi(token, id));
+    // ... test logic
+  });
+});
+```
+
+### Rules
+
+1. **Track created resources** — store IDs of all resources created during a test
+2. **Delete in afterEach** — call delete API endpoints to remove created data
+3. **Reverse order** — delete children before parents (comments before posts)
+4. **Best-effort** — wrap deletes in `.catch(() => {})` since resources may already be deleted by the test itself
+5. **Skip cleanup for delete tests** — if the test itself deletes the resource, no cleanup needed (add a comment explaining why)
+
+### Available Delete Helpers
+
+From `helpers/api-helpers.ts`:
+- `deletePostApi(accessToken, postId)` — deletes a community post
+- `deleteCourseApi(accessToken, courseId)` — deletes a classroom course
+
+### For UI-Created Resources
+
+When a resource is created via the UI (not API), extract the ID from the URL after creation:
+```typescript
+await page.waitForURL(/\/courses\/([a-f0-9-]+)/);
+const courseId = page.url().match(/\/courses\/([a-f0-9-]+)/)?.[1];
+if (courseId) {
+  cleanupFns.push(() => deleteCourseApi(token, courseId));
+}
+```
+
+---
+
 ## Test Quality Checklist
 
 Before marking E2E tests complete, verify:
@@ -396,6 +448,8 @@ Before marking E2E tests complete, verify:
 - [ ] Tests run and pass locally
 - [ ] Tests are stable (pass 3/3 times minimum)
 - [ ] `data-testid` recommendations added to UI_SPEC.md (if applicable)
+- [ ] Tests clean up created resources in afterEach
+- [ ] Delete helpers exist for all created resource types
 
 ---
 

@@ -418,6 +418,38 @@ export async function addLessonApi(
 }
 
 // ============================================================================
+// Delete Helpers (for test cleanup)
+// ============================================================================
+
+/**
+ * Delete a post via API. Best-effort — ignores errors (post may already be deleted).
+ */
+export async function deletePostApi(accessToken: string, postId: string): Promise<void> {
+  try {
+    await fetch(`${API_URL}/community/posts/${postId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    // Best-effort cleanup
+  }
+}
+
+/**
+ * Delete a course via API. Best-effort — ignores errors (course may already be deleted).
+ */
+export async function deleteCourseApi(accessToken: string, courseId: string): Promise<void> {
+  try {
+    await fetch(`${API_URL}/courses/${courseId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  } catch {
+    // Best-effort cleanup
+  }
+}
+
+// ============================================================================
 // Test State Management
 // ============================================================================
 

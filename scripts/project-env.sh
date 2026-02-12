@@ -35,3 +35,7 @@ export KOULU_MAIL_WEB_PORT=${KOULU_MAIL_WEB_PORT:-$(( 8025 + PORT_OFFSET ))}
 # Compute per-project application server ports
 export KOULU_BACKEND_PORT=${KOULU_BACKEND_PORT:-$(( 8000 + PORT_OFFSET ))}
 export KOULU_FRONTEND_PORT=${KOULU_FRONTEND_PORT:-$(( 5173 + PORT_OFFSET ))}
+
+# E2E uses separate ports (+100) so it can run alongside dev servers
+export KOULU_E2E_BACKEND_PORT=${KOULU_E2E_BACKEND_PORT:-$(( KOULU_BACKEND_PORT + 100 ))}
+export KOULU_E2E_FRONTEND_PORT=${KOULU_E2E_FRONTEND_PORT:-$(( KOULU_FRONTEND_PORT + 100 ))}

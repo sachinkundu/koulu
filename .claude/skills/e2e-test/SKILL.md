@@ -603,6 +603,8 @@ test('pause test', async ({ page }) => {
 - **Test user journeys** (not implementation)
 - **Write descriptive test names** (what + expected outcome)
 - **Fix flaky tests immediately** (don't ignore)
+- **Clean up test data** in `afterEach` using delete API helpers
+- **Track created resource IDs** and delete them in reverse order
 
 ### ❌ DON'T
 
@@ -614,6 +616,7 @@ test('pause test', async ({ page }) => {
 - **Don't ignore flaky tests** (fix root cause)
 - **Don't couple tests** (each test independent)
 - **Don't test backend logic** (use BDD tests)
+- **Don't leave test data behind** — every test must clean up after itself
 
 ---
 

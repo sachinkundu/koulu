@@ -5,17 +5,28 @@ import {
   cleanTestState,
   createCommunityMember,
   createPost,
+  deletePostApi,
 } from '../../helpers/api-helpers';
 
 test.describe('Community Interactions', () => {
+  const cleanupFns: Array<() => Promise<void>> = [];
+
   test.beforeEach(async () => {
     await cleanTestState();
+  });
+
+  test.afterEach(async () => {
+    for (const fn of cleanupFns.reverse()) {
+      await fn().catch(() => {});
+    }
+    cleanupFns.length = 0;
   });
 
   test('Member likes and unlikes a post', async ({ page }) => {
     const user = await createCommunityMember(`E2E Like ${Date.now()}`);
     const postTitle = `Like Test ${Date.now()}`;
     const { id: postId } = await createPost(user.accessToken, postTitle, 'Likeable content.');
+    cleanupFns.push(() => deletePostApi(user.accessToken, postId));
 
     // Login and go to post detail
     const loginPage = new LoginPage(page);
@@ -50,6 +61,7 @@ test.describe('Community Interactions', () => {
     const user = await createCommunityMember(`E2E Comment ${Date.now()}`);
     const postTitle = `Comment Test ${Date.now()}`;
     const { id: postId } = await createPost(user.accessToken, postTitle, 'Commentable content.');
+    cleanupFns.push(() => deletePostApi(user.accessToken, postId));
 
     // Login and go to post detail
     const loginPage = new LoginPage(page);
@@ -78,6 +90,7 @@ test.describe('Community Interactions', () => {
     const user = await createCommunityMember(`E2E Edit ${Date.now()}`);
     const postTitle = `Edit Test ${Date.now()}`;
     const { id: postId } = await createPost(user.accessToken, postTitle, 'Original content.');
+    cleanupFns.push(() => deletePostApi(user.accessToken, postId));
 
     // Login and go to post detail
     const loginPage = new LoginPage(page);

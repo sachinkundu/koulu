@@ -17,27 +17,36 @@ echo -e "${BLUE}   Koulu E2E Test Runner${NC}"
 echo -e "${BLUE}======================================${NC}"
 echo ""
 echo "Project: ${COMPOSE_PROJECT_NAME}"
-echo "Ports:   Backend=${KOULU_BACKEND_PORT} Frontend=${KOULU_FRONTEND_PORT}"
+echo "Ports:   E2E Backend=${KOULU_E2E_BACKEND_PORT} E2E Frontend=${KOULU_E2E_FRONTEND_PORT}"
+echo "         Dev Backend=${KOULU_BACKEND_PORT} Dev Frontend=${KOULU_FRONTEND_PORT}"
 echo ""
 
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 E2E_DIR="${PROJECT_ROOT}/tests/e2e"
+FRONTEND_DIR="${PROJECT_ROOT}/frontend"
+POSTGRES_CONTAINER="${KOULU_VOLUME_PREFIX:-koulu}_postgres"
+REDIS_CONTAINER="${KOULU_VOLUME_PREFIX:-koulu}_redis"
+E2E_DB_NAME="koulu_e2e"
+E2E_BACKEND_PID=""
+E2E_FRONTEND_PID=""
 
-# Function to check if a service is running
-check_service() {
-    local name=$1
-    local url=$2
-    local check_cmd=$3
-
-    echo -n "Checking ${name}... "
-    if eval "${check_cmd}" > /dev/null 2>&1; then
-        echo -e "${GREEN}Running${NC}"
-        return 0
-    else
-        echo -e "${RED}Not running${NC}"
-        return 1
+# Cleanup function — kills E2E backend and frontend on exit (success or failure)
+cleanup() {
+    if [ -n "$E2E_FRONTEND_PID" ] && kill -0 "$E2E_FRONTEND_PID" 2>/dev/null; then
+        echo -e "${YELLOW}Stopping E2E frontend (PID ${E2E_FRONTEND_PID})...${NC}"
+        kill "$E2E_FRONTEND_PID" 2>/dev/null || true
+        wait "$E2E_FRONTEND_PID" 2>/dev/null || true
+    fi
+    if [ -n "$E2E_BACKEND_PID" ] && kill -0 "$E2E_BACKEND_PID" 2>/dev/null; then
+        echo -e "${YELLOW}Stopping E2E backend (PID ${E2E_BACKEND_PID})...${NC}"
+        kill "$E2E_BACKEND_PID" 2>/dev/null || true
+        wait "$E2E_BACKEND_PID" 2>/dev/null || true
+    fi
+    if [ -n "$E2E_FRONTEND_PID" ] || [ -n "$E2E_BACKEND_PID" ]; then
+        echo -e "${GREEN}E2E servers stopped${NC}"
     fi
 }
+trap cleanup EXIT
 
 # Function to check docker compose service
 check_compose_service() {
@@ -52,44 +61,65 @@ check_compose_service() {
     fi
 }
 
-echo -e "${YELLOW}Step 1: Checking Prerequisites${NC}"
+# ============================================================================
+# Step 1: Check Docker infrastructure services
+# ============================================================================
+echo -e "${YELLOW}Step 1: Checking Docker Services${NC}"
 echo "-----------------------------------"
 
-# Check docker compose services
 ALL_OK=true
 check_compose_service "postgres" || ALL_OK=false
 check_compose_service "redis" || ALL_OK=false
 check_compose_service "mailhog" || ALL_OK=false
 
-# Check backend
-check_service "Backend API (port ${KOULU_BACKEND_PORT})" "http://localhost:${KOULU_BACKEND_PORT}/health" "curl -sf http://localhost:${KOULU_BACKEND_PORT}/health" || ALL_OK=false
-
-# Check frontend
-check_service "Frontend (port ${KOULU_FRONTEND_PORT})" "http://localhost:${KOULU_FRONTEND_PORT}" "curl -sf http://localhost:${KOULU_FRONTEND_PORT}" || ALL_OK=false
-
 echo ""
 
 if [ "$ALL_OK" = false ]; then
-    echo -e "${RED}Prerequisites not met!${NC}"
-    echo ""
-    echo "To fix:"
-    echo "  1. Start Docker containers: docker compose up -d"
-    echo "  2. Start backend: uvicorn src.main:app --host 0.0.0.0 --port ${KOULU_BACKEND_PORT}"
-    echo "  3. Start frontend: cd frontend && npm run dev -- --port ${KOULU_FRONTEND_PORT}"
-    echo ""
-    echo "Project: ${COMPOSE_PROJECT_NAME}"
-    echo "Ports: Backend=${KOULU_BACKEND_PORT} Frontend=${KOULU_FRONTEND_PORT}"
-    echo ""
+    echo -e "${RED}Docker services not running!${NC}"
+    echo "  Fix: docker compose up -d"
     exit 1
 fi
 
-echo -e "${GREEN}All prerequisites met${NC}"
+# ============================================================================
+# Step 2: Drop and recreate E2E database (clean slate with fresh seed data)
+# ============================================================================
+echo -e "${YELLOW}Step 2: Recreating E2E Database (${E2E_DB_NAME})${NC}"
+echo "-----------------------------------"
+
+# Terminate existing connections and drop the database
+docker exec "${POSTGRES_CONTAINER}" psql -U koulu -d postgres -c "
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname = '${E2E_DB_NAME}' AND pid <> pg_backend_pid();
+" > /dev/null 2>&1 || true
+
+echo -n "Dropping database ${E2E_DB_NAME}... "
+docker exec "${POSTGRES_CONTAINER}" psql -U koulu -d postgres -c "DROP DATABASE IF EXISTS ${E2E_DB_NAME};" > /dev/null 2>&1
+echo -e "${GREEN}Done${NC}"
+
+echo -n "Creating database ${E2E_DB_NAME}... "
+docker exec "${POSTGRES_CONTAINER}" psql -U koulu -d postgres -c "CREATE DATABASE ${E2E_DB_NAME} OWNER koulu;" > /dev/null 2>&1
+echo -e "${GREEN}Created${NC}"
+
+# ============================================================================
+# Step 3: Run migrations on E2E database (includes seed data)
+# ============================================================================
+echo -e "${YELLOW}Step 3: Running Migrations on E2E Database${NC}"
+echo "-----------------------------------"
+
+E2E_DATABASE_URL="postgresql+asyncpg://koulu:koulu_dev_password@localhost:${KOULU_PG_PORT}/${E2E_DB_NAME}"
+
+echo "Running alembic upgrade head..."
+DATABASE_URL="${E2E_DATABASE_URL}" python -m alembic upgrade head
+echo -e "${GREEN}Migrations complete (includes seed data)${NC}"
 echo ""
 
-# Step 2: Flush Redis (clear rate limits)
-echo -e "${YELLOW}Step 2: Clearing Redis (rate limits)${NC}"
+# ============================================================================
+# Step 5: Flush Redis (clear rate limits)
+# ============================================================================
+echo -e "${YELLOW}Step 5: Clearing Redis (rate limits)${NC}"
 echo "-----------------------------------"
-if docker compose exec -T redis redis-cli FLUSHALL > /dev/null 2>&1; then
+if docker exec "${REDIS_CONTAINER}" redis-cli FLUSHALL > /dev/null 2>&1; then
     echo -e "${GREEN}Redis flushed${NC}"
 else
     echo -e "${RED}Failed to flush Redis${NC}"
@@ -97,10 +127,11 @@ else
 fi
 echo ""
 
-# Step 3: Setup Node environment
-echo -e "${YELLOW}Step 3: Setting up Node.js${NC}"
+# ============================================================================
+# Step 6: Setup Node environment
+# ============================================================================
+echo -e "${YELLOW}Step 6: Setting up Node.js${NC}"
 echo "-----------------------------------"
-# Source nvm
 if [ -f "$HOME/.config/nvm/nvm.sh" ]; then
     source "$HOME/.config/nvm/nvm.sh"
     nvm use 20 > /dev/null 2>&1
@@ -119,38 +150,120 @@ else
 fi
 echo ""
 
-# Step 4: Run Playwright tests
-echo -e "${YELLOW}Step 4: Running Playwright Tests${NC}"
+# ============================================================================
+# Step 7: Start E2E backend on separate port
+# ============================================================================
+echo -e "${YELLOW}Step 7: Starting E2E Backend (port ${KOULU_E2E_BACKEND_PORT})${NC}"
+echo "-----------------------------------"
+
+# Check if something is already running on E2E backend port
+if curl -sf "http://localhost:${KOULU_E2E_BACKEND_PORT}/health" > /dev/null 2>&1; then
+    echo -e "${YELLOW}Port ${KOULU_E2E_BACKEND_PORT} already in use — assuming E2E backend already running${NC}"
+else
+    E2E_BACKEND_LOG="${PROJECT_ROOT}/tests/e2e/e2e-backend.log"
+    DATABASE_URL="${E2E_DATABASE_URL}" \
+        uvicorn src.main:app \
+        --host 0.0.0.0 \
+        --port "${KOULU_E2E_BACKEND_PORT}" \
+        > "${E2E_BACKEND_LOG}" 2>&1 &
+    E2E_BACKEND_PID=$!
+    echo "E2E backend PID: ${E2E_BACKEND_PID}"
+    echo "Log: ${E2E_BACKEND_LOG}"
+
+    # Wait for backend to become healthy
+    echo -n "Waiting for health check"
+    for i in $(seq 1 30); do
+        if curl -sf "http://localhost:${KOULU_E2E_BACKEND_PORT}/health" > /dev/null 2>&1; then
+            echo ""
+            echo -e "${GREEN}E2E backend ready${NC}"
+            break
+        fi
+        echo -n "."
+        sleep 1
+        if [ "$i" -eq 30 ]; then
+            echo ""
+            echo -e "${RED}E2E backend failed to start within 30s${NC}"
+            echo "Check log: ${E2E_BACKEND_LOG}"
+            exit 1
+        fi
+    done
+fi
+echo ""
+
+# ============================================================================
+# Step 8: Start E2E frontend on separate port (points at E2E backend)
+# ============================================================================
+echo -e "${YELLOW}Step 8: Starting E2E Frontend (port ${KOULU_E2E_FRONTEND_PORT})${NC}"
+echo "-----------------------------------"
+
+# Check if something is already running on E2E frontend port
+if curl -sf "http://localhost:${KOULU_E2E_FRONTEND_PORT}" > /dev/null 2>&1; then
+    echo -e "${YELLOW}Port ${KOULU_E2E_FRONTEND_PORT} already in use — assuming E2E frontend already running${NC}"
+else
+    E2E_FRONTEND_LOG="${PROJECT_ROOT}/tests/e2e/e2e-frontend.log"
+    (cd "${FRONTEND_DIR}" && \
+        VITE_API_URL="http://localhost:${KOULU_E2E_BACKEND_PORT}/api/v1" \
+        npx vite --port "${KOULU_E2E_FRONTEND_PORT}" --host \
+        > "${E2E_FRONTEND_LOG}" 2>&1) &
+    E2E_FRONTEND_PID=$!
+    echo "E2E frontend PID: ${E2E_FRONTEND_PID}"
+    echo "Log: ${E2E_FRONTEND_LOG}"
+
+    # Wait for frontend to become ready
+    echo -n "Waiting for frontend"
+    for i in $(seq 1 30); do
+        if curl -sf "http://localhost:${KOULU_E2E_FRONTEND_PORT}" > /dev/null 2>&1; then
+            echo ""
+            echo -e "${GREEN}E2E frontend ready${NC}"
+            break
+        fi
+        echo -n "."
+        sleep 1
+        if [ "$i" -eq 30 ]; then
+            echo ""
+            echo -e "${RED}E2E frontend failed to start within 30s${NC}"
+            echo "Check log: ${E2E_FRONTEND_LOG}"
+            exit 1
+        fi
+    done
+fi
+echo ""
+
+# ============================================================================
+# Step 9: Run Playwright tests
+# ============================================================================
+echo -e "${YELLOW}Step 9: Running Playwright Tests${NC}"
 echo "-----------------------------------"
 cd "${E2E_DIR}"
 
-# Export environment variables for Playwright to use computed ports
-export BASE_URL="http://localhost:${KOULU_FRONTEND_PORT}"
-export API_URL="http://localhost:${KOULU_BACKEND_PORT}/api/v1"
+# Export environment variables for Playwright — point at E2E servers
+export BASE_URL="http://localhost:${KOULU_E2E_FRONTEND_PORT}"
+export API_URL="http://localhost:${KOULU_E2E_BACKEND_PORT}/api/v1"
 export MAILHOG_URL="http://localhost:${KOULU_MAIL_WEB_PORT}"
-export REDIS_CONTAINER="${KOULU_VOLUME_PREFIX:-koulu}_redis"
+export REDIS_CONTAINER="${REDIS_CONTAINER}"
+export POSTGRES_CONTAINER="${POSTGRES_CONTAINER}"
+export E2E_DB_NAME="${E2E_DB_NAME}"
 
 echo "Test environment:"
 echo "  BASE_URL=${BASE_URL}"
 echo "  API_URL=${API_URL}"
 echo "  MAILHOG_URL=${MAILHOG_URL}"
-echo "  REDIS_CONTAINER=${REDIS_CONTAINER}"
 echo ""
 
-# Parse arguments
+# Parse arguments — disable set -e to capture exit code
+set +e
 if [ $# -eq 0 ]; then
-    # No arguments - run all tests
     echo "Running all E2E tests..."
     echo ""
     npx playwright test
+    EXIT_CODE=$?
 else
-    # Pass arguments to playwright
     echo "Running: npx playwright test $@"
     echo ""
     npx playwright test "$@"
+    EXIT_CODE=$?
 fi
-
-EXIT_CODE=$?
+set -e
 
 echo ""
 if [ $EXIT_CODE -eq 0 ]; then

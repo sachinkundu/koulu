@@ -7,12 +7,23 @@ import {
   createCommunityMember,
   createPost,
   getCategories,
+  deletePostApi,
 } from '../../helpers/api-helpers';
 
 test.describe('Community Feed', () => {
+  const cleanupFns: Array<() => Promise<void>> = [];
+
   test.beforeEach(async () => {
     await cleanTestState();
   });
+
+  test.afterEach(async () => {
+    for (const fn of cleanupFns.reverse()) {
+      await fn().catch(() => {});
+    }
+    cleanupFns.length = 0;
+  });
+
   test('Member creates post and sees it in feed', async ({ page }) => {
     const displayName = `E2E Poster ${Date.now()}`;
     const user = await createCommunityMember(displayName);
@@ -32,6 +43,13 @@ test.describe('Community Feed', () => {
     // Step 3: After creation, navigates to the post detail page
     await page.waitForURL(/\/community\/posts\//, { timeout: 10_000 });
 
+    // Extract post ID from URL for cleanup
+    const url = page.url();
+    const postIdMatch = url.match(/\/posts\/([a-f0-9-]+)/);
+    if (postIdMatch) {
+      cleanupFns.push(() => deletePostApi(user.accessToken, postIdMatch[1]));
+    }
+
     // Step 4: Go back to feed and verify post appears
     await feedPage.goto();
     await feedPage.waitForFeed();
@@ -45,7 +63,8 @@ test.describe('Community Feed', () => {
     // Create a post via API for fast setup
     const postTitle = `Modal Test ${Date.now()}`;
     const postContent = 'Content for modal viewing test.';
-    await createPost(user.accessToken, postTitle, postContent);
+    const { id: postId } = await createPost(user.accessToken, postTitle, postContent);
+    cleanupFns.push(() => deletePostApi(user.accessToken, postId));
 
     // Login and navigate to feed
     const loginPage = new LoginPage(page);
@@ -89,6 +108,7 @@ test.describe('Community Feed', () => {
       postTitle,
       postContent,
     );
+    cleanupFns.push(() => deletePostApi(user.accessToken, postId));
 
     // Login
     const loginPage = new LoginPage(page);
@@ -126,8 +146,10 @@ test.describe('Community Feed', () => {
     // Create posts in different categories
     const titleA = `Cat1 Post ${Date.now()}`;
     const titleB = `Cat2 Post ${Date.now()}`;
-    await createPost(user.accessToken, titleA, 'Content in category 1', cat1.id);
-    await createPost(user.accessToken, titleB, 'Content in category 2', cat2.id);
+    const { id: postIdA } = await createPost(user.accessToken, titleA, 'Content in category 1', cat1.id);
+    const { id: postIdB } = await createPost(user.accessToken, titleB, 'Content in category 2', cat2.id);
+    cleanupFns.push(() => deletePostApi(user.accessToken, postIdA));
+    cleanupFns.push(() => deletePostApi(user.accessToken, postIdB));
 
     // Login and go to feed
     const loginPage = new LoginPage(page);
@@ -169,6 +191,7 @@ test.describe('Community Feed', () => {
       postTitle,
       'This post will be deleted.',
     );
+    // No cleanup needed — the test itself deletes the post
 
     // Login and go to feed
     const loginPage = new LoginPage(page);

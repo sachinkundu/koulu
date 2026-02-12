@@ -6,17 +6,28 @@ import {
   createCommunityMember,
   createPost,
   addComment,
+  deletePostApi,
 } from '../../helpers/api-helpers';
 
 test.describe('Comment Interactions', () => {
+  const cleanupFns: Array<() => Promise<void>> = [];
+
   test.beforeEach(async () => {
     await cleanTestState();
+  });
+
+  test.afterEach(async () => {
+    for (const fn of cleanupFns.reverse()) {
+      await fn().catch(() => {});
+    }
+    cleanupFns.length = 0;
   });
 
   test('Member replies to a comment', async ({ page }) => {
     const user = await createCommunityMember(`E2E Reply ${Date.now()}`);
     const postTitle = `Reply Test ${Date.now()}`;
     const { id: postId } = await createPost(user.accessToken, postTitle, 'Post with comments.');
+    cleanupFns.push(() => deletePostApi(user.accessToken, postId));
 
     // Add a top-level comment via API
     const { comment_id: commentId } = await addComment(
@@ -59,6 +70,7 @@ test.describe('Comment Interactions', () => {
     const user = await createCommunityMember(`E2E EditComment ${Date.now()}`);
     const postTitle = `Edit Comment Test ${Date.now()}`;
     const { id: postId } = await createPost(user.accessToken, postTitle, 'Post for comment edit.');
+    cleanupFns.push(() => deletePostApi(user.accessToken, postId));
 
     // Add a comment via API
     const originalContent = 'Original comment content';
@@ -102,6 +114,7 @@ test.describe('Comment Interactions', () => {
     const user = await createCommunityMember(`E2E DeleteComment ${Date.now()}`);
     const postTitle = `Delete Comment Test ${Date.now()}`;
     const { id: postId } = await createPost(user.accessToken, postTitle, 'Post for comment delete.');
+    cleanupFns.push(() => deletePostApi(user.accessToken, postId));
 
     // Add a comment via API
     const { comment_id: commentId } = await addComment(
@@ -146,6 +159,7 @@ test.describe('Comment Interactions', () => {
     const user = await createCommunityMember(`E2E CommentLike ${Date.now()}`);
     const postTitle = `Comment Like Test ${Date.now()}`;
     const { id: postId } = await createPost(user.accessToken, postTitle, 'Post for comment like.');
+    cleanupFns.push(() => deletePostApi(user.accessToken, postId));
 
     // Add a comment via API
     const { comment_id: commentId } = await addComment(

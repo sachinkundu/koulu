@@ -7,11 +7,21 @@ import {
   createCourseApi,
   addModuleApi,
   addLessonApi,
+  deleteCourseApi,
 } from '../../helpers/api-helpers';
 
 test.describe('Classroom', () => {
+  const cleanupFns: Array<() => Promise<void>> = [];
+
   test.beforeEach(async () => {
     await cleanTestState();
+  });
+
+  test.afterEach(async () => {
+    for (const fn of cleanupFns.reverse()) {
+      await fn().catch(() => {});
+    }
+    cleanupFns.length = 0;
   });
 
   test('User creates a course and sees it in the list', async ({ page }) => {
@@ -37,6 +47,13 @@ test.describe('Classroom', () => {
     const title = await classroomPage.getCourseTitle();
     expect(title).toBe(courseTitle);
 
+    // Extract course ID from URL for cleanup
+    const url = page.url();
+    const courseIdMatch = url.match(/\/courses\/([a-f0-9-]+)/);
+    if (courseIdMatch) {
+      cleanupFns.push(() => deleteCourseApi(user.accessToken, courseIdMatch[1]));
+    }
+
     // Go back and verify course appears in list
     await classroomPage.goBackToCourses();
     await classroomPage.waitForClassroomPage();
@@ -52,6 +69,8 @@ test.describe('Classroom', () => {
     // Create course with content via API
     const courseTitle = `Detail Course ${Date.now()}`;
     const { id: courseId } = await createCourseApi(user.accessToken, courseTitle, 'Course with modules.');
+    cleanupFns.push(() => deleteCourseApi(user.accessToken, courseId));
+
     const { id: moduleId } = await addModuleApi(user.accessToken, courseId, 'Module 1', 'First module');
     await addLessonApi(user.accessToken, moduleId, 'Lesson 1', 'text', 'Lesson content here.');
     await addLessonApi(user.accessToken, moduleId, 'Lesson 2', 'text', 'More content.');
@@ -86,6 +105,7 @@ test.describe('Classroom', () => {
     // Create course via API
     const courseTitle = `Delete Me ${Date.now()}`;
     const { id: courseId } = await createCourseApi(user.accessToken, courseTitle);
+    // No cleanup needed — the test itself deletes the course
 
     // Login
     const loginPage = new LoginPage(page);
