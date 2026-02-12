@@ -489,15 +489,13 @@ async def create_courses(session: AsyncSession, users: list[UserModel]) -> None:
                 num_lessons = random.randint(4, 8)
 
                 for lesson_pos in range(1, num_lessons + 1):
-                    lesson_types = ["video", "text", "quiz"]
+                    lesson_types = ["video", "text"]
                     content_type = random.choice(lesson_types)
 
                     if content_type == "video":
                         content = f"https://www.youtube.com/watch?v={fake.lexify('???????????')}"
-                    elif content_type == "text":
+                    else:  # text
                         content = fake.text(max_nb_chars=1000)
-                    else:  # quiz
-                        content = fake.text(max_nb_chars=300)
 
                     lesson = LessonModel(
                         id=uuid4(),
