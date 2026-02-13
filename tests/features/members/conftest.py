@@ -17,7 +17,9 @@ from src.identity.infrastructure.services import Argon2PasswordHasher
 
 # Type aliases
 CreateCommunityFactory = Callable[..., Coroutine[Any, Any, CommunityModel]]
-CreateMemberWithProfileFactory = Callable[..., Coroutine[Any, Any, tuple[UserModel, CommunityMemberModel]]]
+CreateMemberWithProfileFactory = Callable[
+    ..., Coroutine[Any, Any, tuple[UserModel, CommunityMemberModel]]
+]
 
 
 @pytest_asyncio.fixture

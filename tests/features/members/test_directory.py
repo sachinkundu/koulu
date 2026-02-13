@@ -387,7 +387,11 @@ async def request_directory_sorted(
     context["response_json"] = response.json()
 
 
-@when(parsers.parse("the user requests the first page of the member directory with a limit of {limit:d}"))
+@when(
+    parsers.parse(
+        "the user requests the first page of the member directory with a limit of {limit:d}"
+    )
+)
 async def request_first_page(
     client: AsyncClient,
     limit: int,
@@ -403,7 +407,11 @@ async def request_first_page(
     context["response_json"] = response.json()
 
 
-@when(parsers.parse("the user requests the second page of the member directory with a limit of {limit:d}"))
+@when(
+    parsers.parse(
+        "the user requests the second page of the member directory with a limit of {limit:d}"
+    )
+)
 async def request_second_page(
     client: AsyncClient,
     limit: int,
@@ -428,7 +436,11 @@ async def request_second_page(
     context["response_json"] = response.json()
 
 
-@when(parsers.parse("the user requests the third page of the member directory with a limit of {limit:d}"))
+@when(
+    parsers.parse(
+        "the user requests the third page of the member directory with a limit of {limit:d}"
+    )
+)
 async def request_third_page(
     client: AsyncClient,
     limit: int,
@@ -555,7 +567,9 @@ async def directory_returns_count(count: int, client: AsyncClient, context: dict
 
 
 @then(parsers.parse("the directory should return {count:d} member"))
-async def directory_returns_count_singular(count: int, client: AsyncClient, context: dict[str, Any]) -> None:
+async def directory_returns_count_singular(
+    count: int, client: AsyncClient, context: dict[str, Any]
+) -> None:
     """Verify number of items returned (singular form)."""
     items = context["response_json"]["items"]
     assert len(items) == count

@@ -49,9 +49,7 @@ class ListMembersHandler:
         requester_id = UserId(query.requester_id)
 
         # Check membership
-        member = await self._member_repository.get_by_user_and_community(
-            requester_id, community_id
-        )
+        member = await self._member_repository.get_by_user_and_community(requester_id, community_id)
         if member is None:
             logger.warning(
                 "member_directory_unauthorized",
