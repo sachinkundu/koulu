@@ -1,14 +1,12 @@
 import { clearEmails, getVerificationToken } from './email-helpers';
-
-const API_URL = process.env.API_URL ?? 'http://localhost:8000/api/v1';
+import { API_URL, REDIS_CONTAINER } from './env';
 /**
  * Flush Redis to clear all rate limits.
- * Uses docker exec with the container name (set via REDIS_CONTAINER env var).
- * Falls back to common container names if env var is not set.
+ * Uses docker exec with the container name from env.ts.
  */
 export async function flushRateLimits(): Promise<void> {
   const { execSync } = await import('child_process');
-  const containerName = process.env.REDIS_CONTAINER ?? 'koulu_redis';
+  const containerName = REDIS_CONTAINER;
   try {
     execSync(`docker exec ${containerName} redis-cli FLUSHALL`, { stdio: 'pipe' });
   } catch {

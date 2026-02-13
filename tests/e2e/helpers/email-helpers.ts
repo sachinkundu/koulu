@@ -1,4 +1,4 @@
-const MAILHOG_URL = process.env.MAILHOG_URL ?? 'http://localhost:8025';
+import { MAILHOG_URL } from './env';
 
 interface MailHogMessage {
   ID: string;

@@ -1,7 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import { BASE_URL } from './helpers/env';
 
 export default defineConfig({
   globalSetup: './global-setup.ts',
+  globalTeardown: './global-teardown.ts',
   testDir: './specs',
   fullyParallel: true,
   workers: process.env.CI ? 2 : 4,
@@ -18,7 +20,7 @@ export default defineConfig({
   ],
 
   use: {
-    baseURL: process.env.BASE_URL ?? 'http://localhost:5173',
+    baseURL: BASE_URL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
