@@ -81,13 +81,15 @@ Reference (read BEFORE implementation):
 - Security: `.claude/skills/security/SKILL.md`
 - UI: `.claude/skills/ui-design/SKILL.md`
 
-Feature workflow:
-1. `/write-feature-spec {context}/{feature}` -> PRD + BDD feature file
-2. `/generate-ui-spec` -> UI_SPEC.md
-3. `/write-technical-design {context}/{feature}` -> TDD
-4. `/implement-feature {context}/{feature}` -> Implementation
-5. `/write-e2e-tests {feature}` -> Playwright tests
-6. `/document-work {context}/{feature}` -> Summary + PRD update
+Feature workflow (screenshots-first — one-direction flow):
+1. Gather Skool.com screenshots into `docs/features/{context}/screenshots/` (manual — before any specs)
+2. `/write-feature-spec {context}/{feature}` -> PRD + BDD (analyzes screenshots to inform UI Behavior section)
+3. `/generate-ui-spec` -> UI_SPEC.md (details the visual approach from PRD + screenshots — confirms, not discovers)
+4. `/write-technical-design {context}/{feature}` -> TDD (references UI_SPEC for component names)
+5. `/create-phase-plan {context}/{feature}` -> Phase plan + Phase 1 granular tasks
+6. `/implement-feature {context}/{feature} --phase=N` -> Implementation per phase
+7. `/write-e2e-tests {feature}` -> Playwright tests
+8. `/document-work {context}/{feature}` -> Summary + PRD update
 
 ## Key Files
 

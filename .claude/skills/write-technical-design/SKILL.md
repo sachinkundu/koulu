@@ -33,6 +33,11 @@ Example: `/write-technical-design identity/profile`
 **Must exist before starting:**
 - PRD: `docs/features/{context}/{feature}-prd.md` (approved)
 - BDD: `tests/features/{context}/{feature}.feature` (approved)
+- UI_SPEC: `docs/features/{context}/UI_SPEC.md` (for user-facing features)
+
+**If UI_SPEC exists:** Use it to source frontend component names for the File Checklist (Section 17). Component names in the TDD must match the UI_SPEC exactly (e.g., `MemberList.tsx` not `MemberGrid.tsx`).
+
+**If UI_SPEC does not exist:** Ask the user if this is a user-facing feature. If yes, recommend running `/generate-ui-spec` first. If no (background job, internal API), proceed without it.
 
 **Output files:**
 - TDD: `docs/features/{context}/{feature}-tdd.md`
@@ -244,6 +249,7 @@ When justifying technology choices:
 
 ### Phase 1: Research (15 min)
 - Read approved PRD and BDD specs
+- Read UI_SPEC.md if it exists (for component names and frontend architecture)
 - Understand business requirements
 - Check existing codebase patterns
 - Research technology options

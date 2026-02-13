@@ -11,13 +11,15 @@ model: sonnet
 
 **Usage:** `/generate-ui-spec`
 
+**Workflow position:** This skill runs AFTER `/write-feature-spec` and BEFORE `/write-technical-design`. When the correct workflow is followed, the PRD already incorporates screenshot insights (layout patterns, filter styles, card content). This skill **details and confirms** the visual approach with component specs, design tokens, and spacing — it should NOT discover major discrepancies with the PRD. If it does, the upstream workflow was not followed correctly.
+
 ---
 
 ## Input Requirements
 
 User must provide:
-1. **PRD path** - The feature's PRD.md file
-2. **Screenshot directory** - Folder containing Skool.com reference images
+1. **PRD path** - The feature's PRD.md file (should already reflect screenshot-informed UI decisions)
+2. **Screenshot directory** - Folder containing Skool.com reference images (same screenshots used during PRD creation)
 3. **(Optional) Phase plan path** - Path to implementation phases document (e.g., `feed-implementation-phases.md`)
 4. **(Optional) Focus areas** - Specific components or interactions to emphasize
 
@@ -401,35 +403,37 @@ The UI_SPEC includes a Phase-to-Component Mapping section to guide incremental i
 
 ## Edge Cases
 
-- **No screenshots provided:** Ask user for screenshot directory
+- **No screenshots provided:** Ask user for screenshot directory. Do not proceed without screenshots.
 - **Screenshots don't match feature:** Ask for clarification or refocus
 - **Pattern conflicts with design system:** Flag discrepancies, ask which to follow
 - **Ambiguous visual elements:** Note uncertainty in UI_SPEC, mark for user clarification
-- **Missing PRD:** Can still generate UI spec, but less context-aware
+- **PRD conflicts with screenshots:** If the PRD's UI Behavior section contradicts what screenshots show, this means the upstream workflow was not followed correctly (screenshots were not analyzed during PRD creation). Flag the discrepancy and recommend updating the PRD before continuing.
+- **Missing PRD:** Do not proceed — PRD must exist before generating UI_SPEC
 
 ---
 
 ## Integration with Other Skills
 
 **Before this skill:**
-- `write-feature-spec` - Creates PRD/BDD
+- Gather Skool.com screenshots (manual — user captures to `docs/features/{context}/screenshots/`)
+- `write-feature-spec` - Creates PRD/BDD (analyzes screenshots during Phase 1.2 to inform UI Behavior)
 - Phase planning (manual) - Creates `[feature]-implementation-phases.md` for complex features
 
 **After this skill:**
-- `write-technical-design` - Uses UI_SPEC for detailed component design
+- `write-technical-design` - Uses UI_SPEC for frontend component names in file checklist
 - `implement-feature` - Uses UI_SPEC for implementation guidance
 
-**Workflow (Simple Feature):**
-1. Write PRD (`write-feature-spec`)
-2. Gather Skool.com screenshots
-3. **Generate UI spec (`generate-ui-spec`)** ← This skill
-4. Write TDD (`write-technical-design`)
+**Workflow (screenshots-first, one-direction):**
+1. Gather Skool.com screenshots (manual)
+2. Write PRD + BDD (`write-feature-spec` — analyzes screenshots)
+3. **Generate UI spec (`generate-ui-spec`)** ← This skill (details, not discovers)
+4. Write TDD (`write-technical-design` — references UI_SPEC component names)
 5. Implement feature (`implement-feature`)
 
 **Workflow (Complex/Phased Feature):**
-1. Write PRD (`write-feature-spec`)
-2. Create phase plan (e.g., `feed-implementation-phases.md`)
-3. Gather Skool.com screenshots (complete feature)
+1. Gather Skool.com screenshots (manual — capture complete feature)
+2. Write PRD + BDD (`write-feature-spec` — analyzes screenshots)
+3. Create phase plan (e.g., `feed-implementation-phases.md`)
 4. **Generate UI spec (`generate-ui-spec` with phase plan)** ← This skill
 5. Write TDD (`write-technical-design`)
 6. Implement Phase 1 (`implement-feature` - reads Phase 1 sections of UI_SPEC)
