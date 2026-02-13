@@ -25,24 +25,56 @@ Example: `/document-work identity/registration-authentication`
 
 ---
 
-## Pre-Documentation Verification
+## Verification (BLOCKING — Must Pass Before Documenting)
 
-Before documenting as "Complete", verify:
+A feature is NOT complete until ALL checks pass with ZERO failures, ZERO warnings, AND coverage >=80%.
 
-1. **No stub test steps** — Search test files for `pass` statements in step definitions:
-   ```bash
-   grep -n "^    pass$" tests/features/{context}/test_*.py
-   ```
-   If found, these are likely untested functionality!
+### Blocking Checklist
 
-2. **Side effects work** — For features with:
-   - Email sending: Manually trigger and check MailHog
-   - Events: Check logs for event publication
-   - External integrations: Verify they actually connect
+Run these commands and verify exact outputs:
 
-3. **Integration wiring complete** — If domain events exist, verify handlers are registered and called
+1. Infrastructure: `docker-compose up -d` — all services healthy
+2. All tests: `./scripts/test.sh --all --ignore=tests/features/identity/`
+   - Required: `X passed, Y skipped` with 0 failed, 0 warnings, coverage >=80%
+   - Test database is created automatically and isolated per agent
+3. Alternative (run separately, both must pass):
+   - `./scripts/test.sh --integration --ignore=tests/features/identity/`
+   - `./scripts/test.sh --unit`
+4. Frontend (if applicable): `./scripts/verify-frontend.sh`
+5. Deployability (user-facing features): `./scripts/check-deployability.sh {feature-name}` — must show backend controllers + frontend components
 
-A feature is NOT complete if tests pass but functionality doesn't work. Stub tests (`pass` statements) hide missing implementations.
+If ANY check fails, work is NOT complete.
+
+### Red Flags (Feature NOT Complete)
+- Tests contain `pass` stubs instead of real assertions
+- `@then` steps without assertions
+- Comments say "mocked" but no actual mock/verification
+- Coverage below 80%
+- "Tests require infrastructure" used as excuse to skip
+- Verification scripts not run
+- Any test failure or warning
+
+### Warning Policy
+Fix warnings at the source. If suppression is unavoidable: use targeted filter, add comment explaining why, get explicit user approval. Never silently suppress.
+
+### Evidence Required
+Completion documentation MUST include exact output showing `0 failed` in test results and coverage >=80%.
+
+### Self-Correction Protocol
+If you marked work complete while tests were failing:
+1. Acknowledge immediately, no excuses
+2. Assess: was code committed? what's failing? is CI broken?
+3. Fix (if quick) or revert to last green state
+4. Document in MEMORY.md with root cause analysis
+5. Verify green before proceeding
+
+### Pre-Documentation Checks
+
+Also verify before documenting:
+
+1. No stub test steps — `grep -n "^    pass$" tests/features/{context}/test_*.py` should return nothing
+2. Side effects work — email sending (check MailHog), events (check logs), external integrations
+3. Integration wiring complete — domain event handlers registered and called
 
 ---
 
