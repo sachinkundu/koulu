@@ -20,6 +20,7 @@ from src.community.application.handlers.unlike_post_handler import UnlikePostHan
 from src.community.application.handlers.unlock_post_handler import UnlockPostHandler
 from src.community.application.handlers.unpin_post_handler import UnpinPostHandler
 from src.community.application.handlers.update_category_handler import UpdateCategoryHandler
+from src.community.application.handlers.list_members_handler import ListMembersHandler
 from src.community.application.handlers.update_post_handler import UpdatePostHandler
 
 __all__ = [
@@ -37,6 +38,7 @@ __all__ = [
     "LikeCommentHandler",
     "LikePostHandler",
     "ListCategoriesHandler",
+    "ListMembersHandler",
     "LockPostHandler",
     "PinPostHandler",
     "UnlikeCommentHandler",
