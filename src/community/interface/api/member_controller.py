@@ -130,8 +130,8 @@ async def list_members(
             cursor=result.cursor,
             has_more=result.has_more,
         )
-    except NotCommunityMemberError:
+    except NotCommunityMemberError as err:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not a member of this community",
-        )
+        ) from err

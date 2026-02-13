@@ -13,6 +13,7 @@ from src.community.application.handlers.get_post_handler import GetPostHandler
 from src.community.application.handlers.like_comment_handler import LikeCommentHandler
 from src.community.application.handlers.like_post_handler import LikePostHandler
 from src.community.application.handlers.list_categories_handler import ListCategoriesHandler
+from src.community.application.handlers.list_members_handler import ListMembersHandler
 from src.community.application.handlers.lock_post_handler import LockPostHandler
 from src.community.application.handlers.pin_post_handler import PinPostHandler
 from src.community.application.handlers.unlike_comment_handler import UnlikeCommentHandler
@@ -20,7 +21,6 @@ from src.community.application.handlers.unlike_post_handler import UnlikePostHan
 from src.community.application.handlers.unlock_post_handler import UnlockPostHandler
 from src.community.application.handlers.unpin_post_handler import UnpinPostHandler
 from src.community.application.handlers.update_category_handler import UpdateCategoryHandler
-from src.community.application.handlers.list_members_handler import ListMembersHandler
 from src.community.application.handlers.update_post_handler import UpdatePostHandler
 
 __all__ = [

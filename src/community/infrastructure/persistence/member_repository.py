@@ -1,6 +1,7 @@
 """SQLAlchemy implementation of member repository."""
 
-from sqlalchemy import func as sa_func, select
+from sqlalchemy import func as sa_func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.community.application.dtos.member_directory_entry import MemberDirectoryEntry
