@@ -169,6 +169,31 @@ class FeedResponse(BaseModel):
     has_more: bool  # Indicates if there are more items
 
 
+# ============================================================================
+# Member Directory Schemas
+# ============================================================================
+
+
+class MemberDirectoryItemResponse(BaseModel):
+    """Single member entry in the directory."""
+
+    user_id: UUID
+    display_name: str | None
+    avatar_url: str | None
+    role: str
+    bio: str | None
+    joined_at: datetime
+
+
+class MemberDirectoryResponse(BaseModel):
+    """Paginated member directory response."""
+
+    items: list[MemberDirectoryItemResponse]
+    total_count: int
+    cursor: str | None
+    has_more: bool
+
+
 class ErrorResponse(BaseModel):
     """Error response."""
 
