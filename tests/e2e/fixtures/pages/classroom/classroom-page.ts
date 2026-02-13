@@ -101,12 +101,12 @@ export class ClassroomPageObject extends BasePage {
   }
 
   async getModuleCount(): Promise<number> {
-    const modules = this.page.locator('[data-testid^="module-"]');
+    const modules = this.page.locator('[data-testid^="module-"]:not([data-testid*="-progress-"])');
     return modules.count();
   }
 
   async getLessonCount(): Promise<number> {
-    const lessons = this.page.locator('[data-testid^="lesson-"]');
+    const lessons = this.page.locator('[data-testid^="lesson-"]:not([data-testid*="-complete-"])');
     return lessons.count();
   }
 }
