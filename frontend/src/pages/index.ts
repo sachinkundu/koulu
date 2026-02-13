@@ -15,3 +15,4 @@ export { PostDetailPage } from './PostDetailPage';
 export { ClassroomPage } from './ClassroomPage';
 export { CourseDetailPage } from './CourseDetailPage';
 export { LessonViewPage } from './LessonViewPage';
+export { MembersPage } from './MembersPage';
