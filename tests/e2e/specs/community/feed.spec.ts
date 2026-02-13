@@ -53,6 +53,7 @@ test.describe('Community Feed', () => {
     // Step 4: Go back to feed and verify post appears
     await feedPage.goto();
     await feedPage.waitForFeed();
+    await feedPage.selectSort('new');
     const postCard = await feedPage.getPostCardByTitle(postTitle);
     await expect(postCard).toBeVisible();
   });
@@ -75,6 +76,9 @@ test.describe('Community Feed', () => {
     // Wait for feed to load with the post
     const feedPage = new FeedPage(page);
     await feedPage.waitForFeed();
+
+    // Switch to "new" sort so recently created posts appear first
+    await feedPage.selectSort('new');
 
     // Click the post card to open modal
     await feedPage.clickPostCard(postTitle);
@@ -160,6 +164,9 @@ test.describe('Community Feed', () => {
     const feedPage = new FeedPage(page);
     await feedPage.waitForFeed();
     await feedPage.waitForCategoryTabs();
+
+    // Switch to "new" sort so recently created posts appear first
+    await feedPage.selectSort('new');
 
     // Filter by category 1 — only its post should be visible
     await feedPage.selectCategory(cat1.slug);

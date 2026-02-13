@@ -105,9 +105,9 @@ test.describe('Comment Interactions', () => {
       { timeout: 10_000 },
     ).toBe(updatedContent);
 
-    // Verify "(edited)" indicator shows
+    // Verify "· edited" indicator shows
     const commentEl = page.locator(`[data-testid="comment-${commentId}"]`).first();
-    await expect(commentEl.locator('text=(edited)')).toBeVisible({ timeout: 5_000 });
+    await expect(commentEl.locator('text=· edited')).toBeVisible({ timeout: 5_000 });
   });
 
   test('Member deletes their own comment', async ({ page }) => {
@@ -179,9 +179,9 @@ test.describe('Comment Interactions', () => {
     await detailPage.waitForDetail();
     await detailPage.waitForCommentThread();
 
-    // Initial like text should be "Like" (no count)
+    // Initial like count should be "0" (no likes yet)
     const initialText = await detailPage.getCommentLikeText(commentId);
-    expect(initialText).toBe('Like');
+    expect(initialText).toBe('0');
 
     // Like the comment
     await detailPage.clickCommentLikeButton(commentId);

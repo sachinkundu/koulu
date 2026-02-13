@@ -169,8 +169,9 @@ export class PostDetailPage extends BasePage {
     const comment = this.page.locator(`[data-testid="comment-${commentId}"]`).first();
     const btn = comment.locator('[data-testid="comment-like-button"]');
     const span = btn.locator('span');
-    await span.waitFor({ state: 'visible' });
-    return (await span.textContent()) ?? '';
+    const count = await span.count();
+    if (count === 0) return '0';
+    return (await span.textContent()) ?? '0';
   }
 
   // Edit post interactions

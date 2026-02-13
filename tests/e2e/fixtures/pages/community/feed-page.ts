@@ -85,6 +85,13 @@ export class FeedPage extends BasePage {
     await this.page.click(this.categoryTabAll);
   }
 
+  async selectSort(sort: 'hot' | 'new' | 'top'): Promise<void> {
+    await this.page.click('[data-testid="sort-trigger"]');
+    await this.page.click(`[data-testid="sort-${sort}"]`);
+    // Wait for feed to reload with new sort
+    await this.page.waitForTimeout(500);
+  }
+
   async getPostCount(): Promise<number> {
     const cards = this.page.locator('[data-testid^="post-card-"]');
     return cards.count();
