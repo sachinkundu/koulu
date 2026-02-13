@@ -186,12 +186,17 @@ async def get_feed(
         post_responses = []
         for post in feed_result.posts:
             author_profile = profiles_map.get(post.author_id.value)
-            author = None
             if author_profile:
                 author = AuthorResponse(
                     id=author_profile.user_id,
                     display_name=author_profile.display_name or "Unknown",
                     avatar_url=author_profile.avatar_url,
+                )
+            else:
+                author = AuthorResponse(
+                    id=post.author_id.value,
+                    display_name="[deleted user]",
+                    avatar_url=None,
                 )
 
             like_count = await reaction_repo.count_by_target("post", post.id.value)
@@ -334,12 +339,17 @@ async def get_post(
         )
         author_profile = author_profile_result.scalar_one_or_none()
 
-        author = None
         if author_profile:
             author = AuthorResponse(
                 id=author_profile.user_id,
                 display_name=author_profile.display_name or "Unknown",
                 avatar_url=author_profile.avatar_url,
+            )
+        else:
+            author = AuthorResponse(
+                id=post.author_id.value,
+                display_name="[deleted user]",
+                avatar_url=None,
             )
 
         # Check if current user liked this post and get counts

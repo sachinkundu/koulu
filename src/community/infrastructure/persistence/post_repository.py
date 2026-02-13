@@ -26,6 +26,8 @@ from src.identity.domain.value_objects import UserId
 class SqlAlchemyPostRepository(IPostRepository):
     """SQLAlchemy implementation of IPostRepository."""
 
+    MAX_PINNED_DISPLAY = 5
+
     def __init__(self, session: AsyncSession) -> None:
         """Initialize with database session."""
         self._session = session
@@ -184,9 +186,22 @@ class SqlAlchemyPostRepository(IPostRepository):
         stmt = stmt.limit(limit).offset(effective_offset)
 
         result = await self._session.execute(stmt)
-        post_models = result.scalars().all()
+        post_models = list(result.scalars().all())
 
-        return [self._to_entity(model) for model in post_models]
+        entities = [self._to_entity(model) for model in post_models]
+
+        # Limit pinned posts displayed at top to MAX_PINNED_DISPLAY (5).
+        # Excess pinned posts appear in the non-pinned portion in their sort order.
+        pinned = [p for p in entities if p.is_pinned]
+        if len(pinned) > self.MAX_PINNED_DISPLAY:
+            unpinned = [p for p in entities if not p.is_pinned]
+            top_pinned = sorted(pinned, key=lambda p: p.pinned_at or p.created_at, reverse=True)[
+                : self.MAX_PINNED_DISPLAY
+            ]
+            overflow = [p for p in pinned if p not in top_pinned]
+            entities = top_pinned + overflow + unpinned
+
+        return entities
 
     async def count_by_category(self, category_id: CategoryId) -> int:
         """Count non-deleted posts in a category."""

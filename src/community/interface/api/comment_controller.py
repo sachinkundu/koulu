@@ -172,6 +172,12 @@ async def get_post_comments(
                     display_name=profile.display_name or "Unknown",
                     avatar_url=profile.avatar_url,
                 )
+            else:
+                author = AuthorResponse(
+                    id=cwl.comment.author_id.value,
+                    display_name="[deleted user]",
+                    avatar_url=None,
+                )
 
         responses.append(
             CommentResponse(
