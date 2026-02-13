@@ -813,7 +813,7 @@ Each feature will have a detailed PRD and BDD specification. The index below map
 | Comments | `docs/features/community/comments-prd.md` | `tests/features/community/comments.feature` | ✅ Complete (included in Feed Phase 2) |
 | Reactions | `docs/features/community/reactions-prd.md` | `tests/features/community/reactions.feature` | ✅ Complete (included in Feed Phase 2) |
 | Categories | `docs/features/community/categories-prd.md` | `tests/features/community/categories.feature` | ✅ Complete (included in Feed Phase 3) |
-| Classroom (Phases 1-3) | `docs/features/classroom/classroom-prd.md` | `tests/features/classroom/classroom.feature` | ✅ Phase 1-3 Complete (Backend: 61/71 scenarios, Frontend: Complete) |
+| Classroom (Phases 1-3) | `docs/features/classroom/classroom-prd.md` | `tests/features/classroom/classroom.feature` | ⚠️ Partial — Phases 1-3 of 4 complete (backend: 61/71 scenarios, frontend: phases 1-3 complete) |
 | Events | `docs/features/calendar/events-prd.md` | `tests/features/calendar/events.feature` | ❌ Not started |
 | Member Directory | `docs/features/members/directory-prd.md` | `tests/features/members/directory.feature` | ❌ Not started |
 | Member Map | `docs/features/members/map-prd.md` | `tests/features/members/map.feature` | ❌ Not started |
