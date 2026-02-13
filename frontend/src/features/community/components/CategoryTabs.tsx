@@ -11,24 +11,28 @@ export function CategoryTabs({ selectedCategoryId, onCategoryChange }: CategoryT
 
   if (isLoading) {
     return (
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-9 w-24 animate-pulse rounded-full bg-gray-200" />
+      <nav className="flex gap-2 overflow-x-auto pb-1">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="h-9 w-20 shrink-0 animate-pulse rounded-full bg-gray-200" />
         ))}
-      </div>
+      </nav>
     );
   }
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-2" data-testid="category-tabs">
+    <nav
+      className="flex gap-2 overflow-x-auto pb-1"
+      style={{ scrollbarWidth: 'none' }}
+      data-testid="category-tabs"
+    >
       {/* All category option */}
       <button
         onClick={() => onCategoryChange(null)}
         className={cn(
-          'whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors',
+          'shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors',
           selectedCategoryId === null
             ? 'bg-gray-900 text-white'
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
         )}
         data-testid="category-tab-all"
       >
@@ -41,17 +45,24 @@ export function CategoryTabs({ selectedCategoryId, onCategoryChange }: CategoryT
           key={category.id}
           onClick={() => onCategoryChange(category.id)}
           className={cn(
-            'flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors',
+            'flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors',
             selectedCategoryId === category.id
               ? 'bg-gray-900 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           )}
           data-testid={`category-tab-${category.slug}`}
         >
-          <span>{category.emoji}</span>
+          {category.emoji !== '' && <span>{category.emoji}</span>}
           <span>{category.name}</span>
         </button>
       ))}
-    </div>
+
+      {/* More button */}
+      {categories !== undefined && categories.length > 6 && (
+        <button className="shrink-0 whitespace-nowrap rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200">
+          More...
+        </button>
+      )}
+    </nav>
   );
 }

@@ -1,32 +1,30 @@
+import { Avatar } from '@/components';
+import { useCurrentUser } from '@/features/identity/hooks';
+
 interface CreatePostInputProps {
   onClick: () => void;
 }
 
 export function CreatePostInput({ onClick }: CreatePostInputProps): JSX.Element {
+  const { user } = useCurrentUser();
+
   return (
-    <button
-      onClick={onClick}
-      className="w-full rounded-lg bg-white p-4 text-left shadow hover:shadow-md transition-shadow"
-      data-testid="create-post-input"
-    >
+    <div className="rounded-lg border border-gray-200 bg-white p-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-600">
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-        </div>
-        <span className="text-gray-500">Write something...</span>
+        <Avatar
+          src={user?.profile?.avatar_url}
+          alt={user?.profile?.display_name ?? 'You'}
+          fallback={user?.profile?.display_name ?? 'You'}
+          size="md"
+        />
+        <button
+          onClick={onClick}
+          className="flex-1 rounded-full bg-gray-100 px-4 py-2.5 text-left text-sm text-gray-500 transition-colors hover:bg-gray-200"
+          data-testid="create-post-input"
+        >
+          Write something...
+        </button>
       </div>
-    </button>
+    </div>
   );
 }

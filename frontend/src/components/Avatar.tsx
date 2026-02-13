@@ -1,11 +1,12 @@
 interface AvatarProps {
   src: string | null | undefined;
   alt: string;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   fallback: string;
 }
 
 const sizeClasses = {
+  xs: 'h-6 w-6 text-xs',
   sm: 'h-8 w-8 text-sm',
   md: 'h-10 w-10 text-base',
   lg: 'h-12 w-12 text-lg',

@@ -16,6 +16,7 @@ import {
 import { PostDetailPage } from '@/pages';
 import {
   CategoryTabs,
+  CommunitySidebar,
   CreatePostInput,
   CreatePostModal,
   FeedPostCard,
@@ -24,9 +25,45 @@ import {
 import { usePosts } from '@/features/community/hooks';
 import type { Post, PostsQueryParams } from '@/features/community/types';
 import { TabBar, UserDropdown } from '@/components';
+import type { User } from '@/features/identity/types';
+
+const APP_TABS = [
+  { label: 'Community', path: '/' },
+  { label: 'Classroom', path: '/classroom' },
+];
+
+function FullPageSpinner(): JSX.Element {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
+    </div>
+  );
+}
+
+function AppHeader({ user, onLogout }: { user: User | null; onLogout: () => void }): JSX.Element {
+  const projectName = import.meta.env.VITE_PROJECT_NAME ?? 'koulu';
+
+  return (
+    <header className="bg-white shadow-sm">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold text-gray-900">Koulu</h1>
+          <span className="rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-700">
+            {projectName}
+          </span>
+        </div>
+        {user !== null && (
+          <div className="flex items-center space-x-4">
+            <UserDropdown user={user} onLogout={onLogout} />
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
 
 /**
- * Home page with community feed.
+ * Home page with community feed in Skool-style layout.
  */
 function HomePage(): JSX.Element {
   const navigate = useNavigate();
@@ -34,120 +71,125 @@ function HomePage(): JSX.Element {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedSort, setSelectedSort] = useState<'hot' | 'new' | 'top'>('hot');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const projectName = import.meta.env.VITE_PROJECT_NAME ?? 'koulu';
 
   const postsParams: PostsQueryParams = { sort: selectedSort };
   if (selectedCategoryId !== null) {
     postsParams.category_id = selectedCategoryId;
   }
 
-  const { posts, isLoading: postsLoading, error } = usePosts(postsParams);
+  const { posts, isLoading: postsLoading, error, hasMore, isFetchingNextPage, fetchNextPage } = usePosts(postsParams);
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
-      </div>
-    );
+    return <FullPageSpinner />;
   }
 
   const handlePostCreated = (post: Post): void => {
-    // Navigate to the new post
     navigate(`/community/posts/${post.id}`);
   };
 
-  const tabs = [
-    { label: 'Community', path: '/' },
-    { label: 'Classroom', path: '/classroom' },
-  ];
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">Koulu</h1>
-            <span className="rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-700">
-              {projectName}
-            </span>
-          </div>
-          {user !== null && (
-            <div className="flex items-center space-x-4">
-              <UserDropdown user={user} onLogout={() => void logout()} />
-            </div>
-          )}
-        </div>
-      </header>
+      <AppHeader user={user} onLogout={() => void logout()} />
+      <TabBar tabs={APP_TABS} />
 
-      {/* Tab bar */}
-      <TabBar tabs={tabs} />
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="space-y-6">
-          {/* Create post input */}
-          <CreatePostInput onClick={() => setIsCreateModalOpen(true)} />
+      {/* Main content: feed + sidebar */}
+      <div className="mx-auto flex max-w-[1100px] gap-6 px-4 py-6">
+        {/* Feed column */}
+        <main className="min-w-0 flex-1">
+          <div className="space-y-4">
+            {/* Create post */}
+            <CreatePostInput onClick={() => setIsCreateModalOpen(true)} />
 
-          {/* Category tabs */}
-          <CategoryTabs
-            selectedCategoryId={selectedCategoryId}
-            onCategoryChange={setSelectedCategoryId}
-          />
-
-          {/* Sort dropdown */}
-          <SortDropdown
-            selectedSort={selectedSort}
-            onSortChange={setSelectedSort}
-          />
-
-          {/* Posts list */}
-          {postsLoading ? (
-            // Loading state
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-48 animate-pulse rounded-lg bg-white shadow" />
-              ))}
-            </div>
-          ) : error !== null ? (
-            // Error state
-            <div className="rounded-md bg-red-50 p-4 text-sm text-red-700" role="alert">
-              Failed to load posts. Please try again later.
-            </div>
-          ) : posts === undefined || posts.length === 0 ? (
-            // Empty state
-            <div className="rounded-lg bg-white p-12 text-center shadow">
-              <svg
-                className="mx-auto h-12 w-12 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            {/* Category tabs + Sort in one row */}
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <CategoryTabs
+                  selectedCategoryId={selectedCategoryId}
+                  onCategoryChange={setSelectedCategoryId}
                 />
-              </svg>
-              <h3 className="mt-2 text-lg font-medium text-gray-900">No posts yet</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Be the first to post in this community!
-              </p>
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="mt-4 rounded-md bg-primary-600 px-4 py-2 text-sm font-medium text-white hover:bg-primary-700"
-              >
-                Create Post
-              </button>
+              </div>
+              <SortDropdown
+                selectedSort={selectedSort}
+                onSortChange={setSelectedSort}
+              />
             </div>
-          ) : (
-            // Posts
-            <div className="space-y-4" data-testid="posts-list">
-              {posts.map((post) => (
-                <FeedPostCard key={post.id} post={post} />
-              ))}
-            </div>
-          )}
-        </div>
-      </main>
+
+            {/* Posts list */}
+            {postsLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-48 animate-pulse rounded-lg border border-gray-200 bg-white" />
+                ))}
+              </div>
+            ) : error !== null ? (
+              <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
+                <p className="text-sm text-red-600">Failed to load posts. Please try again later.</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-3 text-sm font-medium text-primary-600 hover:underline"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : posts === undefined || posts.length === 0 ? (
+              <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+                <h3 className="mt-2 text-lg font-medium text-gray-900">No posts yet</h3>
+                <p className="mt-1 text-sm text-gray-500">
+                  Be the first to post in this community!
+                </p>
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="mt-4 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                >
+                  Create Post
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4" data-testid="posts-list">
+                {posts.map((post) => (
+                  <FeedPostCard key={post.id} post={post} />
+                ))}
+
+                {/* Load more */}
+                {hasMore && (
+                  <div className="py-4 text-center">
+                    <button
+                      onClick={() => fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                      className="rounded-lg border border-gray-200 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      {isFetchingNextPage ? (
+                        <span className="flex items-center gap-2">
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+                          Loading...
+                        </span>
+                      ) : (
+                        'Load More'
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* Right sidebar */}
+        <CommunitySidebar />
+      </div>
 
       {/* Create post modal */}
       <CreatePostModal
@@ -168,11 +210,7 @@ function ProtectedRoute({ children }: { children: JSX.Element }): JSX.Element {
   const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
-      </div>
-    );
+    return <FullPageSpinner />;
   }
 
   if (!isAuthenticated) {
@@ -188,44 +226,18 @@ function ProtectedRoute({ children }: { children: JSX.Element }): JSX.Element {
 
 /**
  * Layout wrapper for classroom pages.
- * Provides consistent header, tabs, and content area.
  */
 function ClassroomLayout({ children }: { children: JSX.Element }): JSX.Element {
   const { user, logout, isLoading } = useAuth();
-  const projectName = import.meta.env.VITE_PROJECT_NAME ?? 'koulu';
-
-  const tabs = [
-    { label: 'Community', path: '/' },
-    { label: 'Classroom', path: '/classroom' },
-  ];
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
-      </div>
-    );
+    return <FullPageSpinner />;
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">Koulu</h1>
-            <span className="rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-700">
-              {projectName}
-            </span>
-          </div>
-          {user !== null && (
-            <div className="flex items-center space-x-4">
-              <UserDropdown user={user} onLogout={() => void logout()} />
-            </div>
-          )}
-        </div>
-      </header>
-
-      <TabBar tabs={tabs} />
+      <AppHeader user={user} onLogout={() => void logout()} />
+      <TabBar tabs={APP_TABS} />
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         {children}
       </main>

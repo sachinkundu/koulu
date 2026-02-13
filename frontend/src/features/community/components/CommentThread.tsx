@@ -48,17 +48,19 @@ export function CommentThread({ postId, currentUserId, isLocked }: CommentThread
 
   return (
     <div data-testid="comment-thread">
-      <h3 className="mb-4 text-lg font-semibold text-gray-900">
-        Comments {comments !== undefined ? `(${comments.length})` : ''}
+      <h3 className="mb-4 text-base font-bold text-gray-900">
+        {comments !== undefined && comments.length > 0
+          ? `${comments.length} ${comments.length === 1 ? 'Comment' : 'Comments'}`
+          : 'Comments'}
       </h3>
 
       {/* Add comment form */}
       {!isLocked ? (
-        <div className="mb-4">
+        <div className="mb-5">
           <AddCommentForm postId={postId} />
         </div>
       ) : (
-        <div className="mb-4 rounded-md bg-gray-100 px-4 py-2 text-sm text-gray-600">
+        <div className="mb-4 rounded-lg bg-gray-50 px-4 py-2.5 text-sm text-gray-500">
           Comments are disabled for this post.
         </div>
       )}
@@ -67,17 +69,20 @@ export function CommentThread({ postId, currentUserId, isLocked }: CommentThread
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 animate-pulse rounded bg-gray-100" />
+            <div key={i} className="flex items-start gap-2.5">
+              <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />
+              <div className="h-14 flex-1 animate-pulse rounded-lg bg-gray-100" />
+            </div>
           ))}
         </div>
       ) : error !== null ? (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-700" role="alert">
+        <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700" role="alert">
           Failed to load comments.
         </div>
       ) : comments === undefined || comments.length === 0 ? (
-        <p className="text-sm text-gray-500">No comments yet. Be the first to comment!</p>
+        <p className="py-4 text-center text-sm text-gray-400">No comments yet. Be the first to comment!</p>
       ) : (
-        <div className="divide-y" data-testid="comments-list">
+        <div data-testid="comments-list">
           {renderComments(buildTree(comments), null, postId, currentUserId, isLocked, 0)}
         </div>
       )}

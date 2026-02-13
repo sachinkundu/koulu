@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Avatar } from '@/components';
+import { timeAgo } from '@/lib/timeAgo';
 import type { Post } from '../types';
 import { deletePost } from '../api';
 import { useLikePost } from '../hooks';
@@ -57,60 +58,70 @@ export function PostDetail({ post, currentUserId, onNavigate }: PostDetailProps)
   };
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow" data-testid="post-detail">
+    <div data-testid="post-detail">
       {/* Header */}
-      <div className="mb-6 flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          {/* Author avatar */}
-          <button type="button" onClick={handleAuthorClick} className="shrink-0" data-testid="post-author-avatar">
-            <Avatar
-              src={post.author?.avatar_url}
-              alt={post.author?.display_name ?? 'Unknown'}
-              fallback={post.author?.display_name ?? 'Unknown'}
-              size="lg"
-            />
-          </button>
+      <div className="mb-4 flex items-start gap-3">
+        <button type="button" onClick={handleAuthorClick} className="shrink-0" data-testid="post-author-avatar">
+          <Avatar
+            src={post.author?.avatar_url}
+            alt={post.author?.display_name ?? 'Unknown'}
+            fallback={post.author?.display_name ?? 'Unknown'}
+            size="lg"
+          />
+        </button>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={handleAuthorClick} className="font-semibold text-gray-900 hover:underline" data-testid="post-author-name">
-                {post.author?.display_name ?? 'Unknown'}
-              </button>
-              {post.is_edited && (
-                <span className="text-sm text-gray-500">(edited)</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <time dateTime={post.created_at}>
-                {new Date(post.created_at).toLocaleString()}
-              </time>
-            </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={handleAuthorClick} className="text-base font-semibold text-gray-900 hover:underline" data-testid="post-author-name">
+              {post.author?.display_name ?? 'Unknown'}
+            </button>
           </div>
+          <p className="text-sm text-gray-500">
+            {post.category !== undefined && (
+              <>
+                <span>{post.category.name}</span>
+                <span> · </span>
+              </>
+            )}
+            <time dateTime={post.created_at}>{timeAgo(post.created_at)}</time>
+            {post.is_edited && <span className="text-gray-400"> · edited</span>}
+          </p>
         </div>
 
-        {/* Category badge */}
-        {post.category !== undefined && (
-          <div className="flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1.5">
-            <span>{post.category.emoji}</span>
-            <span className="text-sm text-gray-700">{post.category.name}</span>
+        {/* Owner actions */}
+        {canEdit && (
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="rounded-md px-3 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+              data-testid="post-edit-button"
+            >
+              Edit
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="rounded-md px-3 py-1.5 text-sm text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+              data-testid="post-delete-button"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </button>
           </div>
         )}
       </div>
 
       {/* Pinned indicator */}
       {post.is_pinned && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-primary-50 px-4 py-2 text-sm font-medium text-primary-700">
-          <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 2a.75.75 0 01.75.75v7.5h3.5a.75.75 0 010 1.5h-3.5v5.5a.75.75 0 01-1.5 0v-5.5h-3.5a.75.75 0 010-1.5h3.5v-7.5A.75.75 0 0110 2z" />
-          </svg>
-          <span>Pinned Post</span>
+        <div className="mb-3 flex items-center gap-1.5 text-sm text-gray-500">
+          <span>📌</span>
+          <span>Pinned</span>
         </div>
       )}
 
       {/* Locked indicator */}
       {post.is_locked && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg bg-gray-100 px-4 py-2 text-sm text-gray-700">
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="mb-3 flex items-center gap-2 rounded-lg bg-gray-50 px-4 py-2 text-sm text-gray-600">
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -123,24 +134,25 @@ export function PostDetail({ post, currentUserId, onNavigate }: PostDetailProps)
       )}
 
       {/* Post title */}
-      <h1 className="mb-4 text-2xl font-bold text-gray-900">{post.title}</h1>
+      <h1 className="mb-3 text-xl font-bold text-gray-900">{post.title}</h1>
 
       {/* Post content */}
-      <div className="mb-6 text-gray-700 whitespace-pre-wrap">{post.content}</div>
+      <div className="mb-4 whitespace-pre-wrap text-base leading-relaxed text-gray-700">{post.content}</div>
 
       {/* Image */}
       {post.image_url !== null && (
-        <div className="mb-6">
+        <div className="mb-4 overflow-hidden rounded-lg">
           <img
             src={post.image_url}
             alt=""
-            className="w-full rounded-lg"
+            className="h-auto max-h-[500px] w-full object-cover"
+            loading="lazy"
           />
         </div>
       )}
 
-      {/* Engagement stats */}
-      <div className="mb-6 flex items-center gap-6 border-t pt-4 text-sm text-gray-600">
+      {/* Engagement footer */}
+      <div className="flex items-center gap-4 border-t border-gray-100 pt-3">
         <LikeButton
           likeCount={post.like_count}
           isLiked={post.liked_by_current_user === true}
@@ -149,7 +161,7 @@ export function PostDetail({ post, currentUserId, onNavigate }: PostDetailProps)
           onUnlike={unlike}
         />
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 text-sm text-gray-500">
           <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
@@ -158,42 +170,19 @@ export function PostDetail({ post, currentUserId, onNavigate }: PostDetailProps)
               d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
             />
           </svg>
-          <span>{post.comment_count} comments</span>
+          <span>{post.comment_count}</span>
         </div>
       </div>
 
-      {/* Actions (if user owns the post) */}
-      {canEdit && (
-        <div className="border-t pt-4">
-          {deleteError !== null && (
-            <div className="mb-4 rounded-md bg-red-50 p-4 text-sm text-red-700" role="alert">
-              {deleteError}
-            </div>
-          )}
-
-          <div className="flex gap-3">
-            <button
-              onClick={() => setIsEditModalOpen(true)}
-              className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-300"
-              data-testid="post-edit-button"
-            >
-              Edit
-            </button>
-
-            <button
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-              data-testid="post-delete-button"
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </button>
-          </div>
+      {/* Delete error */}
+      {deleteError !== null && (
+        <div className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700" role="alert">
+          {deleteError}
         </div>
       )}
 
       {/* Comments */}
-      <div className="border-t pt-6">
+      <div className="mt-6 border-t border-gray-100 pt-6">
         <CommentThread
           postId={post.id}
           currentUserId={currentUserId}

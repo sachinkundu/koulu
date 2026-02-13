@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { getPosts } from '../api';
 import type { Post, PostsQueryParams } from '../types';
 
@@ -8,23 +8,43 @@ export interface UsePostsResult {
   posts: Post[] | undefined;
   isLoading: boolean;
   error: Error | null;
-  cursor: string | null | undefined;
-  hasMore: boolean | undefined;
+  hasMore: boolean;
+  isFetchingNextPage: boolean;
+  fetchNextPage: () => void;
 }
 
 export function usePosts(params?: PostsQueryParams): UsePostsResult {
-  const { data, isLoading, error } = useQuery({
+  const {
+    data,
+    isLoading,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
     queryKey: [...POSTS_KEY, params],
-    queryFn: () => getPosts(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryFn: ({ pageParam }) => {
+      const queryParams: PostsQueryParams = { ...params };
+      if (pageParam != null) {
+        queryParams.cursor = pageParam;
+      }
+      return getPosts(queryParams);
+    },
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) =>
+      lastPage.has_more ? lastPage.cursor : undefined,
+    staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 
+  const posts = data?.pages.flatMap((page) => page.items);
+
   return {
-    posts: data?.items,
-    cursor: data?.cursor,
-    hasMore: data?.has_more,
+    posts,
+    hasMore: hasNextPage ?? false,
     isLoading,
+    isFetchingNextPage,
+    fetchNextPage: () => void fetchNextPage(),
     error: error ?? null,
   };
 }
