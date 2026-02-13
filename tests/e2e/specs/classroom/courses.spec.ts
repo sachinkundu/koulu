@@ -3,7 +3,7 @@ import { ClassroomPageObject } from '../../fixtures/pages/classroom/classroom-pa
 import { LoginPage } from '../../fixtures/pages/auth/login-page';
 import {
   cleanTestState,
-  createCommunityMember,
+  createCommunityAdmin,
   createCourseApi,
   addModuleApi,
   addLessonApi,
@@ -25,7 +25,7 @@ test.describe('Classroom', () => {
   });
 
   test('User creates a course and sees it in the list', async ({ page }) => {
-    const user = await createCommunityMember(`E2E Course ${Date.now()}`);
+    const user = await createCommunityAdmin(`E2E Course ${Date.now()}`);
 
     // Login
     const loginPage = new LoginPage(page);
@@ -64,7 +64,7 @@ test.describe('Classroom', () => {
   });
 
   test('User views course with modules and lessons', async ({ page }) => {
-    const user = await createCommunityMember(`E2E Detail ${Date.now()}`);
+    const user = await createCommunityAdmin(`E2E Detail ${Date.now()}`);
 
     // Create course with content via API
     const courseTitle = `Detail Course ${Date.now()}`;
@@ -100,7 +100,7 @@ test.describe('Classroom', () => {
   });
 
   test('User deletes own course', async ({ page }) => {
-    const user = await createCommunityMember(`E2E Delete ${Date.now()}`);
+    const user = await createCommunityAdmin(`E2E Delete ${Date.now()}`);
 
     // Create course via API
     const courseTitle = `Delete Me ${Date.now()}`;

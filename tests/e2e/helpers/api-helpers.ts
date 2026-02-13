@@ -1,5 +1,5 @@
 import { clearEmails, getVerificationToken } from './email-helpers';
-import { API_URL, REDIS_CONTAINER } from './env';
+import { API_URL, E2E_DB_NAME, POSTGRES_CONTAINER, REDIS_CONTAINER } from './env';
 /**
  * Flush Redis to clear all rate limits.
  * Uses docker exec with the container name from env.ts.
@@ -260,6 +260,33 @@ export async function createCommunityMember(
 ): Promise<TestUser> {
   const user = await createUserWithProfile(displayName, password);
   await joinCommunity(user.accessToken);
+  return user;
+}
+
+/**
+ * Promote a community member to ADMIN role via direct DB update.
+ * Uses docker exec psql against the E2E database.
+ */
+export function promoteToAdmin(email: string): void {
+  const { execFileSync } = require('child_process');
+  const sql =
+    `UPDATE community_members SET role = 'ADMIN' ` +
+    `WHERE user_id = (SELECT id FROM users WHERE email = '${email}')`;
+  execFileSync('docker', ['exec', POSTGRES_CONTAINER, 'psql', '-U', 'koulu', '-d', E2E_DB_NAME, '-c', sql], {
+    stdio: 'pipe',
+  });
+}
+
+/**
+ * Create a verified user with profile, community membership, AND admin role.
+ * Ready for classroom E2E tests that require admin permissions.
+ */
+export async function createCommunityAdmin(
+  displayName = 'Test Admin',
+  password = 'testpass123',
+): Promise<TestUser> {
+  const user = await createCommunityMember(displayName, password);
+  promoteToAdmin(user.email);
   return user;
 }
 

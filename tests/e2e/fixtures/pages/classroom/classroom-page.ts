@@ -106,7 +106,7 @@ export class ClassroomPageObject extends BasePage {
   }
 
   async getLessonCount(): Promise<number> {
-    const lessons = this.page.locator('[data-testid^="lesson-"]');
+    const lessons = this.page.locator('[data-testid^="lesson-"]:not([data-testid*="complete-icon"])');
     return lessons.count();
   }
 }
