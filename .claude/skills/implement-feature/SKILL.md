@@ -91,32 +91,70 @@ Example: `/implement-feature identity/profile --phase=2`
    - If not found: generate one on-the-fly using `superpowers:writing-plans` format, scoped to this phase
 
 3. **If following a granular task plan:**
-   - Execute each task in order
+   - Parse the dependency graph and parallel execution summary from the task plan header
+   - If dependency info exists: use parallel batch execution (see Step 3)
+   - If no dependency info: fall back to sequential task-by-task execution
    - Each task follows TDD: write failing test -> run it -> implement -> run tests -> commit
-   - Report progress after each task
+   - Report progress after each batch (parallel) or task (sequential)
    - If a task is unclear, ask before proceeding
 
 **Note:** Use `/create-phase-plan` to generate phase plans and Phase 1 granular tasks before starting implementation.
 
-### Step 3: Implement Phase
+### Step 3: Implement Phase (Parallel Batch Execution)
 
-Once ready, implement the current phase:
+Execute tasks using dependency-aware batching. If the task plan has no dependency info, fall back to sequential execution.
 
-1. **Create files** listed in phase plan
-2. **Write code** following TDD architecture
-3. **Write tests** for phase's BDD scenarios:
-   - **Implement** step definitions for scenarios enabled in this phase
-   - **Skip** scenarios for future phases with `@pytest.mark.skip(reason="Phase X: condition")`
-   - **Document** which scenarios are skipped and why
-4. **Run verification:**
+#### 3a: Build Execution Batches
+
+Read the parallel execution summary from the task plan. If none exists, build it:
+
+1. Parse each task's `Depends on:` field
+2. Find all tasks with no unmet dependencies → "ready batch"
+3. Before dispatching, verify no file overlap between tasks in the same batch:
+   - Compare each task's **Files:** lists — if two tasks modify the same file, move one to the next batch
+4. This produces an ordered list of batches
+
+#### 3b: Execute Batches
+
+For each batch:
+
+**Single-task batch:** Execute directly in the main conversation (no subagent overhead).
+
+**Multi-task batch (2+ tasks):** Dispatch one `Task` subagent per task using the Task tool. Each subagent receives:
+- The full task text from the task plan (all steps, file paths, code snippets)
+- Instructions to follow TDD: write failing test → implement → verify → commit
+- The current feature branch name
+- Constraint: only create/modify files listed in its task's **Files:** section
+
+**After each batch completes:**
+- Read subagent results and check for errors
+- If a subagent failed: fix the issue before proceeding (do NOT continue to next batch)
+- Run quick lint check (`ruff check`, `mypy`) to catch cross-task issues early
+- Announce: "Batch N complete (Tasks X, Y). Next: Batch N+1 (Tasks A, B)."
+
+#### 3c: Post-Implementation Verification
+
+After all batches complete:
+
+1. **Verify BDD scenarios:**
+   - All phase-specific scenarios should be passing
+   - Future phase scenarios should be skipped with `@pytest.mark.skip(reason="Phase X: condition")`
+2. **Run full verification:**
    - BDD tests for this phase (should show "X passed, Y skipped")
    - Unit tests
    - Linting, type checking
    - Verify all skip markers include phase numbers
-5. **Verify all pass** before marking complete
+3. **Verify all pass** before marking complete
    - All enabled tests pass
    - All skipped tests have phase markers
    - CI green
+
+#### Parallel Execution Fallback
+
+If parallel dispatch causes issues (file conflicts, merge problems):
+1. Stop parallel execution
+2. Revert to sequential task-by-task execution
+3. Note the issue for future reference
 
 ### Step 4: Phase Completion
 

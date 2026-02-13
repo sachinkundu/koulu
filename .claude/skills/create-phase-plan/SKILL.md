@@ -173,6 +173,26 @@ Write `docs/features/{context}/{feature}-phase-1-tasks.md` following the Granula
 - Follow hexagonal architecture patterns from existing contexts
 - Match existing codebase conventions (find a similar file, follow its patterns)
 
+**Task dependency analysis (REQUIRED for parallel execution):**
+
+After defining all tasks, analyze inter-task dependencies to enable `/implement-feature` to dispatch independent tasks in parallel:
+
+1. **For each task, identify what it creates/modifies** — already captured in the Files section
+2. **Check imports/usage:** If Task B's code imports from files Task A creates, B depends on A
+3. **Check file overlap:** If two tasks modify the same file, they must be sequential
+4. **Declare `Depends on:` field** on each task — list task numbers, or "none" if independent
+5. **Generate a dependency graph and parallel execution summary** at the top of the task plan
+
+**Common dependency patterns (architecture-aware):**
+- Application layer (handlers, DTOs) → typically independent, can start first
+- Domain interface extensions → depend on knowing what the handler needs
+- Infrastructure implementations → depend on the domain interface they implement
+- API endpoints → depend on the application handler they wire up
+- Frontend types/hooks → do NOT depend on backend files (they mirror the API contract)
+- Frontend components → depend on frontend types/hooks
+- BDD tests → depend on the full backend stack they exercise
+- Final verification → depends on ALL other tasks
+
 ### Step 9: Present Granular Plan
 
 Present the Phase 1 task plan to user:
@@ -346,10 +366,27 @@ Each `{feature}-phase-N-tasks.md` follows this structure:
 **Files to create/modify:** {count}
 **BDD scenarios to enable:** {count}
 **Estimated time:** {X hours}
+**Task count:** {N}
+
+### Dependency Graph
+
+{ASCII diagram showing task dependency flow — tasks as nodes, arrows for dependencies}
+
+### Parallel Execution Summary
+
+| Batch | Tasks | Mode | Rationale |
+|-------|-------|------|-----------|
+| 1 | Task X, Task Y | Parallel | {why these are independent} |
+| ... | ... | ... | ... |
+
+**Sequential execution:** {N} tasks
+**Parallel execution:** {M} batches (estimated ~{P}% time savings)
 
 ---
 
 ### Task 1: {Component Name}
+
+**Depends on:** none | Task X, Task Y
 
 **Files:**
 - Create: `exact/path/to/file.py`
@@ -392,6 +429,8 @@ git commit -m "feat({context}): add specific feature"
 ---
 
 ### Final Task: Enable BDD Scenarios + Verification
+
+**Depends on:** all previous tasks
 
 **Step 1: Remove skip markers for Phase {N} scenarios**
 
@@ -472,3 +511,6 @@ Use multi-phase implementation when:
 - Exact commands with expected output
 - Frequent commits (every 1-3 tasks)
 - References relevant architecture patterns
+- Task dependencies declared with `Depends on:` field on every task
+- Dependency graph and parallel execution summary at top of plan
+- No false dependencies (e.g., frontend types don't depend on backend files)
