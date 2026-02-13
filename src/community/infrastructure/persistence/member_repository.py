@@ -1,5 +1,7 @@
 """SQLAlchemy implementation of member repository."""
 
+from typing import Any
+
 from sqlalchemy import func as sa_func
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -111,14 +113,35 @@ class SqlAlchemyMemberRepository(IMemberRepository):
             await self._session.delete(member_model)
             await self._session.flush()
 
+    def _build_directory_filters(
+        self,
+        community_id: CommunityId,
+        search: str | None = None,
+        role: str | None = None,
+    ) -> list[Any]:
+        """Build common WHERE filters for directory queries."""
+        filters = [
+            CommunityMemberModel.community_id == community_id.value,
+            CommunityMemberModel.is_active.is_(True),
+        ]
+        if search:
+            filters.append(ProfileModel.display_name.ilike(f"%{search}%"))
+        if role:
+            filters.append(CommunityMemberModel.role == role.upper())
+        return filters
+
     async def list_directory(
         self,
         community_id: CommunityId,
         sort: str = "most_recent",
         limit: int = 20,
         offset: int = 0,
+        search: str | None = None,
+        role: str | None = None,
     ) -> list[MemberDirectoryEntry]:
         """List community members with profile data via JOIN."""
+        filters = self._build_directory_filters(community_id, search, role)
+
         query = (
             select(
                 CommunityMemberModel.user_id,
@@ -132,10 +155,7 @@ class SqlAlchemyMemberRepository(IMemberRepository):
                 ProfileModel,
                 CommunityMemberModel.user_id == ProfileModel.user_id,
             )
-            .where(
-                CommunityMemberModel.community_id == community_id.value,
-                CommunityMemberModel.is_active.is_(True),
-            )
+            .where(*filters)
         )
 
         if sort == "alphabetical":
@@ -163,16 +183,22 @@ class SqlAlchemyMemberRepository(IMemberRepository):
     async def count_directory(
         self,
         community_id: CommunityId,
+        search: str | None = None,
+        role: str | None = None,
     ) -> int:
         """Count active members in a community."""
-        result = await self._session.execute(
+        filters = self._build_directory_filters(community_id, search, role)
+
+        query = (
             select(sa_func.count())
             .select_from(CommunityMemberModel)
-            .where(
-                CommunityMemberModel.community_id == community_id.value,
-                CommunityMemberModel.is_active.is_(True),
+            .outerjoin(
+                ProfileModel,
+                CommunityMemberModel.user_id == ProfileModel.user_id,
             )
+            .where(*filters)
         )
+        result = await self._session.execute(query)
         return result.scalar_one()
 
     def _to_entity(self, model: CommunityMemberModel) -> CommunityMember:

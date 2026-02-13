@@ -8,6 +8,8 @@ export interface DirectoryMember {
 }
 
 export interface MembersQueryParams {
+  search?: string;
+  role?: 'admin' | 'moderator' | 'member';
   sort?: 'most_recent' | 'alphabetical';
   limit?: number;
   cursor?: string;

@@ -41,6 +41,8 @@ class ListMembersHandler:
             "member_directory_list_attempt",
             community_id=str(query.community_id),
             requester_id=str(query.requester_id),
+            search=query.search,
+            role=query.role,
             sort=query.sort,
             limit=query.limit,
         )
@@ -49,9 +51,7 @@ class ListMembersHandler:
         requester_id = UserId(query.requester_id)
 
         # Check membership
-        member = await self._member_repository.get_by_user_and_community(
-            requester_id, community_id
-        )
+        member = await self._member_repository.get_by_user_and_community(requester_id, community_id)
         if member is None:
             logger.warning(
                 "member_directory_unauthorized",
@@ -69,6 +69,11 @@ class ListMembersHandler:
             except (json.JSONDecodeError, ValueError, KeyError):
                 pass
 
+        # Normalize search: treat empty/whitespace-only as None
+        search = query.search.strip() if query.search else None
+        if search == "":
+            search = None
+
         # Fetch limit + 1 to determine has_more
         fetch_limit = query.limit + 1
         items = await self._member_repository.list_directory(
@@ -76,11 +81,15 @@ class ListMembersHandler:
             sort=query.sort,
             limit=fetch_limit,
             offset=offset,
+            search=search,
+            role=query.role,
         )
 
-        # Get total count
+        # Get total count (with same filters)
         total_count = await self._member_repository.count_directory(
             community_id=community_id,
+            search=search,
+            role=query.role,
         )
 
         # Determine pagination
