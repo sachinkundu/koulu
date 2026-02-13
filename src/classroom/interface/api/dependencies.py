@@ -15,13 +15,22 @@ from src.classroom.application.handlers import (
     DeleteModuleHandler,
     GetCourseDetailsHandler,
     GetCourseListHandler,
+    GetLessonHandler,
+    GetNextIncompleteLessonHandler,
+    GetProgressHandler,
+    MarkLessonCompleteHandler,
     ReorderLessonsHandler,
     ReorderModulesHandler,
+    StartCourseHandler,
+    UnmarkLessonHandler,
     UpdateCourseHandler,
     UpdateLessonHandler,
     UpdateModuleHandler,
 )
-from src.classroom.infrastructure.persistence import SqlAlchemyCourseRepository
+from src.classroom.infrastructure.persistence import (
+    SqlAlchemyCourseRepository,
+    SqlAlchemyProgressRepository,
+)
 from src.config import settings
 from src.identity.infrastructure.services import JWTService
 
@@ -39,6 +48,14 @@ def get_course_repository(session: SessionDep) -> SqlAlchemyCourseRepository:
 
 
 CourseRepositoryDep = Annotated[SqlAlchemyCourseRepository, Depends(get_course_repository)]
+
+
+def get_progress_repository(session: SessionDep) -> SqlAlchemyProgressRepository:
+    """Get progress repository."""
+    return SqlAlchemyProgressRepository(session)
+
+
+ProgressRepositoryDep = Annotated[SqlAlchemyProgressRepository, Depends(get_progress_repository)]
 
 
 # ============================================================================
@@ -161,3 +178,74 @@ async def get_current_user_id(
 
 
 CurrentUserIdDep = Annotated[UUID, Depends(get_current_user_id)]
+
+
+# ============================================================================
+# Progress Handler Dependencies
+# ============================================================================
+
+
+def get_start_course_handler(
+    course_repo: CourseRepositoryDep,
+    progress_repo: ProgressRepositoryDep,
+) -> StartCourseHandler:
+    """Get start course handler."""
+    return StartCourseHandler(
+        course_repository=course_repo,
+        progress_repository=progress_repo,
+    )
+
+
+def get_get_lesson_handler(
+    course_repo: CourseRepositoryDep,
+    progress_repo: ProgressRepositoryDep,
+) -> GetLessonHandler:
+    """Get lesson handler."""
+    return GetLessonHandler(
+        course_repository=course_repo,
+        progress_repository=progress_repo,
+    )
+
+
+def get_mark_lesson_complete_handler(
+    course_repo: CourseRepositoryDep,
+    progress_repo: ProgressRepositoryDep,
+) -> MarkLessonCompleteHandler:
+    """Get mark lesson complete handler."""
+    return MarkLessonCompleteHandler(
+        course_repository=course_repo,
+        progress_repository=progress_repo,
+    )
+
+
+def get_unmark_lesson_handler(
+    course_repo: CourseRepositoryDep,
+    progress_repo: ProgressRepositoryDep,
+) -> UnmarkLessonHandler:
+    """Get unmark lesson handler."""
+    return UnmarkLessonHandler(
+        course_repository=course_repo,
+        progress_repository=progress_repo,
+    )
+
+
+def get_progress_handler(
+    course_repo: CourseRepositoryDep,
+    progress_repo: ProgressRepositoryDep,
+) -> GetProgressHandler:
+    """Get progress handler."""
+    return GetProgressHandler(
+        course_repository=course_repo,
+        progress_repository=progress_repo,
+    )
+
+
+def get_next_incomplete_lesson_handler(
+    course_repo: CourseRepositoryDep,
+    progress_repo: ProgressRepositoryDep,
+) -> GetNextIncompleteLessonHandler:
+    """Get next incomplete lesson handler."""
+    return GetNextIncompleteLessonHandler(
+        course_repository=course_repo,
+        progress_repository=progress_repo,
+    )

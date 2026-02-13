@@ -11,6 +11,7 @@ from src.classroom.domain.value_objects.lesson_title import LessonTitle
 from src.classroom.domain.value_objects.module_description import ModuleDescription
 from src.classroom.domain.value_objects.module_id import ModuleId
 from src.classroom.domain.value_objects.module_title import ModuleTitle
+from src.classroom.domain.value_objects.progress_id import ProgressId
 from src.classroom.domain.value_objects.text_content import TextContent
 from src.classroom.domain.value_objects.video_url import VideoUrl
 
@@ -26,6 +27,7 @@ __all__ = [
     "ModuleDescription",
     "ModuleId",
     "ModuleTitle",
+    "ProgressId",
     "TextContent",
     "VideoUrl",
 ]

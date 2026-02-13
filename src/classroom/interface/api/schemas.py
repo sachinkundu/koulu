@@ -110,6 +110,7 @@ class LessonDetailResponse(BaseModel):
     content_type: str
     content: str
     position: int
+    is_complete: bool = False
     created_at: datetime
     updated_at: datetime
 
@@ -138,9 +139,19 @@ class ModuleDetailResponse(BaseModel):
     description: str | None
     position: int
     lesson_count: int = 0
+    completion_percentage: int | None = None
     lessons: list[LessonDetailResponse] = []
     created_at: datetime
     updated_at: datetime
+
+
+class ProgressSummary(BaseModel):
+    """Progress summary embedded in course responses."""
+
+    started: bool = False
+    completion_percentage: int = 0
+    last_accessed_lesson_id: UUID | None = None
+    next_incomplete_lesson_id: UUID | None = None
 
 
 class CourseResponse(BaseModel):
@@ -156,6 +167,7 @@ class CourseResponse(BaseModel):
     estimated_duration: str | None
     module_count: int = 0
     lesson_count: int = 0
+    progress: ProgressSummary | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -173,6 +185,7 @@ class CourseDetailResponse(BaseModel):
     estimated_duration: str | None
     module_count: int = 0
     lesson_count: int = 0
+    progress: ProgressSummary | None = None
     modules: list[ModuleDetailResponse] = []
     created_at: datetime
     updated_at: datetime
@@ -189,6 +202,49 @@ class MessageResponse(BaseModel):
     """Generic message response."""
 
     message: str
+
+
+class LessonContextResponse(BaseModel):
+    """Lesson with navigation and completion context."""
+
+    id: UUID
+    title: str
+    content_type: str
+    content: str
+    position: int
+    is_complete: bool = False
+    next_lesson_id: UUID | None = None
+    prev_lesson_id: UUID | None = None
+    module_title: str
+    course_id: UUID
+    course_title: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class StartCourseResponse(BaseModel):
+    """Response for starting a course."""
+
+    progress_id: UUID
+    first_lesson_id: UUID | None = None
+
+
+class ProgressDetailResponse(BaseModel):
+    """Detailed progress response."""
+
+    user_id: UUID
+    course_id: UUID
+    started_at: str
+    completion_percentage: int
+    completed_lesson_ids: list[UUID]
+    next_incomplete_lesson_id: UUID | None = None
+    last_accessed_lesson_id: UUID | None = None
+
+
+class NextLessonResponse(BaseModel):
+    """Response for next incomplete lesson."""
+
+    lesson_id: UUID | None = None
 
 
 class ErrorResponse(BaseModel):

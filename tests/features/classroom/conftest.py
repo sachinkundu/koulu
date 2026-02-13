@@ -9,8 +9,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.classroom.infrastructure.persistence.models import (
     CourseModel,
+    LessonCompletionModel,
     LessonModel,
     ModuleModel,
+    ProgressModel,
 )
 from src.identity.infrastructure.persistence.models import ProfileModel, UserModel
 from src.identity.infrastructure.services import Argon2PasswordHasher
@@ -19,6 +21,7 @@ from src.identity.infrastructure.services import Argon2PasswordHasher
 CreateCourseFactory = Callable[..., Coroutine[Any, Any, CourseModel]]
 CreateModuleFactory = Callable[..., Coroutine[Any, Any, ModuleModel]]
 CreateLessonFactory = Callable[..., Coroutine[Any, Any, LessonModel]]
+CreateProgressFactory = Callable[..., Coroutine[Any, Any, ProgressModel]]
 
 
 @pytest_asyncio.fixture
@@ -140,3 +143,37 @@ async def create_lesson_in_db(db_session: AsyncSession) -> CreateLessonFactory:
         return lesson
 
     return _create_lesson
+
+
+@pytest_asyncio.fixture
+async def create_progress_in_db(db_session: AsyncSession) -> CreateProgressFactory:
+    """Factory fixture to create progress records directly in the database."""
+
+    async def _create_progress(
+        user_id: Any,
+        course_id: Any,
+        completed_lesson_ids: list[Any] | None = None,
+    ) -> ProgressModel:
+        progress_id = uuid4()
+        progress = ProgressModel(
+            id=progress_id,
+            user_id=user_id,
+            course_id=course_id,
+        )
+        db_session.add(progress)
+        await db_session.flush()
+
+        if completed_lesson_ids:
+            for lesson_id in completed_lesson_ids:
+                completion = LessonCompletionModel(
+                    id=uuid4(),
+                    progress_id=progress_id,
+                    lesson_id=lesson_id,
+                )
+                db_session.add(completion)
+
+        await db_session.commit()
+        await db_session.refresh(progress)
+        return progress
+
+    return _create_progress

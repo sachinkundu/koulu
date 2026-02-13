@@ -29,8 +29,10 @@ from src.classroom.domain.exceptions import (
     CourseTitleTooShortError,
     InvalidCoverImageUrlError,
 )
+from src.classroom.infrastructure.persistence import SqlAlchemyProgressRepository
 from src.classroom.interface.api.dependencies import (
     CurrentUserIdDep,
+    ProgressRepositoryDep,
     get_course_details_handler,
     get_course_list_handler,
     get_create_course_handler,
@@ -47,8 +49,10 @@ from src.classroom.interface.api.schemas import (
     LessonDetailResponse,
     MessageResponse,
     ModuleDetailResponse,
+    ProgressSummary,
     UpdateCourseRequest,
 )
+from src.identity.domain.value_objects import UserId
 
 logger = structlog.get_logger()
 
@@ -117,27 +121,36 @@ async def create_course(
 async def list_courses(
     current_user_id: CurrentUserIdDep,
     handler: Annotated[GetCourseListHandler, Depends(get_course_list_handler)],
+    progress_repo: ProgressRepositoryDep,
 ) -> CourseListResponse:
     """List all courses."""
     try:
         query = GetCourseListQuery(requester_id=current_user_id)
         courses = await handler.handle(query)
 
-        course_responses = [
-            CourseResponse(
-                id=c.id.value,
-                instructor_id=c.instructor_id.value,
-                title=c.title.value,
-                description=c.description.value if c.description else None,
-                cover_image_url=c.cover_image_url.value if c.cover_image_url else None,
-                estimated_duration=c.estimated_duration.value if c.estimated_duration else None,
-                module_count=c.module_count,
-                lesson_count=c.lesson_count,
-                created_at=c.created_at,
-                updated_at=c.updated_at,
+        user_id = UserId(current_user_id)
+        course_responses = []
+        for c in courses:
+            progress_summary = await _build_progress_summary(
+                progress_repo, user_id, c.id, c.lesson_count
             )
-            for c in courses
-        ]
+            course_responses.append(
+                CourseResponse(
+                    id=c.id.value,
+                    instructor_id=c.instructor_id.value,
+                    title=c.title.value,
+                    description=c.description.value if c.description else None,
+                    cover_image_url=c.cover_image_url.value if c.cover_image_url else None,
+                    estimated_duration=(
+                        c.estimated_duration.value if c.estimated_duration else None
+                    ),
+                    module_count=c.module_count,
+                    lesson_count=c.lesson_count,
+                    progress=progress_summary,
+                    created_at=c.created_at,
+                    updated_at=c.updated_at,
+                )
+            )
 
         return CourseListResponse(courses=course_responses, total=len(course_responses))
 
@@ -161,36 +174,53 @@ async def get_course(
     course_id: UUID,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[GetCourseDetailsHandler, Depends(get_course_details_handler)],
+    progress_repo: ProgressRepositoryDep,
 ) -> CourseDetailResponse:
     """Get course details."""
     try:
         query = GetCourseDetailsQuery(course_id=course_id, requester_id=current_user_id)
         course = await handler.handle(query)
 
-        module_responses = [
-            ModuleDetailResponse(
-                id=m.id.value,
-                title=m.title.value,
-                description=m.description.value if m.description else None,
-                position=m.position,
-                lesson_count=m.lesson_count,
-                lessons=[
-                    LessonDetailResponse(
-                        id=ls.id.value,
-                        title=ls.title.value,
-                        content_type=ls.content_type.value,
-                        content=ls.content,
-                        position=ls.position,
-                        created_at=ls.created_at,
-                        updated_at=ls.updated_at,
-                    )
-                    for ls in m.lessons
-                ],
-                created_at=m.created_at,
-                updated_at=m.updated_at,
+        user_id = UserId(current_user_id)
+        progress = await progress_repo.get_by_user_and_course(user_id, course.id)
+        completed_ids = progress.get_completed_lesson_ids() if progress else set()
+
+        module_responses = []
+        for m in course.modules:
+            module_completed = sum(1 for ls in m.lessons if ls.id in completed_ids)
+            module_pct = (
+                round(module_completed * 100 / m.lesson_count) if m.lesson_count > 0 else None
             )
-            for m in course.modules
-        ]
+
+            module_responses.append(
+                ModuleDetailResponse(
+                    id=m.id.value,
+                    title=m.title.value,
+                    description=m.description.value if m.description else None,
+                    position=m.position,
+                    lesson_count=m.lesson_count,
+                    completion_percentage=module_pct if progress else None,
+                    lessons=[
+                        LessonDetailResponse(
+                            id=ls.id.value,
+                            title=ls.title.value,
+                            content_type=ls.content_type.value,
+                            content=ls.content,
+                            position=ls.position,
+                            is_complete=ls.id in completed_ids,
+                            created_at=ls.created_at,
+                            updated_at=ls.updated_at,
+                        )
+                        for ls in m.lessons
+                    ],
+                    created_at=m.created_at,
+                    updated_at=m.updated_at,
+                )
+            )
+
+        progress_summary = await _build_progress_summary(
+            progress_repo, user_id, course.id, course.lesson_count
+        )
 
         return CourseDetailResponse(
             id=course.id.value,
@@ -203,6 +233,7 @@ async def get_course(
             ),
             module_count=course.module_count,
             lesson_count=course.lesson_count,
+            progress=progress_summary,
             modules=module_responses,
             created_at=course.created_at,
             updated_at=course.updated_at,
@@ -319,3 +350,33 @@ async def delete_course(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         ) from e
+
+
+# ============================================================================
+# Helpers
+# ============================================================================
+
+
+async def _build_progress_summary(
+    progress_repo: SqlAlchemyProgressRepository,
+    user_id: UserId,
+    course_id: object,
+    total_lessons: int,
+) -> ProgressSummary | None:
+    """Build a ProgressSummary for a course, or None if not started."""
+    from src.classroom.domain.value_objects.course_id import CourseId
+
+    assert isinstance(course_id, CourseId)
+    progress = await progress_repo.get_by_user_and_course(user_id, course_id)
+    if progress is None:
+        return None
+
+    completion_pct = progress.calculate_completion_percentage(total_lessons)
+    return ProgressSummary(
+        started=True,
+        completion_percentage=completion_pct,
+        last_accessed_lesson_id=(
+            progress.last_accessed_lesson_id.value if progress.last_accessed_lesson_id else None
+        ),
+        next_incomplete_lesson_id=None,  # populated separately if needed
+    )

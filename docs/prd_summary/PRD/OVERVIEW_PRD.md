@@ -813,10 +813,7 @@ Each feature will have a detailed PRD and BDD specification. The index below map
 | Comments | `docs/features/community/comments-prd.md` | `tests/features/community/comments.feature` | |
 | Reactions | `docs/features/community/reactions-prd.md` | `tests/features/community/reactions.feature` | |
 | Categories | `docs/features/community/categories-prd.md` | `tests/features/community/categories.feature` | |
-| Courses | `docs/features/classroom/courses-prd.md` | `tests/features/classroom/courses.feature` | |
-| Modules | `docs/features/classroom/modules-prd.md` | `tests/features/classroom/modules.feature` | |
-| Lessons | `docs/features/classroom/lessons-prd.md` | `tests/features/classroom/lessons.feature` | |
-| Progress Tracking | `docs/features/classroom/progress-prd.md` | `tests/features/classroom/progress.feature` | |
+| Classroom (Phases 1-3) | `docs/features/classroom/classroom-prd.md` | `tests/features/classroom/classroom.feature` | ✅ Phase 1-3 Complete (61/71 scenarios) |
 | Events | `docs/features/calendar/events-prd.md` | `tests/features/calendar/events.feature` | |
 | Member Directory | `docs/features/members/directory-prd.md` | `tests/features/members/directory.feature` | |
 | Member Map | `docs/features/members/map-prd.md` | `tests/features/members/map.feature` | |

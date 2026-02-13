@@ -191,3 +191,36 @@ class InvalidPositionError(ClassroomDomainError):
 
     def __init__(self, reason: str = "Invalid position") -> None:
         super().__init__(reason)
+
+
+# Progress errors
+class ProgressNotFoundError(ClassroomDomainError):
+    """Raised when progress cannot be found for a user and course."""
+
+    def __init__(self, user_id: str, course_id: str) -> None:
+        super().__init__(f"Progress not found for user {user_id} on course {course_id}")
+        self.user_id = user_id
+        self.course_id = course_id
+
+
+class ProgressAlreadyExistsError(ClassroomDomainError):
+    """Raised when progress already exists for a user and course."""
+
+    def __init__(self, user_id: str, course_id: str) -> None:
+        super().__init__(f"Progress already exists for user {user_id} on course {course_id}")
+
+
+class LessonAlreadyCompletedError(ClassroomDomainError):
+    """Raised when a lesson is already marked as complete."""
+
+    def __init__(self, lesson_id: str) -> None:
+        super().__init__(f"Lesson already completed: {lesson_id}")
+        self.lesson_id = lesson_id
+
+
+class LessonNotCompletedError(ClassroomDomainError):
+    """Raised when trying to unmark a lesson that isn't completed."""
+
+    def __init__(self, lesson_id: str) -> None:
+        super().__init__(f"Lesson not completed: {lesson_id}")
+        self.lesson_id = lesson_id

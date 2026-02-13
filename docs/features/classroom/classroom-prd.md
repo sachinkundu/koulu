@@ -1,9 +1,9 @@
 # Classroom - Product Requirements Document
 
-**Version:** 2.0
-**Last Updated:** 2026-02-07
+**Version:** 2.1
+**Last Updated:** 2026-02-13
 **Status:** Draft
-**Implementation Status:** Phase 1-2 Complete (Course Foundation + Module & Lesson Management)
+**Implementation Status:** Phase 1-3 Complete (Course Foundation + Module & Lesson Management + Progress Tracking & Course Consumption)
 **Bounded Context:** Classroom
 **PRD Type:** Feature Specification
 

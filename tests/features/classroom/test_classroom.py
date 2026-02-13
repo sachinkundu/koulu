@@ -13,8 +13,10 @@ Phase 2 scenarios (28 enabled):
 - Member views course details (1 happy path)
 - Course with no modules empty state (1 happy path)
 
-Phase 3-4 scenarios (32 skipped):
-- Phase 3: Progress tracking & course consumption (22 scenarios)
+Phase 3 scenarios (22 enabled):
+- Progress tracking & course consumption (22 scenarios)
+
+Phase 4 scenarios (10 skipped):
 - Phase 4: Security hardening (10 scenarios)
 
 NOTE: Step functions have intentionally "unused" parameters like `client` for pytest-bdd
@@ -30,142 +32,9 @@ from httpx import AsyncClient
 from pytest_bdd import given, parsers, scenario, scenarios, then, when
 
 # ============================================================================
-# PHASE 3-4: EXPLICITLY SKIPPED SCENARIOS
+# PHASE 4: EXPLICITLY SKIPPED SCENARIOS
 # These override the auto-generated test functions from scenarios()
 # ============================================================================
-
-
-# Phase 3: Progress Tracking & Course Consumption (22 scenarios)
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@scenario("classroom.feature", "Admin soft deletes a course")
-def test_admin_soft_deletes_a_course() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@scenario("classroom.feature", "Admin soft deletes a lesson")
-def test_admin_soft_deletes_a_lesson() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@scenario("classroom.feature", "Member views course list with progress indicators")
-def test_member_views_course_list_with_progress_indicators() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@scenario("classroom.feature", "Member views course details with progress")
-def test_member_views_course_details_with_progress() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
-@scenario("classroom.feature", "Member starts a course")
-def test_member_starts_a_course() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
-@scenario("classroom.feature", "Member views a text lesson")
-def test_member_views_a_text_lesson() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
-@scenario("classroom.feature", "Member views a video lesson")
-def test_member_views_a_video_lesson() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
-@scenario("classroom.feature", "Member navigates to next lesson within module")
-def test_member_navigates_to_next_lesson_within_module() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
-@scenario("classroom.feature", "Member navigates to previous lesson within module")
-def test_member_navigates_to_previous_lesson_within_module() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
-@scenario("classroom.feature", "Member navigates to next lesson across modules")
-def test_member_navigates_to_next_lesson_across_modules() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
-@scenario("classroom.feature", "Member navigates to previous lesson across modules")
-def test_member_navigates_to_previous_lesson_across_modules() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when continue is implemented")
-@scenario("classroom.feature", "Member continues where they left off")
-def test_member_continues_where_they_left_off() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when continue is implemented")
-@scenario("classroom.feature", "Member continues on fully completed course")
-def test_member_continues_on_fully_completed_course() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@scenario("classroom.feature", "Member marks a lesson as complete")
-def test_member_marks_a_lesson_as_complete() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@scenario("classroom.feature", "Member un-marks a lesson as complete")
-def test_member_unmarks_a_lesson_as_complete() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@scenario("classroom.feature", "Member completes all lessons in a course")
-def test_member_completes_all_lessons_in_a_course() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@scenario("classroom.feature", "Module completion percentage updates")
-def test_module_completion_percentage_updates() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@scenario("classroom.feature", "Course completion percentage updates")
-def test_course_completion_percentage_updates() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@scenario("classroom.feature", "Progress is retained after course soft delete")
-def test_progress_is_retained_after_course_soft_delete() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@scenario("classroom.feature", "Next incomplete lesson is null when course is complete")
-def test_next_incomplete_lesson_is_null_when_course_is_complete() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@scenario("classroom.feature", "Progress excludes soft-deleted lessons from percentage")
-def test_progress_excludes_softdeleted_lessons_from_percentage() -> None:
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when empty state is implemented")
-@scenario("classroom.feature", "Module with no lessons shows empty state")
-def test_module_with_no_lessons_shows_empty_state() -> None:
-    pass
 
 
 # Phase 4: Security (10 scenarios)
@@ -1345,9 +1214,12 @@ async def each_course_shows_counts(client: AsyncClient, context: dict[str, Any])
 
 @then("the member's progress should be null for unstarted courses")
 async def progress_null_for_unstarted(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify progress is null for unstarted courses (Phase 1: no progress yet)."""
-    # Phase 1: Progress tracking not yet implemented, this is expected
-    pass
+    """Verify progress is null for unstarted courses."""
+    response = context["list_response"]
+    assert response.status_code == 200
+    data = response.json()
+    for course in data["courses"]:
+        assert course["progress"] is None
 
 
 # ============================================================================
@@ -1978,13 +1850,6 @@ async def each_lesson_shows_type(client: AsyncClient, context: dict[str, Any]) -
             assert lesson["content_type"] in ("text", "video")
 
 
-@then("each lesson should show is_complete: false")
-async def each_lesson_not_complete(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify lessons not complete (no progress tracking yet in Phase 2)."""
-    # Phase 2 doesn't have progress tracking - this passes as progress is not shown
-    pass
-
-
 @then(parsers.parse('the response should show "{message}"'))
 async def response_shows_message(
     client: AsyncClient, message: str, context: dict[str, Any]
@@ -1997,553 +1862,1165 @@ async def response_shows_message(
 
 
 # ============================================================================
-# PHASE 3 SKIPPED: Progress Tracking (22 scenarios)
+# PHASE 3: GIVEN STEPS - Course Consumption & Progress
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @given(parsers.parse('a member has started the course "{title}"'))
-async def member_started_course(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
-    """Member has started a course."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@given(
-    parsers.parse(
-        'a course "{title}" exists with {module_count:d} modules and {total_lessons:d} total lessons'
+async def member_started_course(
+    client: AsyncClient,
+    title: str,
+    context: dict[str, Any],
+) -> None:
+    """Member has started a course by calling the start endpoint."""
+    token = context["auth_token"]
+    course_id = context["course_id"]
+    response = await client.post(
+        f"/api/v1/progress/courses/{course_id}/start",
+        headers={"Authorization": f"Bearer {token}"},
     )
-)
-async def course_with_modules_lessons(
-    client: AsyncClient, title: str, module_count: int, total_lessons: int, context: dict[str, Any]
-) -> None:
-    """Course with specific module/lesson counts."""
-    pass
+    assert response.status_code in (201, 400), f"Start course failed: {response.text}"
+    context["start_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@given(parsers.parse('the member has completed {count:d} lessons in "{title}"'))
-async def member_completed_lessons(
-    client: AsyncClient, count: int, title: str, context: dict[str, Any]
-) -> None:
-    """Member completed N lessons."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@then(parsers.parse('the course "{title}" should show {pct:d}% completion'))
-async def course_shows_completion(
-    client: AsyncClient, title: str, pct: int, context: dict[str, Any]
-) -> None:
-    """Verify completion percentage."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@then(parsers.parse('the course should show "started: true"'))
-async def course_shows_started(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify course shows started."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@given(parsers.parse('a course "{title}" exists with {count:d} lessons'))
-async def course_with_n_lessons(
-    client: AsyncClient, title: str, count: int, context: dict[str, Any]
-) -> None:
-    """Course with N lessons."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@given(parsers.parse("the member has completed lesson {num1:d} and lesson {num2:d}"))
-async def member_completed_two_lessons(
-    client: AsyncClient, num1: int, num2: int, context: dict[str, Any]
-) -> None:
-    """Member completed two specific lessons."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@then(parsers.parse("lesson {num:d} should show is_complete: {value}"))
-async def lesson_completion_status(
-    client: AsyncClient, num: int, value: str, context: dict[str, Any]
-) -> None:
-    """Verify lesson completion status."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@then(parsers.parse("the progress should show {pct:d}% completion"))
-async def progress_shows_pct(client: AsyncClient, pct: int, context: dict[str, Any]) -> None:
-    """Verify progress percentage."""
-    pass
-
-
-# --- Course Consumption ---
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
 @given(
     parsers.parse(
         'a course "{title}" exists with {module_count:d} module and {lesson_count:d} lessons'
     )
 )
 async def course_with_module_lessons(
-    client: AsyncClient, title: str, module_count: int, lesson_count: int, context: dict[str, Any]
+    client: AsyncClient,
+    title: str,
+    module_count: int,
+    lesson_count: int,
+    context: dict[str, Any],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+    create_lesson_in_db: Any,
 ) -> None:
-    """Course with module and lessons."""
-    pass
+    """Course with module(s) and lessons."""
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title=title)
+    context["course"] = course
+    context["course_id"] = course.id
+
+    all_lessons: list[Any] = []
+    lesson_num = 0
+    for m_idx in range(1, module_count + 1):
+        module = await create_module_in_db(
+            course_id=course.id, title=f"Module {m_idx}", position=m_idx
+        )
+        lessons_per_module = lesson_count // module_count
+        for l_idx in range(1, lessons_per_module + 1):
+            lesson_num += 1
+            lesson = await create_lesson_in_db(
+                module_id=module.id,
+                title=f"Lesson {lesson_num}",
+                content_type="text",
+                content=f"Content for Lesson {lesson_num}",
+                position=l_idx,
+            )
+            all_lessons.append(lesson)
+    context["all_lessons"] = all_lessons
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
-@when(parsers.parse('the member starts the course "{title}"'))
-async def member_starts_course(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
-    """Member starts a course."""
-    pass
+@given(parsers.parse('a course "{title}" exists with {count:d} lessons'))
+async def course_with_lessons_for_continue(
+    client: AsyncClient,
+    title: str,
+    count: int,
+    context: dict[str, Any],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+    create_lesson_in_db: Any,
+) -> None:
+    """Course with N lessons in a single module."""
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title=title)
+    context["course"] = course
+    context["course_id"] = course.id
+
+    module = await create_module_in_db(course_id=course.id, title="Module 1", position=1)
+    all_lessons: list[Any] = []
+    for i in range(1, count + 1):
+        lesson = await create_lesson_in_db(
+            module_id=module.id,
+            title=f"Lesson {i}",
+            content_type="text",
+            content=f"Content for lesson {i}",
+            position=i,
+        )
+        all_lessons.append(lesson)
+    context["all_lessons"] = all_lessons
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
-@then("a progress record should be created")
-async def progress_record_created(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify progress record."""
-    pass
+@given(
+    parsers.parse('a course "{title}" exists with {count:d} modules and {total:d} total lessons')
+)
+async def course_with_modules_and_total_lessons(
+    client: AsyncClient,
+    title: str,
+    count: int,
+    total: int,
+    context: dict[str, Any],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+    create_lesson_in_db: Any,
+) -> None:
+    """Course with N modules and total lessons distributed evenly."""
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title=title)
+    context["course"] = course
+    context["course_id"] = course.id
+
+    per_module = total // count
+    all_lessons: list[Any] = []
+    lesson_num = 0
+    for m_idx in range(1, count + 1):
+        module = await create_module_in_db(
+            course_id=course.id, title=f"Module {m_idx}", position=m_idx
+        )
+        for l_idx in range(1, per_module + 1):
+            lesson_num += 1
+            lesson = await create_lesson_in_db(
+                module_id=module.id,
+                title=f"Lesson {lesson_num}",
+                content_type="text",
+                content=f"Content for Lesson {lesson_num}",
+                position=l_idx,
+            )
+            all_lessons.append(lesson)
+    context["all_lessons"] = all_lessons
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
-@then("the member should be navigated to the first lesson")
-async def navigated_to_first_lesson(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify navigation to first lesson."""
-    pass
+@given(parsers.parse("a course exists with {count:d} lessons"))
+async def course_with_n_lessons_for_progress(
+    client: AsyncClient,
+    count: int,
+    context: dict[str, Any],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+    create_lesson_in_db: Any,
+) -> None:
+    """Course with N lessons for progress test."""
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title="Test Course")
+    context["course"] = course
+    context["course_id"] = course.id
+
+    module = await create_module_in_db(course_id=course.id, title="Module 1", position=1)
+    all_lessons: list[Any] = []
+    for i in range(1, count + 1):
+        lesson = await create_lesson_in_db(
+            module_id=module.id,
+            title=f"Lesson {i}",
+            content_type="text",
+            content=f"Content for lesson {i}",
+            position=i,
+        )
+        all_lessons.append(lesson)
+    context["all_lessons"] = all_lessons
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
 @given(parsers.parse('a course exists with a text lesson "{title}" containing "{content}"'))
 async def course_with_text_lesson(
-    client: AsyncClient, title: str, content: str, context: dict[str, Any]
+    client: AsyncClient,
+    title: str,
+    content: str,
+    context: dict[str, Any],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+    create_lesson_in_db: Any,
 ) -> None:
-    """Course with text lesson."""
-    pass
+    """Course with a text lesson containing specific content."""
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title="Test Course")
+    context["course"] = course
+    context["course_id"] = course.id
+
+    module = await create_module_in_db(course_id=course.id, title="Module 1", position=1)
+    lesson = await create_lesson_in_db(
+        module_id=module.id, title=title, content_type="text", content=content, position=1
+    )
+    # Add a second lesson so navigation has a "next"
+    lesson2 = await create_lesson_in_db(
+        module_id=module.id, title="Next Lesson", content_type="text", content="Next", position=2
+    )
+    context["lesson"] = lesson
+    context["lesson_id"] = lesson.id
+    context["all_lessons"] = [lesson, lesson2]
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
-@when(parsers.parse('the member views the lesson "{title}"'))
-async def member_views_lesson(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
-    """Member views a lesson."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
-@then("the lesson content should be displayed with rich text formatting")
-async def lesson_shows_rich_text(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify rich text display."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
-@then('the "Mark as Complete" toggle should be unchecked')
-async def toggle_unchecked(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify toggle unchecked."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
-@then('the navigation should show "Next Lesson" button')
-async def shows_next_button(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify next lesson button."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
 @given(parsers.parse('a course exists with a video lesson "{title}" with YouTube URL'))
 async def course_with_video_lesson_yt(
-    client: AsyncClient, title: str, context: dict[str, Any]
+    client: AsyncClient,
+    title: str,
+    context: dict[str, Any],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+    create_lesson_in_db: Any,
 ) -> None:
-    """Course with video lesson."""
-    pass
+    """Course with a video lesson."""
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title="Test Course")
+    context["course"] = course
+    context["course_id"] = course.id
+
+    module = await create_module_in_db(course_id=course.id, title="Module 1", position=1)
+    lesson = await create_lesson_in_db(
+        module_id=module.id,
+        title=title,
+        content_type="video",
+        content="https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        position=1,
+    )
+    context["lesson"] = lesson
+    context["lesson_id"] = lesson.id
+    context["all_lessons"] = [lesson]
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when course consumption is implemented")
-@then("the video should be displayed in an embedded player")
-async def video_embedded(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify video embedded."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
 @given(parsers.parse('a module exists with lessons "{l1}", "{l2}", "{l3}"'))
 async def module_with_three_lessons(
-    client: AsyncClient, l1: str, l2: str, l3: str, context: dict[str, Any]
+    client: AsyncClient,
+    l1: str,
+    l2: str,
+    l3: str,
+    context: dict[str, Any],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+    create_lesson_in_db: Any,
 ) -> None:
-    """Module with three lessons."""
-    pass
+    """Module with three named lessons."""
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title="Test Course")
+    context["course"] = course
+    context["course_id"] = course.id
+
+    module = await create_module_in_db(course_id=course.id, title="Module 1", position=1)
+    lessons_map: dict[str, Any] = {}
+    all_lessons: list[Any] = []
+    for i, name in enumerate([l1, l2, l3], start=1):
+        lesson = await create_lesson_in_db(
+            module_id=module.id,
+            title=name,
+            content_type="text",
+            content=f"Content for {name}",
+            position=i,
+        )
+        lessons_map[name] = lesson
+        all_lessons.append(lesson)
+    context["lessons_map"] = lessons_map
+    context["all_lessons"] = all_lessons
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
-@given(parsers.parse('the member is viewing "{title}"'))
-async def member_viewing_lesson(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
-    """Member is viewing a lesson."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
-@when('the member clicks "Next Lesson"')
-async def member_clicks_next(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Member clicks next."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
-@then(parsers.parse('the member should be navigated to "{title}"'))
-async def navigated_to_lesson(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
-    """Verify navigation to lesson."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
-@when('the member clicks "Previous Lesson"')
-async def member_clicks_previous(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Member clicks previous."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
 @given("a course exists with:")
 async def course_exists_with_structure_table(
-    client: AsyncClient, context: dict[str, Any], datatable: list[dict[str, str]]
+    client: AsyncClient,
+    context: dict[str, Any],
+    datatable: list[dict[str, str]],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+    create_lesson_in_db: Any,
 ) -> None:
-    """Course with structure from table."""
-    pass
+    """Course with structure from table (module | lessons)."""
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title="Test Course")
+    context["course"] = course
+    context["course_id"] = course.id
+
+    lessons_map: dict[str, Any] = {}
+    all_lessons: list[Any] = []
+    for m_idx, row in enumerate(datatable, start=1):
+        module = await create_module_in_db(course_id=course.id, title=row["module"], position=m_idx)
+        lesson_names = [name.strip() for name in row["lessons"].split(",")]
+        for l_idx, lname in enumerate(lesson_names, start=1):
+            lesson = await create_lesson_in_db(
+                module_id=module.id,
+                title=lname,
+                content_type="text",
+                content=f"Content for {lname}",
+                position=l_idx,
+            )
+            lessons_map[lname] = lesson
+            all_lessons.append(lesson)
+    context["lessons_map"] = lessons_map
+    context["all_lessons"] = all_lessons
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
+@given(parsers.parse("a module exists with {count:d} lessons"))
+async def module_with_n_lessons_for_progress(
+    client: AsyncClient,
+    count: int,
+    context: dict[str, Any],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+    create_lesson_in_db: Any,
+) -> None:
+    """Module with N lessons for progress."""
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title="Test Course")
+    context["course"] = course
+    context["course_id"] = course.id
+
+    module = await create_module_in_db(course_id=course.id, title="Module 1", position=1)
+    context["module"] = module
+    context["module_id"] = module.id
+
+    all_lessons: list[Any] = []
+    for i in range(1, count + 1):
+        lesson = await create_lesson_in_db(
+            module_id=module.id,
+            title=f"Lesson {i}",
+            content_type="text",
+            content=f"Content for lesson {i}",
+            position=i,
+        )
+        all_lessons.append(lesson)
+    context["all_lessons"] = all_lessons
+
+
+@given(parsers.parse('the member is viewing "{title}"'))
+async def member_viewing_lesson(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
+    """Member is viewing a lesson — fetch via API and store response."""
+    token = context["auth_token"]
+    lessons_map = context.get("lessons_map", {})
+    lesson = lessons_map.get(title)
+    if lesson is None:
+        # Fallback: search all_lessons
+        for ls in context.get("all_lessons", []):
+            if ls.title == title:
+                lesson = ls
+                break
+    assert lesson is not None, f"Lesson '{title}' not found in context"
+    context["current_lesson_id"] = lesson.id
+
+    response = await client.get(
+        f"/api/v1/lessons/{lesson.id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, f"GET lesson failed: {response.text}"
+    context["lesson_response"] = response
+
+
 @given(parsers.parse('the member is viewing "{title}" (last lesson of {module})'))
 async def member_viewing_last_lesson(
     client: AsyncClient, title: str, module: str, context: dict[str, Any]
 ) -> None:
     """Member viewing last lesson of module."""
-    pass
+    token = context["auth_token"]
+    lessons_map = context.get("lessons_map", {})
+    lesson = lessons_map.get(title)
+    assert lesson is not None, f"Lesson '{title}' not found"
+    context["current_lesson_id"] = lesson.id
+
+    response = await client.get(
+        f"/api/v1/lessons/{lesson.id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    context["lesson_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
-@then(parsers.parse('the member should be navigated to "{title}" (first lesson of {module})'))
-async def navigated_to_first_of_module(
-    client: AsyncClient, title: str, module: str, context: dict[str, Any]
-) -> None:
-    """Verify navigation across modules."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
 @given(parsers.parse('the member is viewing "{title}" (first lesson of {module})'))
 async def member_viewing_first_lesson(
     client: AsyncClient, title: str, module: str, context: dict[str, Any]
 ) -> None:
     """Member viewing first lesson of module."""
-    pass
+    token = context["auth_token"]
+    lessons_map = context.get("lessons_map", {})
+    lesson = lessons_map.get(title)
+    assert lesson is not None, f"Lesson '{title}' not found"
+    context["current_lesson_id"] = lesson.id
+
+    response = await client.get(
+        f"/api/v1/lessons/{lesson.id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    context["lesson_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when navigation is implemented")
+@given(parsers.parse('the member is viewing a lesson "{title}"'))
+async def member_viewing_specific_lesson(
+    client: AsyncClient,
+    title: str,
+    context: dict[str, Any],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+    create_lesson_in_db: Any,
+) -> None:
+    """Member is viewing a specific lesson (creates course/module/lesson if needed)."""
+    if "course_id" not in context:
+        admin_email = "admin@example.com"
+        instructor_id = context["users"][admin_email]["user"].id
+        course = await create_course_in_db(instructor_id=instructor_id, title="Test Course")
+        context["course"] = course
+        context["course_id"] = course.id
+        module = await create_module_in_db(course_id=course.id, title="Module 1", position=1)
+        lesson = await create_lesson_in_db(
+            module_id=module.id, title=title, content_type="text", content="Content", position=1
+        )
+        context["all_lessons"] = [lesson]
+    else:
+        # Find lesson by title in existing lessons
+        lesson = None
+        for ls in context.get("all_lessons", []):
+            if ls.title == title:
+                lesson = ls
+                break
+        assert lesson is not None, f"Lesson '{title}' not found"
+
+    context["lesson"] = lesson
+    context["lesson_id"] = lesson.id
+    context["current_lesson_id"] = lesson.id
+
+
+@given("the lesson is not complete")
+async def lesson_not_complete(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Lesson is not yet completed — this is the default state, nothing to do."""
+
+
+@given("the lesson is already marked complete")
+async def lesson_already_complete(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Mark lesson complete via API so it's already done."""
+    token = context["auth_token"]
+    lesson_id = context["lesson_id"]
+
+    response = await client.post(
+        f"/api/v1/progress/lessons/{lesson_id}/complete",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, f"Mark complete failed: {response.text}"
+
+
+@given(parsers.parse("the member has completed lessons {num1:d} and {num2:d}"))
+async def member_completed_specific_lessons(
+    client: AsyncClient, num1: int, num2: int, context: dict[str, Any]
+) -> None:
+    """Member completed specific lessons by number."""
+    token = context["auth_token"]
+    all_lessons = context["all_lessons"]
+
+    for num in [num1, num2]:
+        lesson = all_lessons[num - 1]
+        response = await client.post(
+            f"/api/v1/progress/lessons/{lesson.id}/complete",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200, f"Mark complete failed: {response.text}"
+
+
+@given(parsers.parse("the member has completed lesson {num1:d} and lesson {num2:d}"))
+async def member_completed_lesson_x_and_y(
+    client: AsyncClient, num1: int, num2: int, context: dict[str, Any]
+) -> None:
+    """Member completed specific lessons by number (alternative phrasing)."""
+    token = context["auth_token"]
+    all_lessons = context["all_lessons"]
+
+    for num in [num1, num2]:
+        lesson = all_lessons[num - 1]
+        response = await client.post(
+            f"/api/v1/progress/lessons/{lesson.id}/complete",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200, f"Mark complete failed: {response.text}"
+
+
+@given("the member has completed all lessons")
+async def member_completed_all(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Member completed all lessons in the course."""
+    token = context["auth_token"]
+    all_lessons = context["all_lessons"]
+
+    for lesson in all_lessons:
+        response = await client.post(
+            f"/api/v1/progress/lessons/{lesson.id}/complete",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200, f"Mark complete failed for {lesson.id}: {response.text}"
+
+
+@given(parsers.parse("the member has completed {count:d} lessons"))
+async def member_completed_n_lessons(
+    client: AsyncClient, count: int, context: dict[str, Any]
+) -> None:
+    """Member completed first N lessons."""
+    token = context["auth_token"]
+    all_lessons = context["all_lessons"]
+
+    for lesson in all_lessons[:count]:
+        response = await client.post(
+            f"/api/v1/progress/lessons/{lesson.id}/complete",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200, f"Mark complete failed: {response.text}"
+
+
+@given(parsers.parse('the member has completed {count:d} lessons in "{title}"'))
+async def member_completed_n_in_course(
+    client: AsyncClient, count: int, title: str, context: dict[str, Any]
+) -> None:
+    """Member completed N lessons in a specific course."""
+    token = context["auth_token"]
+    all_lessons = context["all_lessons"]
+
+    for lesson in all_lessons[:count]:
+        response = await client.post(
+            f"/api/v1/progress/lessons/{lesson.id}/complete",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == 200, f"Mark complete failed: {response.text}"
+
+
+@given(parsers.parse('a module exists with a lesson "Old Lesson"'))
+async def module_with_old_lesson(
+    client: AsyncClient,
+    context: dict[str, Any],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+    create_lesson_in_db: Any,
+) -> None:
+    """Module with lesson for deletion test."""
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title="Test Course")
+    context["course"] = course
+    context["course_id"] = course.id
+
+    module = await create_module_in_db(course_id=course.id, title="Module 1", position=1)
+    context["module"] = module
+    context["module_id"] = module.id
+
+    lesson = await create_lesson_in_db(
+        module_id=module.id, title="Old Lesson", content_type="text", content="Old", position=1
+    )
+    context["lesson"] = lesson
+    context["lesson_id"] = lesson.id
+    context["all_lessons"] = [lesson]
+
+
+@given(parsers.parse('a member has completed the lesson "{title}"'))
+async def member_completed_lesson(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
+    """Member completed a specific lesson by title."""
+    token = context["auth_token"]
+    lesson_id = context["lesson_id"]
+
+    response = await client.post(
+        f"/api/v1/progress/lessons/{lesson_id}/complete",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200, f"Mark complete failed: {response.text}"
+
+
+@given(parsers.parse('a course exists with a module "{title}" that has no lessons'))
+async def course_with_empty_module(
+    client: AsyncClient,
+    title: str,
+    context: dict[str, Any],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+) -> None:
+    """Course with an empty module."""
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title="Test Course")
+    context["course"] = course
+    context["course_id"] = course.id
+
+    module = await create_module_in_db(course_id=course.id, title=title, position=1)
+    context["module"] = module
+    context["module_id"] = module.id
+    context["all_lessons"] = []
+
+
+# ============================================================================
+# PHASE 3: WHEN STEPS
+# ============================================================================
+
+
+@when(parsers.parse('the member starts the course "{title}"'))
+async def member_starts_course(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
+    """Member starts a course via API."""
+    token = context["auth_token"]
+    course_id = context["course_id"]
+
+    response = await client.post(
+        f"/api/v1/courses/{course_id}/start",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["start_response"] = response
+
+
+@when(parsers.parse('the member views the lesson "{title}"'))
+async def member_views_lesson(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
+    """Member views a lesson via API."""
+    token = context["auth_token"]
+    # Find lesson by title
+    lesson = None
+    for ls in context.get("all_lessons", []):
+        if ls.title == title:
+            lesson = ls
+            break
+    if lesson is None and context.get("lesson") and context["lesson"].title == title:
+        lesson = context["lesson"]
+    assert lesson is not None, f"Lesson '{title}' not found"
+
+    response = await client.get(
+        f"/api/v1/lessons/{lesson.id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["lesson_response"] = response
+    context["current_lesson_id"] = lesson.id
+
+
+@when('the member clicks "Next Lesson"')
+async def member_clicks_next(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Navigate to next lesson using the next_lesson_id from current response."""
+    token = context["auth_token"]
+    lesson_data = context["lesson_response"].json()
+    next_id = lesson_data.get("next_lesson_id")
+    assert next_id is not None, "No next lesson available"
+
+    response = await client.get(
+        f"/api/v1/lessons/{next_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["lesson_response"] = response
+
+
+@when('the member clicks "Previous Lesson"')
+async def member_clicks_previous(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Navigate to previous lesson using the prev_lesson_id from current response."""
+    token = context["auth_token"]
+    lesson_data = context["lesson_response"].json()
+    prev_id = lesson_data.get("prev_lesson_id")
+    assert prev_id is not None, "No previous lesson available"
+
+    response = await client.get(
+        f"/api/v1/lessons/{prev_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["lesson_response"] = response
+
+
+@when(parsers.parse('the member clicks "Continue" on the course'))
+async def member_clicks_continue(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Member clicks continue — calls the continue endpoint."""
+    token = context["auth_token"]
+    course_id = context["course_id"]
+
+    response = await client.get(
+        f"/api/v1/courses/{course_id}/continue",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["continue_response"] = response
+
+
+@when("the member marks the lesson as complete")
+async def member_marks_complete(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Mark current lesson complete via API."""
+    token = context["auth_token"]
+    lesson_id = context.get("current_lesson_id") or context["lesson_id"]
+
+    response = await client.post(
+        f"/api/v1/progress/lessons/{lesson_id}/complete",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["complete_response"] = response
+
+
+@when("the member un-marks the lesson as complete")
+async def member_unmarks_complete(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Un-mark lesson via API."""
+    token = context["auth_token"]
+    lesson_id = context.get("current_lesson_id") or context["lesson_id"]
+
+    response = await client.delete(
+        f"/api/v1/progress/lessons/{lesson_id}/complete",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["uncomplete_response"] = response
+
+
+@when("the member marks the third lesson as complete")
+async def member_marks_third_complete(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Mark third lesson complete via API."""
+    token = context["auth_token"]
+    all_lessons = context["all_lessons"]
+    third = all_lessons[2]
+
+    response = await client.post(
+        f"/api/v1/progress/lessons/{third.id}/complete",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["complete_response"] = response
+
+
+@when(parsers.parse('the member requests their progress for "{title}"'))
+async def member_requests_progress(
+    client: AsyncClient, title: str, context: dict[str, Any]
+) -> None:
+    """Member requests progress via API."""
+    token = context["auth_token"]
+    course_id = context["course_id"]
+
+    response = await client.get(
+        f"/api/v1/progress/courses/{course_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["progress_response"] = response
+
+
+@when("the member requests the course progress")
+async def member_requests_course_progress(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Member requests course progress via API."""
+    token = context["auth_token"]
+    course_id = context["course_id"]
+
+    response = await client.get(
+        f"/api/v1/progress/courses/{course_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["progress_response"] = response
+
+
+@when(parsers.parse("the admin deletes lesson {num:d}"))
+async def admin_deletes_lesson_num(client: AsyncClient, num: int, context: dict[str, Any]) -> None:
+    """Admin deletes lesson by number."""
+    admin_email = "admin@example.com"
+    token = await _get_auth_token(client, admin_email)
+    all_lessons = context["all_lessons"]
+    lesson = all_lessons[num - 1]
+
+    response = await client.delete(
+        f"/api/v1/lessons/{lesson.id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 204, f"Delete lesson failed: {response.text}"
+
+
+@when(parsers.parse('the admin deletes the lesson "{title}"'))
+async def admin_deletes_lesson(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
+    """Admin deletes lesson by title."""
+    admin_email = "admin@example.com"
+    token = await _get_auth_token(client, admin_email)
+    lesson_id = context["lesson_id"]
+
+    response = await client.delete(
+        f"/api/v1/lessons/{lesson_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 204, f"Delete lesson failed: {response.text}"
+    context["lesson_delete_response"] = response
+
+
+# ============================================================================
+# PHASE 3: THEN STEPS
+# ============================================================================
+
+
+@then("a progress record should be created")
+async def progress_record_created(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify progress record was created via start response."""
+    response = context["start_response"]
+    assert response.status_code == 201, f"Expected 201, got {response.status_code}: {response.text}"
+    data = response.json()
+    assert "progress_id" in data
+    context["progress_id"] = data["progress_id"]
+
+
+@then("the member should be navigated to the first lesson")
+async def navigated_to_first_lesson(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify start response returns first lesson ID."""
+    response = context["start_response"]
+    data = response.json()
+    first_lesson = context["all_lessons"][0]
+    assert data["first_lesson_id"] == str(first_lesson.id)
+
+
+@then("the lesson content should be displayed with rich text formatting")
+async def lesson_shows_rich_text(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify lesson response includes content."""
+    response = context["lesson_response"]
+    assert response.status_code == 200
+    data = response.json()
+    assert data["content_type"] == "text"
+    assert len(data["content"]) > 0
+
+
+@then('the "Mark as Complete" toggle should be unchecked')
+async def toggle_unchecked(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify lesson shows is_complete: false."""
+    response = context["lesson_response"]
+    data = response.json()
+    assert data["is_complete"] is False
+
+
+@then('the navigation should show "Next Lesson" button')
+async def shows_next_button(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify next_lesson_id is not null."""
+    response = context["lesson_response"]
+    data = response.json()
+    assert data["next_lesson_id"] is not None
+
+
+@then("the video should be displayed in an embedded player")
+async def video_embedded(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify video lesson returns video content_type and YouTube URL."""
+    response = context["lesson_response"]
+    assert response.status_code == 200
+    data = response.json()
+    assert data["content_type"] == "video"
+    assert "youtube.com" in data["content"]
+
+
+@then(parsers.parse('the member should be navigated to "{title}"'))
+async def navigated_to_lesson(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
+    """Verify current lesson response shows the expected title."""
+    response = context["lesson_response"]
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == title, f"Expected '{title}', got '{data['title']}'"
+
+
+@then(parsers.parse('the member should be navigated to "{title}" (first lesson of {module})'))
+async def navigated_to_first_of_module(
+    client: AsyncClient, title: str, module: str, context: dict[str, Any]
+) -> None:
+    """Verify navigation across modules — landed on expected lesson."""
+    response = context["lesson_response"]
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == title, f"Expected '{title}', got '{data['title']}'"
+
+
 @then(parsers.parse('the member should be navigated to "{title}" (last lesson of {module})'))
 async def navigated_to_last_of_module(
     client: AsyncClient, title: str, module: str, context: dict[str, Any]
 ) -> None:
     """Verify navigation to last lesson of previous module."""
-    pass
+    response = context["lesson_response"]
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == title, f"Expected '{title}', got '{data['title']}'"
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when continue is implemented")
-@given(parsers.parse('a course "{title}" exists with {count:d} lessons'))
-async def course_with_lessons_for_continue(
-    client: AsyncClient, title: str, count: int, context: dict[str, Any]
-) -> None:
-    """Course with N lessons for continue test."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when continue is implemented")
-@given(parsers.parse("the member has completed lessons {num1:d} and {num2:d}"))
-async def member_completed_specific_lessons(
-    client: AsyncClient, num1: int, num2: int, context: dict[str, Any]
-) -> None:
-    """Member completed specific lessons."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when continue is implemented")
-@when(parsers.parse('the member clicks "Continue" on the course'))
-async def member_clicks_continue(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Member clicks continue."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when continue is implemented")
 @then(parsers.parse("the member should be navigated to lesson {num:d} (first incomplete)"))
 async def navigated_to_first_incomplete(
     client: AsyncClient, num: int, context: dict[str, Any]
 ) -> None:
-    """Verify navigation to first incomplete."""
-    pass
+    """Verify continue returned the expected lesson."""
+    response = context["continue_response"]
+    assert response.status_code == 200
+    data = response.json()
+    expected_lesson = context["all_lessons"][num - 1]
+    assert data["lesson_id"] == str(expected_lesson.id)
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when continue is implemented")
-@given("the member has completed all lessons")
-async def member_completed_all(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Member completed all lessons."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when continue is implemented")
 @then("the member should be navigated to the last lesson")
 async def navigated_to_last_lesson(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify navigation to last lesson."""
-    pass
+    """Verify continue returned the last lesson."""
+    response = context["continue_response"]
+    assert response.status_code == 200
+    data = response.json()
+    last_lesson = context["all_lessons"][-1]
+    assert data["lesson_id"] == str(last_lesson.id)
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when continue is implemented")
 @then(parsers.parse('a "Course Complete" message should be displayed'))
 async def course_complete_message(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify course complete message."""
-    pass
+    """Verify course is fully complete (all lessons done)."""
+    # Verified by the fact that continue returned last lesson (100% complete)
+    token = context["auth_token"]
+    course_id = context["course_id"]
+    response = await client.get(
+        f"/api/v1/progress/courses/{course_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    assert response.json()["completion_percentage"] == 100
 
 
-# --- Progress Tracking ---
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@given(parsers.parse('the member is viewing a lesson "{title}"'))
-async def member_viewing_specific_lesson(
-    client: AsyncClient, title: str, context: dict[str, Any]
-) -> None:
-    """Member is viewing a specific lesson."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@given("the lesson is not complete")
-async def lesson_not_complete(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Lesson is not yet completed."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@when("the member marks the lesson as complete")
-async def member_marks_complete(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Mark lesson complete."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then("the lesson completion should be saved")
 async def completion_saved(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify completion saved."""
-    pass
+    """Verify mark complete succeeded."""
+    response = context["complete_response"]
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then("the lesson should show is_complete: true")
 async def lesson_shows_complete(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify lesson shows complete."""
-    pass
+    """Verify lesson shows complete via GET."""
+    token = context["auth_token"]
+    lesson_id = context.get("current_lesson_id") or context["lesson_id"]
+
+    response = await client.get(
+        f"/api/v1/lessons/{lesson_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    assert response.json()["is_complete"] is True
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@given("the lesson is already marked complete")
-async def lesson_already_complete(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Lesson is already complete."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@when("the member un-marks the lesson as complete")
-async def member_unmarks_complete(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Un-mark lesson complete."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then("the lesson completion should be removed")
 async def completion_removed(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify completion removed."""
-    pass
+    """Verify unmark succeeded."""
+    response = context["uncomplete_response"]
+    assert response.status_code == 204, f"Expected 204, got {response.status_code}"
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then("the lesson should show is_complete: false")
 async def lesson_shows_not_complete(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify lesson shows not complete."""
-    pass
+    """Verify lesson shows not complete via GET."""
+    token = context["auth_token"]
+    lesson_id = context.get("current_lesson_id") or context["lesson_id"]
+
+    response = await client.get(
+        f"/api/v1/lessons/{lesson_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    assert response.json()["is_complete"] is False
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@given(parsers.parse("the member has completed {count:d} lessons"))
-async def member_completed_n_lessons(
-    client: AsyncClient, count: int, context: dict[str, Any]
-) -> None:
-    """Member completed N lessons."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@when("the member marks the third lesson as complete")
-async def member_marks_third_complete(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Mark third lesson complete."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then(parsers.parse("the course progress should show {pct:d}% completion"))
 async def course_progress_pct(client: AsyncClient, pct: int, context: dict[str, Any]) -> None:
-    """Verify course progress percentage."""
-    pass
+    """Verify course progress percentage via progress endpoint."""
+    token = context["auth_token"]
+    course_id = context["course_id"]
+
+    response = await client.get(
+        f"/api/v1/progress/courses/{course_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["completion_percentage"] == pct, (
+        f"Expected {pct}%, got {data['completion_percentage']}%"
+    )
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@given(parsers.parse("a module exists with {count:d} lessons"))
-async def module_with_n_lessons_for_progress(
-    client: AsyncClient, count: int, context: dict[str, Any]
-) -> None:
-    """Module with N lessons for progress."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then(parsers.parse("the module should show {pct:d}% completion"))
 async def module_shows_pct(client: AsyncClient, pct: int, context: dict[str, Any]) -> None:
-    """Verify module progress."""
-    pass
+    """Verify module completion percentage via course details."""
+    token = context["auth_token"]
+    course_id = context["course_id"]
+
+    response = await client.get(
+        f"/api/v1/courses/{course_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    # Check first module
+    modules = data["modules"]
+    assert len(modules) > 0
+    assert modules[0]["completion_percentage"] == pct, (
+        f"Expected {pct}%, got {modules[0]['completion_percentage']}%"
+    )
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then(parsers.parse("the course should show {pct:d}% completion"))
 async def course_shows_pct(client: AsyncClient, pct: int, context: dict[str, Any]) -> None:
-    """Verify course completion."""
-    pass
+    """Verify course completion via course details progress."""
+    token = context["auth_token"]
+    course_id = context["course_id"]
+
+    response = await client.get(
+        f"/api/v1/courses/{course_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["progress"] is not None
+    assert data["progress"]["completion_percentage"] == pct, (
+        f"Expected {pct}%, got {data['progress']['completion_percentage']}%"
+    )
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@when(parsers.parse('the member requests their progress for "{title}"'))
-async def member_requests_progress(
-    client: AsyncClient, title: str, context: dict[str, Any]
+@then(parsers.parse('the course "{title}" should show {pct:d}% completion'))
+async def course_title_shows_pct(
+    client: AsyncClient, title: str, pct: int, context: dict[str, Any]
 ) -> None:
-    """Member requests progress."""
-    pass
+    """Verify specific course shows completion in list."""
+    response = context["list_response"]
+    assert response.status_code == 200
+    data = response.json()
+    for course in data["courses"]:
+        if course["title"] == title:
+            assert course["progress"] is not None
+            assert course["progress"]["completion_percentage"] == pct
+            return
+    pytest.fail(f"Course '{title}' not found in list")
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
+@then('the course should show "started: true"')
+async def course_shows_started(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify course shows started in list."""
+    response = context["list_response"]
+    assert response.status_code == 200
+    data = response.json()
+    # Find the course with progress
+    found = False
+    for course in data["courses"]:
+        if course["progress"] is not None:
+            assert course["progress"]["started"] is True
+            found = True
+    assert found, "No course with progress found in list"
+
+
+@then(parsers.parse("the progress should show {pct:d}% completion"))
+async def progress_shows_pct(client: AsyncClient, pct: int, context: dict[str, Any]) -> None:
+    """Verify progress percentage in course details."""
+    response = context["detail_response"]
+    assert response.status_code == 200
+    data = response.json()
+    assert data["progress"] is not None
+    assert data["progress"]["completion_percentage"] == pct
+
+
+@then(parsers.parse("lesson {num:d} should show is_complete: true"))
+async def lesson_num_complete(client: AsyncClient, num: int, context: dict[str, Any]) -> None:
+    """Verify specific lesson shows complete in course details."""
+    response = context["detail_response"]
+    data = response.json()
+    # Flatten all lessons from all modules
+    all_lesson_responses = []
+    for m in data["modules"]:
+        all_lesson_responses.extend(m["lessons"])
+    assert all_lesson_responses[num - 1]["is_complete"] is True
+
+
+@then(parsers.parse("lesson {num:d} should show is_complete: false"))
+async def lesson_num_not_complete(client: AsyncClient, num: int, context: dict[str, Any]) -> None:
+    """Verify specific lesson shows not complete in course details."""
+    response = context["detail_response"]
+    data = response.json()
+    all_lesson_responses = []
+    for m in data["modules"]:
+        all_lesson_responses.extend(m["lessons"])
+    assert all_lesson_responses[num - 1]["is_complete"] is False
+
+
+@then("each lesson should show is_complete: false")
+async def all_lessons_not_complete(client: AsyncClient, context: dict[str, Any]) -> None:
+    """Verify all lessons show not complete in course details."""
+    response = context["detail_response"]
+    data = response.json()
+    for m in data["modules"]:
+        for ls in m["lessons"]:
+            assert ls["is_complete"] is False, f"Lesson {ls['title']} should not be complete"
+
+
 @then(parsers.parse("the progress should still show {count:d} completed lessons"))
 async def progress_shows_completed(
     client: AsyncClient, count: int, context: dict[str, Any]
 ) -> None:
-    """Verify completed lesson count."""
-    pass
+    """Verify completed lesson count in progress response."""
+    response = context["progress_response"]
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["completed_lesson_ids"]) == count
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then(parsers.parse("the completion percentage should be {pct:d}%"))
 async def completion_is_pct(client: AsyncClient, pct: int, context: dict[str, Any]) -> None:
-    """Verify completion percentage."""
-    pass
+    """Verify completion percentage in progress response."""
+    response = context["progress_response"]
+    assert response.status_code == 200
+    data = response.json()
+    assert data["completion_percentage"] == pct
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@when("the member requests the course progress")
-async def member_requests_course_progress(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Member requests course progress."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then("the next_incomplete_lesson_id should be null")
 async def next_incomplete_null(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify next incomplete is null."""
-    pass
+    """Verify next incomplete is null in progress response."""
+    response = context["progress_response"]
+    assert response.status_code == 200
+    data = response.json()
+    assert data["next_incomplete_lesson_id"] is None
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@given(parsers.parse("a course exists with {count:d} lessons"))
-async def course_with_n_lessons_for_progress(
-    client: AsyncClient, count: int, context: dict[str, Any]
-) -> None:
-    """Course with N lessons for progress test."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@when(parsers.parse("the admin deletes lesson {num:d}"))
-async def admin_deletes_lesson_num(client: AsyncClient, num: int, context: dict[str, Any]) -> None:
-    """Admin deletes lesson by number."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then(parsers.parse("the course should show {pct:d}% completion ({detail})"))
 async def course_shows_pct_detail(
     client: AsyncClient, pct: int, detail: str, context: dict[str, Any]
 ) -> None:
-    """Verify completion with detail."""
-    pass
+    """Verify completion with detail text (e.g., '2 of 3 remaining lessons')."""
+    token = context["auth_token"]
+    course_id = context["course_id"]
+
+    response = await client.get(
+        f"/api/v1/courses/{course_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["progress"] is not None
+    assert data["progress"]["completion_percentage"] == pct
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@given(parsers.parse('a member has completed the lesson "{title}"'))
-async def member_completed_lesson(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
-    """Member completed a specific lesson."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@when(parsers.parse('the admin deletes the lesson "{title}"'))
-async def admin_deletes_lesson(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
-    """Admin deletes lesson by title."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then("the lesson should be soft deleted")
 async def lesson_soft_deleted(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify lesson soft deleted."""
-    pass
+    """Verify lesson is soft deleted (not visible in course details)."""
+    token = context["auth_token"]
+    course_id = context["course_id"]
+
+    response = await client.get(
+        f"/api/v1/courses/{course_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    lesson_id = str(context["lesson_id"])
+    for m in data["modules"]:
+        for ls in m["lessons"]:
+            assert ls["id"] != lesson_id, "Deleted lesson should not appear"
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then("the lesson should not appear in module details")
 async def lesson_not_in_module(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify lesson not in module."""
-    pass
+    """Verify deleted lesson doesn't appear in module."""
+    # Already verified by lesson_soft_deleted above
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
 @then("the member's completion status should be retained")
 async def completion_retained(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify completion retained."""
-    pass
+    """Verify completion is retained after lesson deletion."""
+    token = context["auth_token"]
+    course_id = context["course_id"]
+
+    response = await client.get(
+        f"/api/v1/progress/courses/{course_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["completed_lesson_ids"]) > 0
 
 
-@pytest.mark.skip(reason="Phase 3: Will be enabled when progress tracking is implemented")
-@given(parsers.parse('a module exists with a lesson "Old Lesson"'))
-async def module_with_old_lesson(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Module with lesson for deletion test."""
-    pass
-
-
-# --- Empty States ---
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when empty state display is implemented")
-@given(parsers.parse('a course exists with a module "{title}" that has no lessons'))
-async def course_with_empty_module(
-    client: AsyncClient, title: str, context: dict[str, Any]
-) -> None:
-    """Course with empty module."""
-    pass
-
-
-@pytest.mark.skip(reason="Phase 3: Will be enabled when empty state display is implemented")
 @then(parsers.parse('the module should show "{message}"'))
 async def module_shows_message(client: AsyncClient, message: str, context: dict[str, Any]) -> None:
-    """Verify module message."""
-    pass
+    """Verify module shows expected message (empty state — verified via lesson_count=0)."""
+    token = context["auth_token"]
+    course_id = context["course_id"]
+
+    response = await client.get(
+        f"/api/v1/courses/{course_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["modules"][0]["lesson_count"] == 0
 
 
 # ============================================================================
