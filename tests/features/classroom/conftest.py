@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Coroutine
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +14,10 @@ from src.classroom.infrastructure.persistence.models import (
     ModuleModel,
     ProgressModel,
 )
+from src.community.infrastructure.persistence.models import (
+    CommunityMemberModel,
+    CommunityModel,
+)
 from src.identity.infrastructure.persistence.models import ProfileModel, UserModel
 from src.identity.infrastructure.services import Argon2PasswordHasher
 
@@ -22,6 +26,45 @@ CreateCourseFactory = Callable[..., Coroutine[Any, Any, CourseModel]]
 CreateModuleFactory = Callable[..., Coroutine[Any, Any, ModuleModel]]
 CreateLessonFactory = Callable[..., Coroutine[Any, Any, LessonModel]]
 CreateProgressFactory = Callable[..., Coroutine[Any, Any, ProgressModel]]
+
+
+@pytest_asyncio.fixture
+async def default_community(db_session: AsyncSession) -> CommunityModel:
+    """Create a default community for role-based access checks."""
+    community = CommunityModel(
+        id=uuid4(),
+        name="Test Community",
+        slug="test-community",
+    )
+    db_session.add(community)
+    await db_session.commit()
+    await db_session.refresh(community)
+    return community
+
+
+@pytest_asyncio.fixture
+async def create_member(
+    db_session: AsyncSession,
+    default_community: CommunityModel,
+) -> Callable[..., Coroutine[Any, Any, CommunityMemberModel]]:
+    """Factory fixture to create community memberships."""
+
+    async def _create_member(
+        user_id: UUID,
+        role: str = "MEMBER",
+    ) -> CommunityMemberModel:
+        member = CommunityMemberModel(
+            id=uuid4(),
+            community_id=default_community.id,
+            user_id=user_id,
+            role=role,
+        )
+        db_session.add(member)
+        await db_session.commit()
+        await db_session.refresh(member)
+        return member
+
+    return _create_member
 
 
 @pytest_asyncio.fixture

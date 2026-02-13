@@ -224,3 +224,12 @@ class LessonNotCompletedError(ClassroomDomainError):
     def __init__(self, lesson_id: str) -> None:
         super().__init__(f"Lesson not completed: {lesson_id}")
         self.lesson_id = lesson_id
+
+
+# Authorization errors
+class UnauthorizedError(ClassroomDomainError):
+    """Raised when a user lacks permission for an action."""
+
+    def __init__(self, action: str = "perform this action") -> None:
+        super().__init__(f"Not authorized to {action}")
+        self.action = action

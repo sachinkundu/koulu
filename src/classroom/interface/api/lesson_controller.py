@@ -33,7 +33,7 @@ from src.classroom.domain.exceptions import (
     VideoUrlRequiredError,
 )
 from src.classroom.interface.api.dependencies import (
-    CurrentUserIdDep,
+    AdminVerifiedDep,
     get_add_lesson_handler,
     get_delete_lesson_handler,
     get_reorder_lessons_handler,
@@ -66,7 +66,7 @@ router = APIRouter(tags=["Classroom Lessons"])
 async def add_lesson(
     module_id: UUID,
     body: AddLessonRequest,
-    current_user_id: CurrentUserIdDep,  # noqa: ARG001
+    current_user_id: AdminVerifiedDep,  # noqa: ARG001
     handler: Annotated[AddLessonHandler, Depends(get_add_lesson_handler)],
 ) -> CreateLessonResponse:
     """Add a lesson to a module."""
@@ -121,7 +121,7 @@ async def add_lesson(
 async def update_lesson(
     lesson_id: UUID,
     body: UpdateLessonRequest,
-    current_user_id: CurrentUserIdDep,  # noqa: ARG001
+    current_user_id: AdminVerifiedDep,  # noqa: ARG001
     handler: Annotated[UpdateLessonHandler, Depends(get_update_lesson_handler)],
 ) -> MessageResponse:
     """Update a lesson."""
@@ -174,7 +174,7 @@ async def update_lesson(
 )
 async def delete_lesson(
     lesson_id: UUID,
-    current_user_id: CurrentUserIdDep,  # noqa: ARG001
+    current_user_id: AdminVerifiedDep,  # noqa: ARG001
     handler: Annotated[DeleteLessonHandler, Depends(get_delete_lesson_handler)],
 ) -> None:
     """Soft delete a lesson."""
@@ -209,7 +209,7 @@ async def delete_lesson(
 async def reorder_lessons(
     module_id: UUID,
     body: ReorderRequest,
-    current_user_id: CurrentUserIdDep,  # noqa: ARG001
+    current_user_id: AdminVerifiedDep,  # noqa: ARG001
     handler: Annotated[ReorderLessonsHandler, Depends(get_reorder_lessons_handler)],
 ) -> MessageResponse:
     """Reorder lessons in a module."""

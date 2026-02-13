@@ -4,7 +4,7 @@ from typing import Annotated
 from uuid import UUID
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from src.classroom.application.commands import (
     CreateCourseCommand,
@@ -31,6 +31,7 @@ from src.classroom.domain.exceptions import (
 )
 from src.classroom.infrastructure.persistence import SqlAlchemyProgressRepository
 from src.classroom.interface.api.dependencies import (
+    AdminVerifiedDep,
     CurrentUserIdDep,
     ProgressRepositoryDep,
     get_course_details_handler,
@@ -53,6 +54,7 @@ from src.classroom.interface.api.schemas import (
     UpdateCourseRequest,
 )
 from src.identity.domain.value_objects import UserId
+from src.identity.infrastructure.services import limiter
 
 logger = structlog.get_logger()
 
@@ -71,11 +73,14 @@ router = APIRouter(prefix="/courses", tags=["Classroom Courses"])
     responses={
         400: {"model": ErrorResponse, "description": "Validation error"},
         401: {"model": ErrorResponse, "description": "Not authenticated"},
+        403: {"model": ErrorResponse, "description": "Not authorized"},
     },
 )
+@limiter.limit("10/minute")
 async def create_course(
+    request: Request,  # noqa: ARG001 — required by slowapi rate limiter
     body: CreateCourseRequest,
-    current_user_id: CurrentUserIdDep,
+    current_user_id: AdminVerifiedDep,
     handler: Annotated[CreateCourseHandler, Depends(get_create_course_handler)],
 ) -> CreateCourseResponse:
     """Create a new course."""
@@ -258,13 +263,14 @@ async def get_course(
     responses={
         400: {"model": ErrorResponse, "description": "Validation error"},
         401: {"model": ErrorResponse, "description": "Not authenticated"},
+        403: {"model": ErrorResponse, "description": "Not authorized"},
         404: {"model": ErrorResponse, "description": "Course not found"},
     },
 )
 async def update_course(
     course_id: UUID,
     body: UpdateCourseRequest,
-    current_user_id: CurrentUserIdDep,
+    current_user_id: AdminVerifiedDep,
     handler: Annotated[UpdateCourseHandler, Depends(get_update_course_handler)],
 ) -> MessageResponse:
     """Update a course."""
@@ -316,12 +322,13 @@ async def update_course(
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
         401: {"model": ErrorResponse, "description": "Not authenticated"},
+        403: {"model": ErrorResponse, "description": "Not authorized"},
         404: {"model": ErrorResponse, "description": "Course not found"},
     },
 )
 async def delete_course(
     course_id: UUID,
-    current_user_id: CurrentUserIdDep,
+    current_user_id: AdminVerifiedDep,
     handler: Annotated[DeleteCourseHandler, Depends(get_delete_course_handler)],
 ) -> None:
     """Soft delete a course."""

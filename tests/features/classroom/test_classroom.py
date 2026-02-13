@@ -16,8 +16,8 @@ Phase 2 scenarios (28 enabled):
 Phase 3 scenarios (22 enabled):
 - Progress tracking & course consumption (22 scenarios)
 
-Phase 4 scenarios (10 skipped):
-- Phase 4: Security hardening (10 scenarios)
+Phase 4 scenarios (10 enabled):
+- Security hardening: auth, authz, XSS, rate limiting (10 scenarios)
 
 NOTE: Step functions have intentionally "unused" parameters like `client` for pytest-bdd
 fixture dependency ordering.
@@ -32,67 +32,56 @@ from httpx import AsyncClient
 from pytest_bdd import given, parsers, scenario, scenarios, then, when
 
 # ============================================================================
-# PHASE 4: EXPLICITLY SKIPPED SCENARIOS
+# PHASE 4: SECURITY SCENARIOS (now enabled)
 # These override the auto-generated test functions from scenarios()
 # ============================================================================
 
 
-# Phase 4: Security (10 scenarios)
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authentication enforcement is implemented")
 @scenario("classroom.feature", "Unauthenticated user cannot view courses")
 def test_unauthenticated_user_cannot_view_courses() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authorization is implemented")
 @scenario("classroom.feature", "Non-admin cannot create a course")
 def test_nonadmin_cannot_create_a_course() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authorization is implemented")
 @scenario("classroom.feature", "Non-admin cannot edit a course")
 def test_nonadmin_cannot_edit_a_course() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authorization is implemented")
 @scenario("classroom.feature", "Non-admin cannot delete a course")
 def test_nonadmin_cannot_delete_a_course() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authorization is implemented")
 @scenario("classroom.feature", "Non-admin cannot manage modules")
 def test_nonadmin_cannot_manage_modules() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authorization is implemented")
 @scenario("classroom.feature", "Non-admin cannot manage lessons")
 def test_nonadmin_cannot_manage_lessons() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when XSS prevention is implemented")
 @scenario("classroom.feature", "Rich text content is sanitized to prevent XSS")
 def test_rich_text_content_is_sanitized_to_prevent_xss() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when video URL validation is implemented")
 @scenario("classroom.feature", "Video embed URLs are validated to prevent XSS")
 def test_video_embed_urls_are_validated_to_prevent_xss() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when progress ownership is implemented")
 @scenario("classroom.feature", "Member can only view their own progress")
 def test_member_can_only_view_their_own_progress() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when rate limiting is implemented")
 @scenario("classroom.feature", "Course creation is rate limited")
 def test_course_creation_is_rate_limited() -> None:
     pass
@@ -137,10 +126,14 @@ async def verified_user_exists(
     email: str,
     role: str,
     create_user: Any,
+    create_member: Any,
     context: dict[str, Any],
 ) -> None:
-    """Create a verified user."""
+    """Create a verified user with community membership."""
     user = await create_user(email=email, display_name=f"{role.title()} User")
+    # Create community membership with appropriate role
+    community_role = role.upper()
+    await create_member(user_id=user.id, role=community_role)
 
     if "users" not in context:
         context["users"] = {}
@@ -3024,145 +3017,285 @@ async def module_shows_message(client: AsyncClient, message: str, context: dict[
 
 
 # ============================================================================
-# PHASE 4 SKIPPED: Security (10 scenarios)
+# PHASE 4: Security step definitions
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authentication enforcement is implemented")
+# --- Authentication / Authorization steps ---
+
+
 @when("the request attempts to view the course list")
 async def unauthenticated_view_courses(client: AsyncClient, context: dict[str, Any]) -> None:
     """Unauthenticated request to view courses."""
-    pass
+    response = await client.get("/api/v1/courses")
+    context["security_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authentication enforcement is implemented")
 @then(parsers.parse('the request should fail with "{error_msg}" error'))
 async def request_fails_with_error(
     client: AsyncClient, error_msg: str, context: dict[str, Any]
 ) -> None:
-    """Verify request failed."""
-    pass
+    """Verify request failed with expected error."""
+    response = context["security_response"]
+    if error_msg == "authentication required":
+        assert response.status_code == 401, (
+            f"Expected 401, got {response.status_code}: {response.text}"
+        )
+    elif error_msg == "unauthorized":
+        # 403 = explicit forbidden, 404 = structurally prevented (e.g., progress scoped to JWT user)
+        assert response.status_code in (403, 404), (
+            f"Expected 403 or 404, got {response.status_code}: {response.text}"
+        )
+    elif error_msg == "invalid video URL":
+        assert response.status_code == 400, (
+            f"Expected 400, got {response.status_code}: {response.text}"
+        )
+    else:
+        msg = f"Unknown error_msg: {error_msg}"
+        raise AssertionError(msg)
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authorization is implemented")
 @when("the user attempts to create a course")
 async def user_attempts_create_course(client: AsyncClient, context: dict[str, Any]) -> None:
     """Non-admin attempts to create course."""
-    pass
+    token = context["auth_token"]
+    response = await client.post(
+        "/api/v1/courses",
+        json={"title": "Unauthorized Course"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["security_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authorization is implemented")
 @when("the user attempts to edit the course")
 async def user_attempts_edit_course(client: AsyncClient, context: dict[str, Any]) -> None:
     """Non-admin attempts to edit course."""
-    pass
+    token = context["auth_token"]
+    course_id = context["course_id"]
+    response = await client.patch(
+        f"/api/v1/courses/{course_id}",
+        json={"title": "Hacked Title"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["security_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authorization is implemented")
 @when("the user attempts to delete the course")
 async def user_attempts_delete_course(client: AsyncClient, context: dict[str, Any]) -> None:
     """Non-admin attempts to delete course."""
-    pass
+    token = context["auth_token"]
+    course_id = context["course_id"]
+    response = await client.delete(
+        f"/api/v1/courses/{course_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["security_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authorization is implemented")
 @when("the user attempts to add a module to the course")
 async def user_attempts_add_module(client: AsyncClient, context: dict[str, Any]) -> None:
     """Non-admin attempts to add module."""
-    pass
+    token = context["auth_token"]
+    course_id = context["course_id"]
+    response = await client.post(
+        f"/api/v1/courses/{course_id}/modules",
+        json={"title": "Unauthorized Module"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["security_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authorization is implemented")
 @given("a module exists")
-async def module_exists_for_security(client: AsyncClient, context: dict[str, Any]) -> None:
+async def module_exists_for_security(
+    client: AsyncClient,
+    context: dict[str, Any],
+    create_course_in_db: Any,
+    create_module_in_db: Any,
+) -> None:
     """Module exists for security test."""
-    pass
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title="Security Test Course")
+    context["course"] = course
+    context["course_id"] = course.id
+
+    module = await create_module_in_db(
+        course_id=course.id,
+        title="Security Test Module",
+        position=1,
+    )
+    context["module"] = module
+    context["module_id"] = module.id
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when authorization is implemented")
 @when("the user attempts to add a lesson to the module")
 async def user_attempts_add_lesson(client: AsyncClient, context: dict[str, Any]) -> None:
     """Non-admin attempts to add lesson."""
-    pass
+    token = context["auth_token"]
+    module_id = context["module_id"]
+    response = await client.post(
+        f"/api/v1/modules/{module_id}/lessons",
+        json={"title": "Unauthorized Lesson", "content_type": "text", "content": "No access"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["security_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when XSS prevention is implemented")
+# --- XSS Prevention steps ---
+
+
 @when(parsers.parse('the admin creates a text lesson with content "{content}"'))
 async def admin_creates_xss_lesson(
     client: AsyncClient, content: str, context: dict[str, Any]
 ) -> None:
-    """Create text lesson with potential XSS."""
-    pass
+    """Create text lesson with potential XSS content."""
+    token = context["auth_token"]
+    module_id = context["module_id"]
+    response = await client.post(
+        f"/api/v1/modules/{module_id}/lessons",
+        json={"title": "XSS Test Lesson", "content_type": "text", "content": content},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["lesson_response"] = response
+    if response.status_code == 201:
+        context["created_lesson_id"] = response.json()["id"]
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when XSS prevention is implemented")
 @then("the lesson should be saved successfully")
 async def lesson_saved(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify lesson saved."""
-    pass
+    """Verify lesson was saved."""
+    response = context["lesson_response"]
+    assert response.status_code == 201, f"Expected 201, got {response.status_code}: {response.text}"
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when XSS prevention is implemented")
 @then("the content should be sanitized to remove script tags")
 async def content_sanitized(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify sanitization."""
-    pass
+    """Verify script tags were stripped by bleach sanitization."""
+    token = context["auth_token"]
+    lesson_id = context["created_lesson_id"]
+    response = await client.get(
+        f"/api/v1/lessons/{lesson_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    content = response.json()["content"]
+    assert "<script>" not in content
+    assert "alert(" not in content
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when XSS prevention is implemented")
 @then(parsers.parse('the content should contain "{text}"'))
 async def content_contains(client: AsyncClient, text: str, context: dict[str, Any]) -> None:
-    """Verify content contains text."""
-    pass
+    """Verify content contains expected safe text."""
+    token = context["auth_token"]
+    lesson_id = context["created_lesson_id"]
+    response = await client.get(
+        f"/api/v1/lessons/{lesson_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    content = response.json()["content"]
+    assert text in content, f"Expected '{text}' in content, got: {content}"
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when video URL validation is implemented")
 @when(parsers.parse('the admin attempts to create a video lesson with content "{content}"'))
 async def admin_attempts_xss_video(
     client: AsyncClient, content: str, context: dict[str, Any]
 ) -> None:
-    """Attempt to create video lesson with XSS content."""
-    pass
+    """Attempt to create video lesson with XSS URL."""
+    token = context["auth_token"]
+    module_id = context["module_id"]
+    response = await client.post(
+        f"/api/v1/modules/{module_id}/lessons",
+        json={"title": "XSS Video", "content_type": "video", "content": content},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["lesson_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when progress ownership is implemented")
+# --- Progress ownership steps ---
+
+
 @given(parsers.parse('the user "{email}" exists with progress on "{title}"'))
 async def user_with_progress(
-    client: AsyncClient, email: str, title: str, context: dict[str, Any]
+    client: AsyncClient,
+    email: str,
+    title: str,
+    context: dict[str, Any],
+    create_user: Any,
+    create_member: Any,
+    create_course_in_db: Any,
+    create_progress_in_db: Any,
 ) -> None:
-    """User has progress on a course."""
-    pass
+    """Create another user with progress on a course."""
+    user = await create_user(email=email, display_name="Other User")
+    await create_member(user_id=user.id, role="MEMBER")
+
+    if "users" not in context:
+        context["users"] = {}
+    context["users"][email] = {"user": user, "role": "member"}
+
+    # Create a course and progress for this user
+    admin_email = "admin@example.com"
+    instructor_id = context["users"][admin_email]["user"].id
+    course = await create_course_in_db(instructor_id=instructor_id, title=title)
+    await create_progress_in_db(user_id=user.id, course_id=course.id)
+    context["other_user_course_id"] = course.id
+    context["other_user_id"] = user.id
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when progress ownership is implemented")
 @when(parsers.parse('the user "{email}" attempts to view progress of "{other_email}"'))
 async def user_views_other_progress(
     client: AsyncClient, email: str, other_email: str, context: dict[str, Any]
 ) -> None:
-    """Attempt to view another user's progress."""
-    pass
+    """Attempt to view another user's progress — should only see own data."""
+    token = context["auth_token"]
+    course_id = context["other_user_course_id"]
+
+    # The progress endpoint is scoped to the current user (from JWT).
+    # Requesting progress for a course where the current user has no progress → 404.
+    response = await client.get(
+        f"/api/v1/progress/courses/{course_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["security_response"] = response
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when rate limiting is implemented")
+# --- Rate limiting steps ---
+
+
 @when(parsers.parse("the admin sends {count:d} course creation requests within {minutes:d} minute"))
 async def admin_sends_many_requests(
     client: AsyncClient, count: int, minutes: int, context: dict[str, Any]
 ) -> None:
-    """Send many course creation requests."""
-    pass
+    """Send many course creation requests to trigger rate limiting."""
+    token = context["auth_token"]
+    responses = []
+    for i in range(count):
+        response = await client.post(
+            "/api/v1/courses",
+            json={"title": f"Rate Limit Test Course {i}"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        responses.append(response)
+    context["rate_limit_responses"] = responses
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when rate limiting is implemented")
 @then("the requests should be rate limited after the threshold")
 async def requests_rate_limited(client: AsyncClient, context: dict[str, Any]) -> None:
-    """Verify rate limiting."""
-    pass
+    """Verify that some requests were rate limited (429)."""
+    responses = context["rate_limit_responses"]
+    status_codes = [r.status_code for r in responses]
+    assert 429 in status_codes, f"Expected at least one 429 response, got: {status_codes}"
 
 
-@pytest.mark.skip(reason="Phase 4: Will be enabled when rate limiting is implemented")
 @then(parsers.parse('subsequent requests should fail with "{error_msg}" error'))
 async def subsequent_requests_fail(
     client: AsyncClient, error_msg: str, context: dict[str, Any]
 ) -> None:
-    """Verify subsequent requests fail."""
-    pass
+    """Verify last requests got rate limited."""
+    responses = context["rate_limit_responses"]
+    # The last response should be rate limited
+    last_response = responses[-1]
+    assert last_response.status_code == 429, (
+        f"Expected 429, got {last_response.status_code}: {last_response.text}"
+    )

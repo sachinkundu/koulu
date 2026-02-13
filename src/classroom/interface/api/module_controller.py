@@ -28,7 +28,7 @@ from src.classroom.domain.exceptions import (
     ModuleTitleTooShortError,
 )
 from src.classroom.interface.api.dependencies import (
-    CurrentUserIdDep,
+    AdminVerifiedDep,
     get_add_module_handler,
     get_delete_module_handler,
     get_reorder_modules_handler,
@@ -61,7 +61,7 @@ router = APIRouter(tags=["Classroom Modules"])
 async def add_module(
     course_id: UUID,
     body: AddModuleRequest,
-    current_user_id: CurrentUserIdDep,  # noqa: ARG001
+    current_user_id: AdminVerifiedDep,  # noqa: ARG001
     handler: Annotated[AddModuleHandler, Depends(get_add_module_handler)],
 ) -> CreateModuleResponse:
     """Add a module to a course."""
@@ -110,7 +110,7 @@ async def add_module(
 async def update_module(
     module_id: UUID,
     body: UpdateModuleRequest,
-    current_user_id: CurrentUserIdDep,  # noqa: ARG001
+    current_user_id: AdminVerifiedDep,  # noqa: ARG001
     handler: Annotated[UpdateModuleHandler, Depends(get_update_module_handler)],
 ) -> MessageResponse:
     """Update a module."""
@@ -157,7 +157,7 @@ async def update_module(
 )
 async def delete_module(
     module_id: UUID,
-    current_user_id: CurrentUserIdDep,  # noqa: ARG001
+    current_user_id: AdminVerifiedDep,  # noqa: ARG001
     handler: Annotated[DeleteModuleHandler, Depends(get_delete_module_handler)],
 ) -> None:
     """Soft delete a module."""
@@ -192,7 +192,7 @@ async def delete_module(
 async def reorder_modules(
     course_id: UUID,
     body: ReorderRequest,
-    current_user_id: CurrentUserIdDep,  # noqa: ARG001
+    current_user_id: AdminVerifiedDep,  # noqa: ARG001
     handler: Annotated[ReorderModulesHandler, Depends(get_reorder_modules_handler)],
 ) -> MessageResponse:
     """Reorder modules in a course."""

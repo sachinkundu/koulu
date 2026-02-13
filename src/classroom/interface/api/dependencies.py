@@ -5,6 +5,7 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 
 from src.classroom.application.handlers import (
     AddLessonHandler,
@@ -178,6 +179,35 @@ async def get_current_user_id(
 
 
 CurrentUserIdDep = Annotated[UUID, Depends(get_current_user_id)]
+
+
+async def require_admin(
+    current_user_id: CurrentUserIdDep,
+    session: SessionDep,
+) -> UUID:
+    """Verify the current user has admin role in the community.
+
+    Raises 403 if the user is not an admin.
+    Returns the user_id for downstream use.
+    """
+    from src.community.infrastructure.persistence.models import CommunityMemberModel
+
+    result = await session.execute(
+        select(CommunityMemberModel.role).where(
+            CommunityMemberModel.user_id == current_user_id,
+            CommunityMemberModel.role == "ADMIN",
+            CommunityMemberModel.is_active.is_(True),
+        )
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to perform this action",
+        )
+    return current_user_id
+
+
+AdminVerifiedDep = Annotated[UUID, Depends(require_admin)]
 
 
 # ============================================================================
