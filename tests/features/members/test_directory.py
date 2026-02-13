@@ -3,20 +3,21 @@
 Total: 23 scenarios
 Phase 1 (6 active): Browse, count, sort, pagination
 Phase 2 (11 active): Search, filter, sort options, combinations
-Phase 3 (6 skipped): Edge cases, security
+Phase 3 (6 active): Edge cases, security
 """
 
 # ruff: noqa: ARG001
 
 from typing import Any
+from uuid import uuid4
 
-import pytest
 from httpx import AsyncClient
 from pytest_bdd import given, parsers, scenario, then, when
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.community.infrastructure.persistence.models import CommunityMemberModel
+from src.identity.infrastructure.persistence.models import ProfileModel, UserModel
 
 # ============================================================================
 # PHASE 1 SCENARIOS (6 active)
@@ -114,41 +115,35 @@ def test_empty_search_returns_all() -> None:
 
 
 # ============================================================================
-# PHASE 3 SCENARIOS (6 skipped — edge cases, security)
+# PHASE 3 SCENARIOS (6 active — edge cases, security)
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 3: Edge case — deactivated members")
 @scenario("directory.feature", "Deactivated members are excluded from directory")
 def test_deactivated_members_excluded() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Edge case — incomplete profiles")
 @scenario("directory.feature", "Members without completed profiles appear with defaults")
 def test_incomplete_profiles_with_defaults() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Edge case — single member community")
 @scenario("directory.feature", "Member directory for community with single member")
 def test_single_member_community() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Security — authentication required")
 @scenario("directory.feature", "Unauthenticated user cannot access member directory")
 def test_unauthenticated_access() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Security — membership required")
 @scenario("directory.feature", "Non-member cannot access community directory")
 def test_non_member_access() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Security — no private data exposure")
 @scenario("directory.feature", "Member directory does not expose private information")
 def test_no_private_info_exposed() -> None:
     pass
@@ -306,7 +301,7 @@ async def no_moderators(
 
 
 # ============================================================================
-# GIVEN STEPS — Phase 3 (edge case/security placeholders)
+# GIVEN STEPS — Phase 3 (edge cases/security)
 # ============================================================================
 
 
@@ -314,29 +309,62 @@ async def no_moderators(
 async def member_deactivated(
     client: AsyncClient,
     name: str,
+    db_session: AsyncSession,
     context: dict[str, Any],
 ) -> None:
-    """Placeholder — Phase 3 will implement deactivation."""
-    pass
+    """Deactivate a member by setting is_active=False."""
+    member_data = context["members"][name]
+    user_id = member_data["user"].id
+    community_id = context["community_id"]
+    await db_session.execute(
+        update(CommunityMemberModel)
+        .where(
+            CommunityMemberModel.user_id == user_id,
+            CommunityMemberModel.community_id == community_id,
+        )
+        .values(is_active=False)
+    )
+    await db_session.commit()
 
 
 @given(parsers.parse('"{name}" has not completed their profile'))
 async def member_incomplete_profile(
     client: AsyncClient,
     name: str,
+    db_session: AsyncSession,
     context: dict[str, Any],
 ) -> None:
-    """Placeholder — Phase 3 will handle incomplete profiles."""
-    pass
+    """Clear profile data to simulate incomplete profile."""
+    member_data = context["members"][name]
+    user_id = member_data["user"].id
+    await db_session.execute(
+        update(ProfileModel)
+        .where(ProfileModel.user_id == user_id)
+        .values(avatar_url=None, bio=None, is_complete=False)
+    )
+    await db_session.commit()
 
 
 @given("the user is the only member of a new community")
 async def single_member_community(
     client: AsyncClient,
+    create_community: Any,
+    create_member_with_profile: Any,
     context: dict[str, Any],
 ) -> None:
-    """Placeholder — Phase 3 will create a single-member community."""
-    pass
+    """Create a new community with only one member and authenticate as them."""
+    community = await create_community(name="Solo Community", slug="solo-community")
+    context["community_id"] = community.id
+
+    user, _member = await create_member_with_profile(
+        community_id=community.id,
+        display_name="Solo User",
+        role="MEMBER",
+        bio="The only member",
+        joined_days_ago=1,
+    )
+    token = await _get_auth_token(client, user.email)
+    context["auth_token"] = token
 
 
 @given("the user is not authenticated")
@@ -348,10 +376,28 @@ async def user_not_authenticated(client: AsyncClient, context: dict[str, Any]) -
 @given("the user is authenticated but not a member of the community")
 async def user_authenticated_non_member(
     client: AsyncClient,
+    db_session: AsyncSession,
     context: dict[str, Any],
 ) -> None:
-    """Placeholder — Phase 3 will create a non-member user."""
-    pass
+    """Create and authenticate a user who is NOT a member of the community."""
+    from src.identity.infrastructure.services import Argon2PasswordHasher
+
+    hasher = Argon2PasswordHasher()
+    user_id = uuid4()
+    hashed = hasher.hash("testpassword123")
+
+    user = UserModel(
+        id=user_id,
+        email="nonmember@test.com",
+        hashed_password=hashed.value,
+        is_verified=True,
+        is_active=True,
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    token = await _get_auth_token(client, "nonmember@test.com")
+    context["auth_token"] = token
 
 
 # ============================================================================
@@ -365,10 +411,11 @@ async def request_member_directory(
     context: dict[str, Any],
 ) -> None:
     """GET /api/v1/community/members."""
-    token = context["auth_token"]
+    token = context.get("auth_token")
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
     response = await client.get(
         "/api/v1/community/members",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     )
     context["response"] = response
     context["response_json"] = response.json()
@@ -553,9 +600,14 @@ async def request_directory_for_community(
     client: AsyncClient,
     context: dict[str, Any],
 ) -> None:
-    """Placeholder — Phase 3."""
-    context["response"] = None
-    context["response_json"] = {}
+    """Request directory as authenticated non-member."""
+    token = context["auth_token"]
+    response = await client.get(
+        "/api/v1/community/members",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["response"] = response
+    context["response_json"] = response.json()
 
 
 # ============================================================================
@@ -692,7 +744,7 @@ async def returns_all_active_members(client: AsyncClient, context: dict[str, Any
 
 
 # ============================================================================
-# THEN STEPS — Phase 3 (edge case/security placeholders)
+# THEN STEPS — Phase 3 (edge cases/security)
 # ============================================================================
 
 
