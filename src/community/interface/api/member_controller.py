@@ -100,6 +100,8 @@ async def list_members(
     current_user_id: CurrentUserIdDep,
     community_id: DefaultCommunityIdDep,
     handler: ListMembersHandlerDep,
+    search: str | None = None,
+    role: str | None = None,
     sort: str = "most_recent",
     limit: int = 20,
     cursor: str | None = None,
@@ -109,6 +111,8 @@ async def list_members(
         query = ListMembersQuery(
             community_id=community_id,
             requester_id=current_user_id,
+            search=search,
+            role=role,
             sort=sort,
             limit=limit,
             cursor=cursor,

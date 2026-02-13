@@ -2,7 +2,7 @@
 
 Total: 23 scenarios
 Phase 1 (6 active): Browse, count, sort, pagination
-Phase 2 (11 skipped): Search, filter, sort options, combinations
+Phase 2 (11 active): Search, filter, sort options, combinations
 Phase 3 (6 skipped): Edge cases, security
 """
 
@@ -13,6 +13,10 @@ from typing import Any
 import pytest
 from httpx import AsyncClient
 from pytest_bdd import given, parsers, scenario, then, when
+from sqlalchemy import update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.community.infrastructure.persistence.models import CommunityMemberModel
 
 # ============================================================================
 # PHASE 1 SCENARIOS (6 active)
@@ -50,71 +54,60 @@ def test_load_final_page() -> None:
 
 
 # ============================================================================
-# PHASE 2 SCENARIOS (11 skipped — search, filter, sort options)
+# PHASE 2 SCENARIOS (11 active — search, filter, sort options)
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 2: Requires search query param")
 @scenario("directory.feature", "Search members by name")
 def test_search_members_by_name() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires search query param")
 @scenario("directory.feature", "Search is case-insensitive")
 def test_search_is_case_insensitive() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires search query param")
 @scenario("directory.feature", "Search with partial name match")
 def test_search_with_partial_name_match() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires role filter param")
 @scenario("directory.feature", "Filter members by admin role")
 def test_filter_by_admin_role() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires role filter param")
 @scenario("directory.feature", "Filter members by moderator role")
 def test_filter_by_moderator_role() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires role filter param")
 @scenario("directory.feature", "Filter members by member role")
 def test_filter_by_member_role() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires alphabetical sort option")
 @scenario("directory.feature", "Sort members alphabetically")
 def test_sort_alphabetically() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires search + filter combination")
 @scenario("directory.feature", "Combine search with role filter")
 def test_combine_search_with_role_filter() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires search query param")
 @scenario("directory.feature", "Search returns no results")
 def test_search_returns_no_results() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires role filter param")
 @scenario("directory.feature", "Filter returns no results")
 def test_filter_returns_no_results() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires search query param")
 @scenario("directory.feature", "Empty search query returns all members")
 def test_empty_search_returns_all() -> None:
     pass
@@ -272,7 +265,7 @@ async def community_has_n_members(
 
 
 # ============================================================================
-# GIVEN STEPS — Phase 2 (search/filter placeholders)
+# GIVEN STEPS — Phase 2 (search/filter)
 # ============================================================================
 
 
@@ -296,10 +289,20 @@ async def additional_admin_members_with_test(
 @given("no moderators exist in the community")
 async def no_moderators(
     client: AsyncClient,
+    db_session: AsyncSession,
     context: dict[str, Any],
 ) -> None:
-    """Placeholder — in Phase 2, this step will deactivate moderators."""
-    pass
+    """Deactivate all moderator memberships in the test community."""
+    community_id = context["community_id"]
+    await db_session.execute(
+        update(CommunityMemberModel)
+        .where(
+            CommunityMemberModel.community_id == community_id,
+            CommunityMemberModel.role == "MODERATOR",
+        )
+        .values(is_active=False)
+    )
+    await db_session.commit()
 
 
 # ============================================================================
@@ -473,8 +476,24 @@ async def request_third_page(
 
 
 # ============================================================================
-# WHEN STEPS — Phase 2 (search/filter placeholders)
+# WHEN STEPS — Phase 2 (search/filter)
 # ============================================================================
+
+
+@when('the user searches the directory for ""')
+async def search_directory_empty(
+    client: AsyncClient,
+    context: dict[str, Any],
+) -> None:
+    """GET /api/v1/community/members?search= (empty)."""
+    token = context["auth_token"]
+    response = await client.get(
+        "/api/v1/community/members",
+        params={"search": ""},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["response"] = response
+    context["response_json"] = response.json()
 
 
 @when(parsers.parse('the user searches the directory for "{search}"'))
@@ -483,8 +502,15 @@ async def search_directory(
     search: str,
     context: dict[str, Any],
 ) -> None:
-    """Placeholder — Phase 2."""
-    context["response_json"] = {"items": [], "total_count": 0}
+    """GET /api/v1/community/members?search=..."""
+    token = context["auth_token"]
+    response = await client.get(
+        "/api/v1/community/members",
+        params={"search": search},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["response"] = response
+    context["response_json"] = response.json()
 
 
 @when(parsers.parse('the user filters the directory by role "{role}"'))
@@ -493,8 +519,15 @@ async def filter_by_role(
     role: str,
     context: dict[str, Any],
 ) -> None:
-    """Placeholder — Phase 2."""
-    context["response_json"] = {"items": [], "total_count": 0}
+    """GET /api/v1/community/members?role=..."""
+    token = context["auth_token"]
+    response = await client.get(
+        "/api/v1/community/members",
+        params={"role": role},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["response"] = response
+    context["response_json"] = response.json()
 
 
 @when(parsers.parse('the user searches the directory for "{search}" and filters by role "{role}"'))
@@ -504,8 +537,15 @@ async def search_and_filter(
     role: str,
     context: dict[str, Any],
 ) -> None:
-    """Placeholder — Phase 2."""
-    context["response_json"] = {"items": [], "total_count": 0}
+    """GET /api/v1/community/members?search=...&role=..."""
+    token = context["auth_token"]
+    response = await client.get(
+        "/api/v1/community/members",
+        params={"search": search, "role": role},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["response"] = response
+    context["response_json"] = response.json()
 
 
 @when("the user requests the member directory for that community")
@@ -605,7 +645,7 @@ async def no_more_members(client: AsyncClient, context: dict[str, Any]) -> None:
 
 
 # ============================================================================
-# THEN STEPS — Phase 2 (search/filter placeholders)
+# THEN STEPS — Phase 2 (search/filter)
 # ============================================================================
 
 

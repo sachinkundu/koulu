@@ -10,6 +10,8 @@ class ListMembersQuery:
 
     community_id: UUID
     requester_id: UUID
+    search: str | None = None
+    role: str | None = None
     sort: str = "most_recent"
     limit: int = 20
     cursor: str | None = None

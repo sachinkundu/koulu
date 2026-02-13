@@ -104,6 +104,8 @@ class IMemberRepository(ABC):
         sort: str = "most_recent",
         limit: int = 20,
         offset: int = 0,
+        search: str | None = None,
+        role: str | None = None,
     ) -> list[MemberDirectoryEntry]:
         """
         List community members with profile data for the directory view.
@@ -116,6 +118,8 @@ class IMemberRepository(ABC):
     async def count_directory(
         self,
         community_id: CommunityId,
+        search: str | None = None,
+        role: str | None = None,
     ) -> int:
         """Count active members in a community directory."""
         ...
