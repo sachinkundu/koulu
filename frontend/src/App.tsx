@@ -12,6 +12,7 @@ import {
   VerifyEmailPage,
   ClassroomPage,
   CourseDetailPage,
+  LessonViewPage,
 } from '@/pages';
 import { PostDetailPage } from '@/pages';
 import {
@@ -309,6 +310,14 @@ function App(): JSX.Element {
         element={
           <ProtectedRoute>
             <ClassroomLayout><CourseDetailPage /></ClassroomLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/classroom/courses/:courseId/lessons/:lessonId"
+        element={
+          <ProtectedRoute>
+            <LessonViewPage />
           </ProtectedRoute>
         }
       />

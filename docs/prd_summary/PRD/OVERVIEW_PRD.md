@@ -671,34 +671,34 @@ Private 1-on-1 communication between members.
 ### 6.1 MVP (Phase 1)
 
 **Must Have:**
-- User registration and authentication
-- Basic profile management
-- Community feed (posts, comments, likes)
-- Categories and filtering
-- Basic course structure (modules, lessons)
-- Lesson progress tracking
-- Member directory
-- Basic search
+- ✅ User registration and authentication
+- ✅ Basic profile management
+- ✅ Community feed (posts, comments, likes)
+- ✅ Categories and filtering
+- ✅ Basic course structure (modules, lessons)
+- ✅ Lesson progress tracking
+- ❌ Member directory
+- ❌ Basic search
 
 ### 6.2 Phase 2
 
 **Should Have:**
-- Leaderboards and gamification
-- Calendar and events
-- Direct messaging
-- Notifications (in-app)
-- Level-based access control
-- Email notifications
+- ❌ Leaderboards and gamification
+- ❌ Calendar and events
+- ❌ Direct messaging
+- ❌ Notifications (in-app)
+- ❌ Level-based access control
+- ❌ Email notifications
 
 ### 6.3 Phase 3
 
 **Nice to Have:**
-- Map feature
-- Native video hosting
-- Advanced analytics
-- Payment integration
-- Affiliate program
-- Mobile app
+- ❌ Map feature
+- ❌ Native video hosting
+- ❌ Advanced analytics
+- ❌ Payment integration
+- ❌ Affiliate program
+- ❌ Mobile app
 
 ---
 
@@ -809,21 +809,21 @@ Each feature will have a detailed PRD and BDD specification. The index below map
 | User Registration & Authentication | `docs/features/identity/registration-authentication-prd.md` | `tests/features/identity/registration_authentication.feature` | ✅ Complete |
 | User Profile | `docs/features/identity/profile-prd.md` | `tests/features/identity/profile.feature` | ✅ Complete |
 | Community Feed | `docs/features/community/feed-prd.md` | `tests/features/community/feed.feature` | ✅ Complete (70/70 scenarios) |
-| Posts | `docs/features/community/posts-prd.md` | `tests/features/community/posts.feature` | |
-| Comments | `docs/features/community/comments-prd.md` | `tests/features/community/comments.feature` | |
-| Reactions | `docs/features/community/reactions-prd.md` | `tests/features/community/reactions.feature` | |
-| Categories | `docs/features/community/categories-prd.md` | `tests/features/community/categories.feature` | |
-| Classroom (Phases 1-3) | `docs/features/classroom/classroom-prd.md` | `tests/features/classroom/classroom.feature` | ✅ Phase 1-3 Complete (61/71 scenarios) |
-| Events | `docs/features/calendar/events-prd.md` | `tests/features/calendar/events.feature` | |
-| Member Directory | `docs/features/members/directory-prd.md` | `tests/features/members/directory.feature` | |
-| Member Map | `docs/features/members/map-prd.md` | `tests/features/members/map.feature` | |
-| Leaderboards | `docs/features/gamification/leaderboards-prd.md` | `tests/features/gamification/leaderboards.feature` | |
-| Points & Levels | `docs/features/gamification/points-prd.md` | `tests/features/gamification/points.feature` | |
-| Direct Messages | `docs/features/messaging/dm-prd.md` | `tests/features/messaging/dm.feature` | |
-| Notifications | `docs/features/notifications/notifications-prd.md` | `tests/features/notifications/notifications.feature` | |
-| Search | `docs/features/search/search-prd.md` | `tests/features/search/search.feature` | |
-| Admin Settings | `docs/features/admin/settings-prd.md` | `tests/features/admin/settings.feature` | |
-| Payments | `docs/features/membership/payments-prd.md` | `tests/features/membership/payments.feature` | |
+| Posts | `docs/features/community/posts-prd.md` | `tests/features/community/posts.feature` | ✅ Complete (included in Feed Phases 1-4) |
+| Comments | `docs/features/community/comments-prd.md` | `tests/features/community/comments.feature` | ✅ Complete (included in Feed Phase 2) |
+| Reactions | `docs/features/community/reactions-prd.md` | `tests/features/community/reactions.feature` | ✅ Complete (included in Feed Phase 2) |
+| Categories | `docs/features/community/categories-prd.md` | `tests/features/community/categories.feature` | ✅ Complete (included in Feed Phase 3) |
+| Classroom (Phases 1-3) | `docs/features/classroom/classroom-prd.md` | `tests/features/classroom/classroom.feature` | ✅ Phase 1-3 Complete (Backend: 61/71 scenarios, Frontend: Complete) |
+| Events | `docs/features/calendar/events-prd.md` | `tests/features/calendar/events.feature` | ❌ Not started |
+| Member Directory | `docs/features/members/directory-prd.md` | `tests/features/members/directory.feature` | ❌ Not started |
+| Member Map | `docs/features/members/map-prd.md` | `tests/features/members/map.feature` | ❌ Not started |
+| Leaderboards | `docs/features/gamification/leaderboards-prd.md` | `tests/features/gamification/leaderboards.feature` | ❌ Not started |
+| Points & Levels | `docs/features/gamification/points-prd.md` | `tests/features/gamification/points.feature` | ❌ Not started |
+| Direct Messages | `docs/features/messaging/dm-prd.md` | `tests/features/messaging/dm.feature` | ❌ Not started |
+| Notifications | `docs/features/notifications/notifications-prd.md` | `tests/features/notifications/notifications.feature` | ❌ Not started |
+| Search | `docs/features/search/search-prd.md` | `tests/features/search/search.feature` | ❌ Not started |
+| Admin Settings | `docs/features/admin/settings-prd.md` | `tests/features/admin/settings.feature` | ❌ Not started |
+| Payments | `docs/features/membership/payments-prd.md` | `tests/features/membership/payments.feature` | ❌ Not started |
 
 ### Appendix B: UI Reference
 

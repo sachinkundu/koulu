@@ -14,3 +14,4 @@ export { CommunityPage } from './CommunityPage';
 export { PostDetailPage } from './PostDetailPage';
 export { ClassroomPage } from './ClassroomPage';
 export { CourseDetailPage } from './CourseDetailPage';
+export { LessonViewPage } from './LessonViewPage';
