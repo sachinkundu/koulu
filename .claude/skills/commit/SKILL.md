@@ -1,83 +1,67 @@
 ---
 name: commit
-description: Stage and commit changes with a well-crafted commit message
+description: Stage and commit changes, ensuring work never lands directly on main
 user_invocable: true
 model: haiku
 ---
 
 # Commit
 
-Create a git commit for the current changes.
+Create a git commit. **NEVER commits to main/master** — always ensures a feature branch.
 
 ## Usage
 
 ```
-/commit                          # auto-detect or ask for branch
+/commit                          # auto-detect branch or ask
 /commit feature/my-branch        # use this branch (create if needed)
-/commit chore/cleanup            # use this branch (create if needed)
 ```
-
-If an argument is provided, treat it as the target branch name. Skip the branch inference/question logic entirely.
 
 ## Steps
 
-### Step 0: Branch Check
+### 1. Branch Guard
 
-1. Run `git branch --show-current` to get the current branch name.
-2. **If the user provided a branch name as an argument:**
-   - If already on that branch, proceed directly.
-   - If on a different branch, run `git checkout -b <branch>` (or `git checkout <branch>` if it already exists) to switch.
-3. **If no argument provided and on `main` or `master`:**
-   - Run `git status` and `git diff --stat` to see what changed.
-   - Look at the changed files to infer a reasonable branch name:
-     - Files in `src/community/` or `tests/features/community/` → suggest `feature/community-...`
-     - Files in `src/classroom/` or `tests/features/classroom/` → suggest `feature/classroom-...`
-     - Files in `tests/e2e/` → suggest `feature/e2e-tests`
-     - Files in `docs/` only → suggest `docs/...`
-     - Files in `scripts/` or config files → suggest `chore/...`
-     - Mixed or unclear → cannot infer
-   - **Ask the user** what branch to commit into. Suggest the inferred name if possible. Offer options like:
-     - The inferred branch name (if one could be determined)
-     - "Commit directly to main" (if the user really wants to)
-   - If the user picks a new branch, create it with `git checkout -b <branch>` before proceeding.
-4. **If no argument provided and already on a feature/fix/docs/chore branch:** proceed directly — no need to ask.
+Run `git branch --show-current`.
 
-### Step 1: Review Changes
+**If argument provided:** switch to that branch (`git checkout -b <branch>` or `git checkout <branch>` if it exists).
 
-Run `git status` (never use `-uall`), `git diff` (staged + unstaged), and `git log --oneline -5` in parallel.
+**If on `main` or `master` (no argument):**
+- Run `git status` and `git diff --stat` to see changed files.
+- Infer a branch name from file paths:
+  - `src/community/` or `tests/features/community/` → `feature/community-...`
+  - `src/classroom/` or `tests/features/classroom/` → `feature/classroom-...`
+  - `src/identity/` or `tests/features/identity/` → `feature/identity-...`
+  - `tests/e2e/` → `feature/e2e-tests`
+  - `docs/` only → `docs/...`
+  - `scripts/` or config files → `chore/...`
+  - Mixed or unclear → ask user
+- **Ask the user** to confirm or provide a branch name. Never offer "commit to main" as an option.
+- Create the branch with `git checkout -b <branch>` before proceeding.
 
-Review all changes. Do NOT commit files that look like secrets (`.env`, credentials, tokens).
+**If already on a feature/fix/docs/chore branch:** proceed directly.
 
-### Step 2: Draft Commit Message
+### 2. Review and Commit
 
-- First line: `type(scope): short summary` (max 72 chars)
-- Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`
-- Scope: module or area affected (e.g., `community`, `classroom`, `e2e`, `scripts`)
-- Body (if needed): blank line then explanation of *why*, not *what*
-
-### Step 3: Stage and Commit
-
-Stage the relevant files by name (`git add <files>`). Prefer specific files over `git add .`.
-
-Commit using a HEREDOC:
+1. Run `git status` (never `-uall`), `git diff` (staged + unstaged), and `git log --oneline -5` in parallel.
+2. Do NOT commit files that look like secrets (`.env`, credentials, tokens).
+3. Draft commit message: `type(scope): summary` (max 72 chars). Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`.
+4. Stage specific files by name (`git add <files>`), not `git add .`.
+5. Commit using HEREDOC:
 ```bash
 git commit -m "$(cat <<'EOF'
 type(scope): summary
 
-Optional body.
+Optional body explaining why, not what.
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 EOF
 )"
 ```
-
-### Step 4: Verify
-
-Run `git status` after to confirm clean state.
+6. Run `git status` to confirm clean state.
 
 ## Rules
 
-- NEVER amend a previous commit unless the user explicitly says "amend"
+- NEVER commit to main or master — always create a feature branch first
+- NEVER amend unless the user explicitly says "amend"
 - NEVER push unless the user explicitly asks
 - NEVER use `--no-verify`
 - If a pre-commit hook fails, fix the issue and create a NEW commit

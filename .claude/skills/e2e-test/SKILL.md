@@ -76,6 +76,18 @@ Run Playwright end-to-end tests, debug failures, fix flaky tests, and add new E2
 
 ---
 
+## Project-Specific Setup
+
+- **Database isolation**: E2E uses `koulu_e2e` database, dev uses `koulu`. Script drops/recreates DB each run.
+- **Port isolation**: Dev Backend=8067, E2E Backend=8167, E2E Frontend=5340, Dev Frontend=5240
+- **Run E2E**: `./scripts/run-e2e-tests.sh` — starts its own backend + frontend, cleans up on exit
+- **Seed data**: Do NOT truncate `communities` or `categories` — they're seeded by migration `66ce48aa6407`
+- **Race condition**: FastAPI yield dependencies commit AFTER response sent; `createVerifiedUser` retries verification up to 5x
+- **Rate limiting**: `cleanTestState()` must be in every test suite's `beforeEach`; `flushRateLimits()` MUST be awaited
+- **Compose project name**: running containers use `cc_koulu`, `project-env.sh` computes `cckoulu`
+
+---
+
 ## Workflow
 
 ### Mode 1: Run E2E Tests

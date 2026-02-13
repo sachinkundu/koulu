@@ -12,6 +12,12 @@ model: sonnet
 
 A step implementation that contains only `pass` is **NEVER acceptable**. Every `@then` step MUST have at least one assertion.
 
+## Test Layers (Both Required for Features)
+- Unit tests: domain entities, value objects, handlers -> `tests/unit/`
+- BDD tests: user-facing behavior via API -> `tests/features/`
+
+All tests must show `0 failed`. Fix failures or skip with `@pytest.mark.skip(reason="Phase X: condition")`.
+
 ## Tools
 - **Python**: `pytest-bdd`
 - **Frontend**: `cucumber-js`
@@ -115,6 +121,15 @@ npm run test:bdd
 1. Check if scenario matches PRD requirements
 2. Debug implementation code
 3. Do NOT change test to match broken code (unless test was wrong)
+
+---
+
+## pytest-bdd Skip Markers (Critical Gotcha)
+
+- `@pytest.mark.skip` on step definition functions (`@given`, `@when`, `@then`) is **DEAD CODE** — it does NOT skip scenarios
+- Only `@pytest.mark.skip` on `@scenario()` decorated test functions works
+- `scenarios("file.feature")` auto-generates test functions for ALL scenarios
+- To skip specific scenarios: declare explicit `@scenario()` with `@pytest.mark.skip` BEFORE the `scenarios()` call
 
 ---
 

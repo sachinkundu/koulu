@@ -91,6 +91,18 @@ def process_order(order_id: str) -> None:
 
 ---
 
+## Unit Testing
+
+Every domain entity and handler with business logic MUST have unit tests in `tests/unit/`.
+
+Test these critical paths:
+- State transitions with guards (verify, login, disable)
+- Value object validation (email format, password length, display name)
+- Handler decision branches (all if/else paths)
+- Error conditions and edge cases
+
+Both unit tests (`tests/unit/`) and BDD tests (`tests/features/`) are required for features.
+
 ## Verification
 
 Run before completing any Python task:
