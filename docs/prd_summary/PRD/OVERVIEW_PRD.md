@@ -815,7 +815,7 @@ Each feature will have a detailed PRD and BDD specification. The index below map
 | Categories | `docs/features/community/categories-prd.md` | `tests/features/community/categories.feature` | ✅ Complete (included in Feed Phase 3) |
 | Classroom (Phases 1-3) | `docs/features/classroom/classroom-prd.md` | `tests/features/classroom/classroom.feature` | ✅ Phase 1-3 Complete (Backend: 61/71 scenarios, Frontend: Complete) |
 | Events | `docs/features/calendar/events-prd.md` | `tests/features/calendar/events.feature` | ❌ Not started |
-| Member Directory | `docs/features/members/directory-prd.md` | `tests/features/members/directory.feature` | ⚠️ Phase 1/3 Complete — Browse & Paginate (6/23 scenarios) |
+| Member Directory | `docs/features/members/directory-prd.md` | `tests/features/members/directory.feature` | ⚠️ Phase 2/3 Complete — Browse, Search, Filter & Sort (17/23 scenarios) |
 | Member Map | `docs/features/members/map-prd.md` | `tests/features/members/map.feature` | ❌ Not started |
 | Leaderboards | `docs/features/gamification/leaderboards-prd.md` | `tests/features/gamification/leaderboards.feature` | ❌ Not started |
 | Points & Levels | `docs/features/gamification/points-prd.md` | `tests/features/gamification/points.feature` | ❌ Not started |
