@@ -3,6 +3,16 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from src.community.application.queries.list_members_query import ListMembersQuery
+
+__all__ = [
+    "GetFeedQuery",
+    "GetPostCommentsQuery",
+    "GetPostQuery",
+    "ListCategoriesQuery",
+    "ListMembersQuery",
+]
+
 
 @dataclass(frozen=True)
 class GetPostQuery:

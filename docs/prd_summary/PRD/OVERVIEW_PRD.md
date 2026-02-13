@@ -677,7 +677,7 @@ Private 1-on-1 communication between members.
 - ✅ Categories and filtering
 - ✅ Basic course structure (modules, lessons)
 - ✅ Lesson progress tracking
-- ❌ Member directory
+- ⚠️ Member directory (Phase 1/3 complete — browse & paginate working, search/filter pending)
 - ❌ Basic search
 
 ### 6.2 Phase 2
@@ -815,7 +815,7 @@ Each feature will have a detailed PRD and BDD specification. The index below map
 | Categories | `docs/features/community/categories-prd.md` | `tests/features/community/categories.feature` | ✅ Complete (included in Feed Phase 3) |
 | Classroom | `docs/features/classroom/classroom-prd.md` | `tests/features/classroom/classroom.feature` | ✅ Complete (71/71 scenarios) |
 | Events | `docs/features/calendar/events-prd.md` | `tests/features/calendar/events.feature` | ❌ Not started |
-| Member Directory | `docs/features/members/directory-prd.md` | `tests/features/members/directory.feature` | ❌ Not started |
+| Member Directory | `docs/features/members/directory-prd.md` | `tests/features/members/directory.feature` | ⚠️ Phase 1/3 Complete — Browse & Paginate (6/23 scenarios) |
 | Member Map | `docs/features/members/map-prd.md` | `tests/features/members/map.feature` | ❌ Not started |
 | Leaderboards | `docs/features/gamification/leaderboards-prd.md` | `tests/features/gamification/leaderboards.feature` | ❌ Not started |
 | Points & Levels | `docs/features/gamification/points-prd.md` | `tests/features/gamification/points.feature` | ❌ Not started |

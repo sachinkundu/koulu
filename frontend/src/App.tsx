@@ -13,6 +13,7 @@ import {
   ClassroomPage,
   CourseDetailPage,
   LessonViewPage,
+  MembersPage,
 } from '@/pages';
 import { PostDetailPage } from '@/pages';
 import {
@@ -31,6 +32,7 @@ import type { User } from '@/features/identity/types';
 const APP_TABS = [
   { label: 'Community', path: '/' },
   { label: 'Classroom', path: '/classroom' },
+  { label: 'Members', path: '/members' },
 ];
 
 function FullPageSpinner(): JSX.Element {
@@ -228,6 +230,22 @@ function ProtectedRoute({ children }: { children: JSX.Element }): JSX.Element {
 /**
  * Layout wrapper for classroom pages.
  */
+function MembersLayout({ children }: { children: JSX.Element }): JSX.Element {
+  const { user, logout, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <FullPageSpinner />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <AppHeader user={user} onLogout={() => void logout()} />
+      <TabBar tabs={APP_TABS} />
+      {children}
+    </div>
+  );
+}
+
 function ClassroomLayout({ children }: { children: JSX.Element }): JSX.Element {
   const { user, logout, isLoading } = useAuth();
 
@@ -292,6 +310,16 @@ function App(): JSX.Element {
         element={
           <ProtectedRoute>
             <PostDetailPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Members route */}
+      <Route
+        path="/members"
+        element={
+          <ProtectedRoute>
+            <MembersLayout><MembersPage /></MembersLayout>
           </ProtectedRoute>
         }
       />

@@ -20,6 +20,7 @@ from src.community.application.handlers import (
     LikeCommentHandler,
     LikePostHandler,
     ListCategoriesHandler,
+    ListMembersHandler,
     LockPostHandler,
     PinPostHandler,
     UnlikeCommentHandler,
@@ -320,6 +321,18 @@ def get_delete_category_handler(
         post_repository=post_repo,
         member_repository=member_repo,
     )
+
+
+def get_list_members_handler(
+    member_repo: MemberRepositoryDep,
+) -> ListMembersHandler:
+    """Get list members handler."""
+    return ListMembersHandler(
+        member_repository=member_repo,
+    )
+
+
+ListMembersHandlerDep = Annotated[ListMembersHandler, Depends(get_list_members_handler)]
 
 
 def get_get_feed_handler(

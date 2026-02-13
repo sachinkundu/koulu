@@ -1,10 +1,16 @@
 """Community member repository interface."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 from src.community.domain.entities import CommunityMember
 from src.community.domain.value_objects import CommunityId
 from src.identity.domain.value_objects import UserId
+
+if TYPE_CHECKING:
+    from src.community.application.dtos.member_directory_entry import MemberDirectoryEntry
 
 
 class IMemberRepository(ABC):
@@ -89,4 +95,27 @@ class IMemberRepository(ABC):
             user_id: The user's ID
             community_id: The community ID
         """
+        ...
+
+    @abstractmethod
+    async def list_directory(
+        self,
+        community_id: CommunityId,
+        sort: str = "most_recent",
+        limit: int = 20,
+        offset: int = 0,
+    ) -> list[MemberDirectoryEntry]:
+        """
+        List community members with profile data for the directory view.
+
+        Returns flat DTOs joining membership + profile data.
+        """
+        ...
+
+    @abstractmethod
+    async def count_directory(
+        self,
+        community_id: CommunityId,
+    ) -> int:
+        """Count active members in a community directory."""
         ...
