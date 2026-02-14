@@ -5,12 +5,12 @@ Phase 1 (11 scenarios — active):
 - Post search: by title, by body content, newest-first sort, card fields
 - Tabbed results: counts for both tabs, switch between tabs
 
-Phase 2 (8 scenarios — skipped):
+Phase 2 (8 scenarios — active):
 - Pagination: paginated results, next page
 - Stemming: member bio stemming, post content stemming
 - Validation: query too short, empty query, invalid type, max length truncation
 
-Phase 3 (11 scenarios — skipped):
+Phase 3 (11 scenarios — active):
 - Edge cases: no results, special characters, deleted posts, inactive members,
   whitespace-only, member with no bio, multiple member matches
 - Security: unauthenticated, non-member, SQL injection, rate limiting
@@ -22,10 +22,15 @@ pytest-bdd fixture dependency ordering. See MEMORY.md for details.
 # ruff: noqa: ARG001
 
 from typing import Any
+from uuid import uuid4
 
-import pytest
 from httpx import AsyncClient
 from pytest_bdd import given, parsers, scenario, then, when
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.identity.infrastructure.persistence.models import ProfileModel, UserModel
+from src.identity.infrastructure.services import Argon2PasswordHasher
 
 # ============================================================================
 # PHASE 2 SCENARIOS (8 active — pagination, stemming, validation)
@@ -73,71 +78,60 @@ def test_search_with_query_exceeding_maximum_length() -> None:
 
 
 # ============================================================================
-# PHASE 3 SKIPS (11 scenarios)
+# PHASE 3 SCENARIOS (11 active — edge cases, security)
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 3: Edge cases")
 @scenario("search.feature", "Search returns no results")
 def test_search_returns_no_results() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Edge cases - special characters")
 @scenario("search.feature", "Search with special characters")
 def test_search_with_special_characters() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Edge cases - deleted posts")
 @scenario("search.feature", "Deleted posts do not appear in search results")
 def test_deleted_posts_do_not_appear_in_search_results() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Edge cases - inactive members")
 @scenario("search.feature", "Inactive members do not appear in search results")
 def test_inactive_members_do_not_appear_in_search_results() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Edge cases - whitespace")
 @scenario("search.feature", "Search with only whitespace")
 def test_search_with_only_whitespace() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Edge cases - no bio")
 @scenario("search.feature", "Member with no bio is still found by name")
 def test_member_with_no_bio_is_still_found_by_name() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Edge cases - multiple matches")
 @scenario("search.feature", "Search query matches across multiple members")
 def test_search_query_matches_across_multiple_members() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Security - authentication")
 @scenario("search.feature", "Unauthenticated user cannot search")
 def test_unauthenticated_user_cannot_search() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Security - membership")
 @scenario("search.feature", "Non-member cannot search a community")
 def test_non_member_cannot_search_a_community() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Security - SQL injection")
 @scenario("search.feature", "Search input is sanitized against SQL injection")
 def test_search_input_is_sanitized_against_sql_injection() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Security - rate limiting")
 @scenario("search.feature", "Search respects rate limiting")
 def test_search_respects_rate_limiting() -> None:
     pass
@@ -621,6 +615,7 @@ async def search_contains_at_least_n_members(
 # ============================================================================
 
 
+@then(parsers.parse('the search should fail with an "{error_type}" error'))
 @then(parsers.parse('the search should fail with a "{error_type}" error'))
 async def search_fails_with_error(
     client: AsyncClient, error_type: str, context: dict[str, Any]
@@ -749,16 +744,43 @@ async def unauthenticated_search(client: AsyncClient, query: str, context: dict[
 
 @given(parsers.parse('a user "{name}" exists but is not a member of "{community}"'))
 async def user_not_member(
-    client: AsyncClient, name: str, community: str, context: dict[str, Any]
+    client: AsyncClient,
+    name: str,
+    community: str,
+    context: dict[str, Any],
+    db_session: AsyncSession,
+    password_hasher: Argon2PasswordHasher,
 ) -> None:
-    """User exists but not a member."""
+    """Create a real user who is not a member of the community."""
+    user_id = uuid4()
+    email = f"{name.lower().replace(' ', '-')}@example.com"
+    hashed = password_hasher.hash("testpassword123")
+    user = UserModel(
+        id=user_id,
+        email=email,
+        hashed_password=hashed.value,
+        is_verified=True,
+        is_active=True,
+    )
+    db_session.add(user)
+    profile = ProfileModel(
+        user_id=user_id,
+        display_name=name,
+        username=name.lower().replace(" ", "-"),
+        is_complete=True,
+    )
+    db_session.add(profile)
+    await db_session.commit()
     context["non_member_name"] = name
+    context["non_member_email"] = email
 
 
 @given(parsers.parse('the user "{name}" is authenticated'))
 async def user_is_authenticated(client: AsyncClient, name: str, context: dict[str, Any]) -> None:
     """Authenticate a non-member user."""
-    context["token"] = "fake-token-for-non-member"
+    email = context["non_member_email"]
+    token = await _get_auth_token(client, email)
+    context["token"] = token
 
 
 @when(parsers.parse('the user searches for "{query}" in community "{community}"'))
@@ -778,17 +800,33 @@ async def user_searches_in_community(
 
 
 @given(parsers.parse('the post "{title}" has been deleted'))
-async def post_has_been_deleted(client: AsyncClient, title: str, context: dict[str, Any]) -> None:
+async def post_has_been_deleted(
+    client: AsyncClient, title: str, context: dict[str, Any], db_session: AsyncSession
+) -> None:
     """Mark a post as deleted."""
-    pass
+    post = context["posts"][title]
+    await db_session.execute(
+        text("UPDATE posts SET is_deleted = TRUE WHERE id = :pid"),
+        {"pid": str(post.id)},
+    )
+    await db_session.commit()
 
 
 @given(parsers.parse('the member "{name}" has been deactivated'))
 async def member_has_been_deactivated(
-    client: AsyncClient, name: str, context: dict[str, Any]
+    client: AsyncClient, name: str, context: dict[str, Any], db_session: AsyncSession
 ) -> None:
     """Deactivate a member."""
-    pass
+    member_info = context["members"][name]
+    member = member_info["member"]
+    await db_session.execute(
+        text(
+            "UPDATE community_members SET is_active = FALSE "
+            "WHERE community_id = :cid AND user_id = :uid"
+        ),
+        {"cid": str(member.community_id), "uid": str(member.user_id)},
+    )
+    await db_session.commit()
 
 
 @given(parsers.parse('a member "{name}" exists with username "{username}" and no bio'))

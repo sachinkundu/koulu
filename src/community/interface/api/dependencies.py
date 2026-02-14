@@ -353,6 +353,7 @@ def get_search_handler(
     return SearchHandler(
         search_repository=search_repo,
         member_repository=member_repo,
+        rate_limiter=get_rate_limiter(),
     )
 
 

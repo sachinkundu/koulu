@@ -10,6 +10,7 @@ from src.identity.domain.value_objects import UserId
 # Rate limits: action -> (max_count, window_seconds)
 RATE_LIMITS: dict[str, tuple[int, int]] = {
     "create_post": (10, 3600),  # 10 posts per hour
+    "search": (30, 60),  # 30 searches per minute
 }
 
 

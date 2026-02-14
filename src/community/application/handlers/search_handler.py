@@ -12,6 +12,7 @@ from src.community.application.dtos.search_results import (
 from src.community.application.queries.search_query import SearchQuery
 from src.community.domain.exceptions import NotCommunityMemberError
 from src.community.domain.repositories import IMemberRepository, ISearchRepository
+from src.community.domain.services.rate_limiter import IRateLimiter
 from src.community.domain.value_objects import CommunityId
 from src.identity.domain.value_objects import UserId
 
@@ -27,10 +28,12 @@ class SearchHandler:
         self,
         member_repository: IMemberRepository,
         search_repository: ISearchRepository,
+        rate_limiter: IRateLimiter,
     ) -> None:
         """Initialize with dependencies."""
         self._member_repository = member_repository
         self._search_repository = search_repository
+        self._rate_limiter = rate_limiter
 
     async def handle(self, query: SearchQuery) -> SearchResult:
         """
@@ -65,6 +68,9 @@ class SearchHandler:
                 requester_id=str(requester_id),
             )
             raise NotCommunityMemberError()
+
+        # Check rate limit
+        await self._rate_limiter.check_rate_limit(requester_id, "search")
 
         # Sanitize query: strip HTML tags and normalize whitespace
         sanitized = _HTML_TAG_RE.sub("", query.query)

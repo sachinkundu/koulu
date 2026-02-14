@@ -12,7 +12,7 @@ from src.community.application.dtos.search_results import (
     PostSearchEntry,
 )
 from src.community.application.queries.search_query import SearchQuery
-from src.community.domain.exceptions import NotCommunityMemberError
+from src.community.domain.exceptions import NotCommunityMemberError, RateLimitExceededError
 from src.community.infrastructure.persistence.models import CommunityModel
 from src.community.interface.api.dependencies import (
     CurrentUserIdDep,
@@ -58,6 +58,7 @@ DefaultCommunityIdDep = Annotated[UUID, Depends(get_default_community_id)]
         400: {"model": ErrorResponse, "description": "Invalid query"},
         401: {"description": "Not authenticated"},
         403: {"description": "Not a community member"},
+        429: {"description": "Rate limit exceeded"},
     },
 )
 async def search(
@@ -145,6 +146,14 @@ async def search(
             post_count=result.post_count,
             has_more=result.has_more,
         )
+    except RateLimitExceededError as err:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "code": "RATE_LIMIT_EXCEEDED",
+                "message": "Rate limit exceeded",
+            },
+        ) from err
     except NotCommunityMemberError as err:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
