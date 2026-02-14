@@ -24,12 +24,13 @@ export function SearchResultTabs({
   };
 
   return (
-    <div className="border-b border-gray-200 bg-white">
+    <div className="border-b border-gray-200 bg-white" data-testid="search-tabs">
       <nav className="mx-auto flex max-w-7xl space-x-8 px-4">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             type="button"
+            data-testid={`search-tab-${tab.key}`}
             onClick={() => onTabChange(tab.key)}
             className={`whitespace-nowrap border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
               activeTab === tab.key

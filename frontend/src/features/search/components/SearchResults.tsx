@@ -27,7 +27,7 @@ export function SearchResults(): JSX.Element {
         : 'Please enter at least 3 characters to search';
 
     return (
-      <div className="py-12 text-center">
+      <div className="py-12 text-center" data-testid="search-empty-state">
         <p className="text-sm text-gray-500">{message}</p>
       </div>
     );
@@ -83,7 +83,7 @@ function SearchResultContent({
 
   if (error != null) {
     return (
-      <div className="py-12 text-center">
+      <div className="py-12 text-center" data-testid="search-error">
         <p className="text-sm text-red-600">
           Search is temporarily unavailable. Please try again.
         </p>
@@ -93,7 +93,7 @@ function SearchResultContent({
 
   if (data == null || data.items.length === 0) {
     return (
-      <div className="py-12 text-center">
+      <div className="py-12 text-center" data-testid="search-no-results">
         <p className="text-base font-semibold text-gray-900">
           No {activeTab} found for &ldquo;{query}&rdquo;
         </p>
@@ -106,19 +106,19 @@ function SearchResultContent({
 
   if (activeTab === 'members') {
     return (
-      <>
+      <div data-testid="search-results-list">
         {(data.items as MemberSearchItem[]).map((member) => (
           <MemberSearchCard key={member.user_id} member={member} />
         ))}
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div data-testid="search-results-list">
       {(data.items as PostSearchItem[]).map((post) => (
         <PostSearchCard key={post.id} post={post} />
       ))}
-    </>
+    </div>
   );
 }
