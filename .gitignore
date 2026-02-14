@@ -82,3 +82,5 @@ scripts/.seed-credentials.json
 scripts/.seed-credentials.txt
 
 .claude/settings.local.json
+
+.playwright-mcp/
