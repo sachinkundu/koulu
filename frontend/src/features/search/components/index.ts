@@ -4,3 +4,4 @@ export { SearchResultTabs } from './SearchResultTabs';
 export { MemberSearchCard } from './MemberSearchCard';
 export { PostSearchCard } from './PostSearchCard';
 export { SearchSkeleton } from './SearchSkeleton';
+export { SearchPagination } from './SearchPagination';

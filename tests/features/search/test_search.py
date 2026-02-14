@@ -28,53 +28,45 @@ from httpx import AsyncClient
 from pytest_bdd import given, parsers, scenario, then, when
 
 # ============================================================================
-# PHASE 2 SKIPS (8 scenarios)
+# PHASE 2 SCENARIOS (8 active — pagination, stemming, validation)
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 2: Pagination support")
 @scenario("search.feature", "Search results are paginated")
 def test_search_results_are_paginated() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Pagination support")
 @scenario("search.feature", "Navigate to next page of results")
 def test_navigate_to_next_page_of_results() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Stemming")
 @scenario("search.feature", "Search uses stemming for member bio")
 def test_search_uses_stemming_for_member_bio() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Stemming")
 @scenario("search.feature", "Search uses stemming for post content")
 def test_search_uses_stemming_for_post_content() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Validation errors")
 @scenario("search.feature", "Search with query shorter than 3 characters")
 def test_search_with_query_shorter_than_3_characters() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Validation errors")
 @scenario("search.feature", "Search with empty query")
 def test_search_with_empty_query() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Validation errors")
 @scenario("search.feature", "Search with invalid type parameter")
 def test_search_with_invalid_type_parameter() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Validation errors")
 @scenario("search.feature", "Search with query exceeding maximum length")
 def test_search_with_query_exceeding_maximum_length() -> None:
     pass
@@ -633,8 +625,25 @@ async def search_contains_at_least_n_members(
 async def search_fails_with_error(
     client: AsyncClient, error_type: str, context: dict[str, Any]
 ) -> None:
-    """Assert search failed with expected error."""
-    assert context["response_status"] != 200
+    """Assert search failed with expected error code."""
+    error_code_map = {
+        "query too short": ("QUERY_TOO_SHORT", 400),
+        "query required": ("QUERY_REQUIRED", 400),
+        "invalid search type": ("INVALID_SEARCH_TYPE", 400),
+        "authentication required": (None, 401),
+        "not a member": (None, 403),
+        "rate limit exceeded": ("RATE_LIMIT_EXCEEDED", 429),
+    }
+    expected_code, expected_status = error_code_map.get(error_type, (None, None))
+    assert context["response_status"] == expected_status, (
+        f"Expected {expected_status} for '{error_type}', got {context['response_status']}"
+    )
+    if expected_code is not None:
+        response = context["response"]
+        detail = response.json().get("detail", {})
+        assert detail.get("code") == expected_code, (
+            f"Expected error code '{expected_code}', got '{detail}'"
+        )
 
 
 @then("the search should execute successfully")
@@ -654,6 +663,24 @@ async def response_no_results(client: AsyncClient, context: dict[str, Any]) -> N
 async def search_query_truncated(client: AsyncClient, length: int, context: dict[str, Any]) -> None:
     """Assert query was truncated (search still works)."""
     assert context["response_status"] == 200
+
+
+@when(parsers.parse('the member searches for "" with type "{search_type}"'))
+async def member_searches_empty_query(
+    client: AsyncClient,
+    search_type: str,
+    context: dict[str, Any],
+) -> None:
+    """Execute a search with empty query."""
+    token = context["token"]
+    response = await client.get(
+        "/api/v1/community/search",
+        params={"q": "", "type": search_type},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["response"] = response
+    context["response_data"] = response.json() if response.status_code == 200 else {}
+    context["response_status"] = response.status_code
 
 
 @when("the member searches with a 201-character query")
