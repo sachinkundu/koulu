@@ -63,6 +63,7 @@ dev = [
 
     # Type stubs
     "types-redis>=4.6.0",
+    "types-bleach>=6.1.0",
 
     # Development utilities
     "faker>=22.0.0",
