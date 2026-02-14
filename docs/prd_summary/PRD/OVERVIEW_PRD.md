@@ -678,7 +678,7 @@ Private 1-on-1 communication between members.
 - ✅ Basic course structure (modules, lessons)
 - ✅ Lesson progress tracking
 - ✅ Member directory
-- ❌ Basic search
+- ⚠️ Basic search (Phase 2/3 — member & post search working, pagination UI complete, edge cases & security hardening pending)
 
 ### 6.2 Phase 2
 
