@@ -677,7 +677,7 @@ Private 1-on-1 communication between members.
 - ✅ Categories and filtering
 - ✅ Basic course structure (modules, lessons)
 - ✅ Lesson progress tracking
-- ⚠️ Member directory (Phase 1/3 complete — browse & paginate working, search/filter pending)
+- ✅ Member directory
 - ❌ Basic search
 
 ### 6.2 Phase 2
@@ -821,7 +821,7 @@ Each feature will have a detailed PRD and BDD specification. The index below map
 | Points & Levels | `docs/features/gamification/points-prd.md` | `tests/features/gamification/points.feature` | ❌ Not started |
 | Direct Messages | `docs/features/messaging/dm-prd.md` | `tests/features/messaging/dm.feature` | ❌ Not started |
 | Notifications | `docs/features/notifications/notifications-prd.md` | `tests/features/notifications/notifications.feature` | ❌ Not started |
-| Search | `docs/features/search/search-prd.md` | `tests/features/search/search.feature` | ❌ Not started |
+| Search | `docs/features/search/search-prd.md` | `tests/features/search/search.feature` | ⚠️ Partial — Phase 1 complete (11/30 scenarios), Phase 2-3 pending |
 | Admin Settings | `docs/features/admin/settings-prd.md` | `tests/features/admin/settings.feature` | ❌ Not started |
 | Payments | `docs/features/membership/payments-prd.md` | `tests/features/membership/payments.feature` | ❌ Not started |
 

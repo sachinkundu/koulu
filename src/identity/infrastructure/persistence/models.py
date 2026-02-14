@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -92,6 +93,12 @@ class ProfileModel(Base):
         Text,
         nullable=True,
     )
+    username: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        unique=True,
+    )
+    search_vector: Mapped[str | None] = mapped_column(TSVECTOR, nullable=True)
     location_city: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,

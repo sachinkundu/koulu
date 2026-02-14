@@ -199,3 +199,45 @@ class ErrorResponse(BaseModel):
 
     code: str
     message: str
+
+
+# ============================================================================
+# Search Schemas
+# ============================================================================
+
+
+class MemberSearchItemResponse(BaseModel):
+    """Member search result item."""
+
+    user_id: UUID
+    display_name: str | None
+    username: str | None
+    avatar_url: str | None
+    role: str
+    bio: str | None
+    joined_at: datetime
+
+
+class PostSearchItemResponse(BaseModel):
+    """Post search result item."""
+
+    id: UUID
+    title: str
+    body_snippet: str
+    author_name: str | None
+    author_avatar_url: str | None
+    category_name: str | None
+    category_emoji: str | None
+    created_at: datetime
+    like_count: int
+    comment_count: int
+
+
+class SearchResponse(BaseModel):
+    """Search results response with tab counts."""
+
+    items: list[MemberSearchItemResponse] | list[PostSearchItemResponse]
+    total_count: int
+    member_count: int
+    post_count: int
+    has_more: bool

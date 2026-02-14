@@ -23,6 +23,7 @@ from src.community.application.handlers import (
     ListMembersHandler,
     LockPostHandler,
     PinPostHandler,
+    SearchHandler,
     UnlikeCommentHandler,
     UnlikePostHandler,
     UnlockPostHandler,
@@ -36,6 +37,7 @@ from src.community.infrastructure.persistence import (
     SqlAlchemyMemberRepository,
     SqlAlchemyPostRepository,
     SqlAlchemyReactionRepository,
+    SqlAlchemySearchRepository,
 )
 from src.community.infrastructure.services import InMemoryRateLimiter
 from src.config import settings
@@ -80,6 +82,14 @@ CategoryRepositoryDep = Annotated[SqlAlchemyCategoryRepository, Depends(get_cate
 MemberRepositoryDep = Annotated[SqlAlchemyMemberRepository, Depends(get_member_repository)]
 CommentRepositoryDep = Annotated[SqlAlchemyCommentRepository, Depends(get_comment_repository)]
 ReactionRepositoryDep = Annotated[SqlAlchemyReactionRepository, Depends(get_reaction_repository)]
+
+
+def get_search_repository(session: SessionDep) -> SqlAlchemySearchRepository:
+    """Get search repository."""
+    return SqlAlchemySearchRepository(session)
+
+
+SearchRepositoryDep = Annotated[SqlAlchemySearchRepository, Depends(get_search_repository)]
 
 
 # ============================================================================
@@ -333,6 +343,20 @@ def get_list_members_handler(
 
 
 ListMembersHandlerDep = Annotated[ListMembersHandler, Depends(get_list_members_handler)]
+
+
+def get_search_handler(
+    search_repo: SearchRepositoryDep,
+    member_repo: MemberRepositoryDep,
+) -> SearchHandler:
+    """Get search handler."""
+    return SearchHandler(
+        search_repository=search_repo,
+        member_repository=member_repo,
+    )
+
+
+SearchHandlerDep = Annotated[SearchHandler, Depends(get_search_handler)]
 
 
 def get_get_feed_handler(

@@ -1,0 +1,1 @@
+export { searchCommunity } from './searchApi';

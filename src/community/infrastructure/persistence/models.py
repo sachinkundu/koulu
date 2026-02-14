@@ -4,6 +4,7 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.dialects.postgresql import UUID as PgUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -234,6 +235,7 @@ class PostModel(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+    search_vector: Mapped[str | None] = mapped_column(TSVECTOR, nullable=True)
 
     # Indexes for feed queries
     __table_args__ = (

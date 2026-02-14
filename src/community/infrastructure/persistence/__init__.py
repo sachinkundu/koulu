@@ -21,6 +21,9 @@ from src.community.infrastructure.persistence.post_repository import SqlAlchemyP
 from src.community.infrastructure.persistence.reaction_repository import (
     SqlAlchemyReactionRepository,
 )
+from src.community.infrastructure.persistence.search_repository import (
+    SqlAlchemySearchRepository,
+)
 
 __all__ = [
     "CategoryModel",
@@ -34,4 +37,5 @@ __all__ = [
     "SqlAlchemyMemberRepository",
     "SqlAlchemyPostRepository",
     "SqlAlchemyReactionRepository",
+    "SqlAlchemySearchRepository",
 ]

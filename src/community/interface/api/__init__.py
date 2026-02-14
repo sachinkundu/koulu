@@ -7,6 +7,7 @@ from src.community.interface.api.comment_controller import (
 )
 from src.community.interface.api.member_controller import router as members_router
 from src.community.interface.api.post_controller import router as posts_router
+from src.community.interface.api.search_controller import router as search_router
 
 __all__ = [
     "categories_router",
@@ -14,4 +15,5 @@ __all__ = [
     "members_router",
     "post_comments_router",
     "posts_router",
+    "search_router",
 ]

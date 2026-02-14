@@ -14,6 +14,7 @@ import {
   CourseDetailPage,
   LessonViewPage,
   MembersPage,
+  SearchPage,
 } from '@/pages';
 import { PostDetailPage } from '@/pages';
 import {
@@ -27,6 +28,7 @@ import {
 import { usePosts } from '@/features/community/hooks';
 import type { Post, PostsQueryParams } from '@/features/community/types';
 import { TabBar, UserDropdown } from '@/components';
+import { SearchBar } from '@/features/search/components/SearchBar';
 import type { User } from '@/features/identity/types';
 
 const APP_TABS = [
@@ -55,6 +57,7 @@ function AppHeader({ user, onLogout }: { user: User | null; onLogout: () => void
             {projectName}
           </span>
         </div>
+        {user !== null && <SearchBar />}
         {user !== null && (
           <div className="flex items-center space-x-4">
             <UserDropdown user={user} onLogout={onLogout} />
@@ -346,6 +349,16 @@ function App(): JSX.Element {
         element={
           <ProtectedRoute>
             <LessonViewPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Search route */}
+      <Route
+        path="/search"
+        element={
+          <ProtectedRoute>
+            <SearchPage />
           </ProtectedRoute>
         }
       />

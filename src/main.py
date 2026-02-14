@@ -24,6 +24,7 @@ from src.community.interface.api import (
     members_router,
     post_comments_router,
     posts_router,
+    search_router,
 )
 from src.config import settings
 from src.identity.domain.exceptions import RateLimitExceededError
@@ -150,6 +151,7 @@ app.include_router(members_router, prefix="/api/v1")
 app.include_router(posts_router, prefix="/api/v1")
 app.include_router(post_comments_router, prefix="/api/v1")
 app.include_router(comments_router, prefix="/api/v1")
+app.include_router(search_router, prefix="/api/v1")
 app.include_router(courses_router, prefix="/api/v1")
 app.include_router(modules_router, prefix="/api/v1")
 app.include_router(lessons_router, prefix="/api/v1")

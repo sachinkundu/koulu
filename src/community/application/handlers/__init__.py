@@ -16,6 +16,7 @@ from src.community.application.handlers.list_categories_handler import ListCateg
 from src.community.application.handlers.list_members_handler import ListMembersHandler
 from src.community.application.handlers.lock_post_handler import LockPostHandler
 from src.community.application.handlers.pin_post_handler import PinPostHandler
+from src.community.application.handlers.search_handler import SearchHandler
 from src.community.application.handlers.unlike_comment_handler import UnlikeCommentHandler
 from src.community.application.handlers.unlike_post_handler import UnlikePostHandler
 from src.community.application.handlers.unlock_post_handler import UnlockPostHandler
@@ -41,6 +42,7 @@ __all__ = [
     "ListMembersHandler",
     "LockPostHandler",
     "PinPostHandler",
+    "SearchHandler",
     "UnlikeCommentHandler",
     "UnlikePostHandler",
     "UnlockPostHandler",

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from src.community.application.queries.list_members_query import ListMembersQuery
+from src.community.application.queries.search_query import SearchQuery
 
 __all__ = [
     "GetFeedQuery",
@@ -11,6 +12,7 @@ __all__ = [
     "GetPostQuery",
     "ListCategoriesQuery",
     "ListMembersQuery",
+    "SearchQuery",
 ]
 
 
