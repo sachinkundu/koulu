@@ -3,12 +3,14 @@
 import logging
 from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 import structlog
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -156,3 +158,16 @@ app.include_router(courses_router, prefix="/api/v1")
 app.include_router(modules_router, prefix="/api/v1")
 app.include_router(lessons_router, prefix="/api/v1")
 app.include_router(progress_router, prefix="/api/v1")
+
+# Serve React SPA in production (static/ directory exists from Docker build)
+_static_dir = Path(__file__).resolve().parent.parent / "static"
+if _static_dir.exists():
+    app.mount("/assets", StaticFiles(directory=_static_dir / "assets"), name="static-assets")
+
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str) -> FileResponse:
+        """Serve SPA index.html for client-side routing."""
+        file_path = _static_dir / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+        return FileResponse(_static_dir / "index.html")

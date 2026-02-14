@@ -1,0 +1,17 @@
+.git
+.github
+__pycache__
+*.pyc
+node_modules
+.env
+.env.*
+docs
+tests
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.coverage
+htmlcov
+*.egg-info
+.venv
+.playwright-mcp
