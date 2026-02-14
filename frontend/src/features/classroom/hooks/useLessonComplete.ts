@@ -32,6 +32,6 @@ export function useLessonComplete(lessonId: string, courseId: string): {
     unmarkComplete: () => unmarkMutation.mutate(),
     isMarkPending: markMutation.isPending,
     isUnmarkPending: unmarkMutation.isPending,
-    error: (markMutation.error ?? unmarkMutation.error) as Error | null,
+    error: markMutation.error ?? unmarkMutation.error,
   };
 }

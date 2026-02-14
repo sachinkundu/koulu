@@ -16,6 +16,6 @@ export function useCourse(courseId: string): {
   return {
     course: data,
     isLoading,
-    error: error as Error | null,
+    error,
   };
 }

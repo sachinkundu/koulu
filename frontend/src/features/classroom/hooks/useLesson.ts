@@ -16,6 +16,6 @@ export function useLesson(lessonId: string): {
   return {
     lesson: data,
     isLoading,
-    error: error as Error | null,
+    error,
   };
 }

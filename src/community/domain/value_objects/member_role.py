@@ -1,9 +1,9 @@
 """MemberRole value object."""
 
-from enum import Enum
+from enum import StrEnum
 
 
-class MemberRole(str, Enum):
+class MemberRole(StrEnum):
     """
     Community member role enumeration.
 

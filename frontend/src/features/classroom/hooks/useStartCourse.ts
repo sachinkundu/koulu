@@ -22,6 +22,6 @@ export function useStartCourse(courseId: string): {
     start: () => mutation.mutate(),
     data: mutation.data,
     isPending: mutation.isPending,
-    error: mutation.error as Error | null,
+    error: mutation.error,
   };
 }

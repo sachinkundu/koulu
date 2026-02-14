@@ -17,6 +17,6 @@ export function useCourses(): {
     courses: data?.courses,
     total: data?.total ?? 0,
     isLoading,
-    error: error as Error | null,
+    error,
   };
 }

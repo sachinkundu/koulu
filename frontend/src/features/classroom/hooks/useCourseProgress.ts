@@ -16,6 +16,6 @@ export function useCourseProgress(courseId: string): {
   return {
     progress: data,
     isLoading,
-    error: error as Error | null,
+    error,
   };
 }
