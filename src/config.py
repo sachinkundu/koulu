@@ -33,15 +33,10 @@ class Settings(BaseSettings):
     jwt_refresh_token_expire_days: int = 7
     jwt_refresh_token_remember_me_days: int = 30
 
-    # Email
-    mail_server: str = "localhost"
-    mail_port: int = 1025
-    mail_username: str = ""
-    mail_password: str = ""
-    mail_from: str = "noreply@koulu.local"
+    # Email (Resend HTTP API)
+    resend_api_key: str = ""
+    mail_from: str = "onboarding@resend.dev"
     mail_from_name: str = "Koulu"
-    mail_tls: bool = False
-    mail_ssl: bool = False
 
     # Frontend URL (for email links)
     frontend_url: str = "http://localhost:5173"
