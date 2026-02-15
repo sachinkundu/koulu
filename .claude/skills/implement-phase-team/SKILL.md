@@ -71,7 +71,7 @@ Read the Agent Execution Plan table from the task plan and build:
 
 ```
 agents_needed = {
-  "backend": [task_ids],
+  "backend": [task_ids],       # single-backend mode
   "frontend": [task_ids],
   "testing": [task_ids],
 }
@@ -82,7 +82,33 @@ start_conditions = {
 }
 ```
 
-Skip agents with no tasks. If only backend tasks exist, fall back to `/implement-feature`.
+**Multi-backend detection:** If the Agent Execution Plan contains `backend-domain`, `backend-infra`, or `backend-app` agents, use multi-backend mode instead:
+
+```
+agents_needed = {
+  "backend-domain": [task_ids],   # domain layer
+  "backend-infra": [task_ids],    # infrastructure layer
+  "backend-app": [task_ids],      # application + API layer
+  "frontend": [task_ids],
+  "testing": [task_ids],
+}
+start_conditions = {
+  "backend-domain": "immediately",
+  "backend-infra": "immediately",
+  "backend-app": "after backend-domain + backend-infra",
+  "frontend": "immediately",
+  "testing": "immediately (setup + domain tests), full integration after all implementation agents",
+}
+```
+
+**Auto-splitting (when plan uses single `backend` owner with 8+ tasks):**
+If the plan has a single `backend` agent with 8+ tasks, auto-split by analyzing file paths:
+- Tasks creating files in `src/{context}/domain/` → `backend-domain`
+- Tasks creating files in `src/{context}/infrastructure/` or `alembic/` → `backend-infra`
+- Tasks creating files in `src/{context}/application/` or `src/{context}/interface/` → `backend-app`
+- Cross-context modifications (e.g., enriching Community events) → `backend-infra`
+
+Skip agents with no tasks. If only backend tasks exist and <8 tasks, fall back to `/implement-feature`.
 
 ### Step 4: Create Team and Task List
 
@@ -108,7 +134,7 @@ Spawn agents in parallel using the Task tool. Each agent receives:
 - The feature branch name
 - Key file paths (TDD, PRD, BDD, UI_SPEC)
 
-**Backend Agent:**
+**Backend Agent (single-backend mode):**
 ```
 Task(
   name="backend-dev",
@@ -129,6 +155,103 @@ Task(
   - BDD: tests/features/{context}/{feature}.feature
 
   Check TaskList for your assigned tasks (owner: backend-dev).
+  Work through them in ID order, following TDD for each.
+  Mark tasks completed as you finish them.
+  Send a message to the team lead when all your tasks are done.
+  """
+)
+```
+
+**Multi-Backend Agents (when 8+ backend tasks — spawn all three in parallel):**
+
+```
+Task(
+  name="backend-domain",
+  team_name="{context}-{feature}-phase-{N}",
+  subagent_type="general-purpose",
+  mode="bypassPermissions",
+  prompt="""
+  You are the DOMAIN layer backend developer for this team.
+
+  Read your agent instructions: .claude/agents/backend-dev.md
+
+  Feature: {context}/{feature}, Phase {N}
+  Branch: feature/{context}-{feature}
+
+  Key files:
+  - TDD: docs/features/{context}/{feature}-tdd.md
+  - PRD: docs/features/{context}/{feature}-prd.md
+  - Task plan: docs/features/{context}/{feature}-phase-{N}-tasks.md
+
+  YOUR SCOPE: Domain layer ONLY
+  - You own: src/{context}/domain/, tests/unit/{context}/domain/
+  - Do NOT touch: src/{context}/infrastructure/, src/{context}/application/, src/{context}/interface/, frontend/, alembic/
+
+  Check TaskList for your assigned tasks (owner: backend-domain).
+  Work through them in ID order, following TDD for each.
+  Mark tasks completed as you finish them.
+  Send a message to the team lead when all your tasks are done.
+  """
+)
+```
+
+```
+Task(
+  name="backend-infra",
+  team_name="{context}-{feature}-phase-{N}",
+  subagent_type="general-purpose",
+  mode="bypassPermissions",
+  prompt="""
+  You are the INFRASTRUCTURE layer backend developer for this team.
+
+  Read your agent instructions: .claude/agents/backend-dev.md
+
+  Feature: {context}/{feature}, Phase {N}
+  Branch: feature/{context}-{feature}
+
+  Key files:
+  - TDD: docs/features/{context}/{feature}-tdd.md
+  - Task plan: docs/features/{context}/{feature}-phase-{N}-tasks.md
+
+  YOUR SCOPE: Infrastructure layer + cross-context event enrichment ONLY
+  - You own: src/{context}/infrastructure/, alembic/versions/, cross-context event files (e.g., src/community/domain/events.py enrichment)
+  - Do NOT touch: src/{context}/domain/, src/{context}/application/, src/{context}/interface/, frontend/
+
+  Check TaskList for your assigned tasks (owner: backend-infra).
+  Work through them in ID order, following TDD for each.
+  Mark tasks completed as you finish them.
+  Send a message to the team lead when all your tasks are done.
+  """
+)
+```
+
+```
+Task(
+  name="backend-app",
+  team_name="{context}-{feature}-phase-{N}",
+  subagent_type="general-purpose",
+  mode="bypassPermissions",
+  prompt="""
+  You are the APPLICATION layer backend developer for this team.
+
+  Read your agent instructions: .claude/agents/backend-dev.md
+
+  Feature: {context}/{feature}, Phase {N}
+  Branch: feature/{context}-{feature}
+
+  Key files:
+  - TDD: docs/features/{context}/{feature}-tdd.md
+  - PRD: docs/features/{context}/{feature}-prd.md
+  - Task plan: docs/features/{context}/{feature}-phase-{N}-tasks.md
+
+  YOUR SCOPE: Application layer, API endpoints, and app wiring ONLY
+  - You own: src/{context}/application/, src/{context}/interface/, tests/unit/{context}/application/
+  - Do NOT touch: src/{context}/domain/, src/{context}/infrastructure/, frontend/, alembic/
+
+  IMPORTANT: Your tasks depend on backend-domain and backend-infra completing first.
+  Check TaskList — your tasks will be blocked until dependencies are resolved.
+
+  Check TaskList for your assigned tasks (owner: backend-app).
   Work through them in ID order, following TDD for each.
   Mark tasks completed as you finish them.
   Send a message to the team lead when all your tasks are done.
@@ -165,7 +288,7 @@ Task(
 )
 ```
 
-**Testing Agent (spawned AFTER backend + frontend complete):**
+**Testing Agent (spawned IMMEDIATELY — works in phases):**
 ```
 Task(
   name="test-engineer",
@@ -183,20 +306,56 @@ Task(
   Key files:
   - BDD: tests/features/{context}/{feature}.feature
   - TDD: docs/features/{context}/{feature}-tdd.md
+  - PRD: docs/features/{context}/{feature}-prd.md
+  - Task plan: docs/features/{context}/{feature}-phase-{N}-tasks.md
 
   Check TaskList for your assigned tasks (owner: test-engineer).
-  Work through them in ID order.
-  Run final verification when all tasks are complete.
-  Send verification results to the team lead.
+
+  IMPORTANT: You start IMMEDIATELY, not after backend finishes. Work in 3 phases:
+
+  PHASE A — Start now (no dependencies):
+  1. Read existing BDD test patterns in tests/features/ (e.g., community/)
+  2. Create tests/features/{context}/__init__.py
+  3. Create tests/features/{context}/conftest.py with fixtures:
+     - Community creation helpers
+     - User/auth helpers
+     - Any domain factory helpers needed
+  4. Add skip markers for all future-phase scenarios
+  5. Create step definition shells (function signatures) for all scenarios
+
+  PHASE B — After domain tasks complete (check TaskList for domain task status):
+  6. Implement step definitions for domain-level BDD scenarios
+     (scenarios testing pure domain logic like level calculation,
+     point accumulation, ratchet behavior — these don't need API)
+  7. Run these tests to verify domain logic
+
+  PHASE C — After ALL backend + frontend tasks complete:
+  8. Implement step definitions for API-level BDD scenarios
+     (scenarios testing HTTP endpoints, event-driven point awards)
+  9. Run full verification: ./scripts/verify.sh
+  10. Send verification results to team lead
+
+  Mark tasks completed as you finish them.
+  If blocked waiting for backend, send a message to the team lead.
   """
 )
 ```
 
 ### Step 6: Assign Tasks and Monitor
 
-1. **Assign backend tasks** to `backend-dev` using TaskUpdate (set owner)
-2. **Assign frontend tasks** to `frontend-dev` using TaskUpdate (set owner)
-3. **Keep testing tasks unassigned** until backend + frontend complete
+1. **Assign backend tasks** to `backend-dev` (or `backend-domain`/`backend-infra`/`backend-app`) using TaskUpdate
+2. **Assign frontend tasks** to `frontend-dev` using TaskUpdate
+3. **Assign testing tasks** to `test-engineer` using TaskUpdate — testing starts immediately
+
+   **Testing task dependency strategy:**
+   - If the plan has split testing tasks (`testing-setup`, `testing-domain`, `testing-integration`):
+     - `testing-setup` tasks: no blockers (assign immediately)
+     - `testing-domain` tasks: blocked by domain backend tasks only
+     - `testing-integration` tasks: blocked by all backend + frontend tasks
+   - If the plan has a single testing task: split it into sub-tasks at team creation time:
+     - Create a "Test scaffolding" task (no blockers) — conftest, fixtures, skip markers
+     - Create a "Domain BDD tests" task (blocked by domain tasks) — domain-level step definitions
+     - Create a "Integration BDD tests + verification" task (blocked by all) — API-level steps, final run
 
 4. **Monitor progress:**
    - Agents send messages when they complete tasks or encounter issues
@@ -207,7 +366,7 @@ Task(
    - Verify all their tasks are marked completed in TaskList
    - Run a quick integration check: `ruff check src/{context}/ && mypy src/{context}/`
    - If issues found, send fixes back to the relevant agent
-   - If clean, assign testing tasks to `test-engineer` and spawn the testing agent
+   - Test engineer should already be working on integration tests by this point
 
 ### Step 7: Handle Issues
 
@@ -302,6 +461,17 @@ After phase is verified complete:
 - Feature has significant UI (not just API endpoints)
 - You want maximum speed for a large phase
 
+**Use multi-backend mode (within team mode) when:**
+- Phase has 8+ backend tasks
+- Backend tasks have independent sub-chains across architectural layers (domain, infra, app)
+- Domain foundations and infrastructure can be built in parallel
+- Single backend agent would be the bottleneck while frontend finishes quickly
+
+**Use single-backend mode when:**
+- Phase has <8 backend tasks
+- Backend tasks are highly sequential
+- Most tasks touch the same directories
+
 **Use `/implement-feature` when:**
 - Phase has < 6 tasks total
 - All tasks are backend-only or frontend-only
@@ -323,8 +493,11 @@ If team mode encounters persistent issues:
 ## Anti-Patterns to Avoid
 
 - **Don't spawn agents before validating the task plan** — missing Owner tags cause chaos
-- **Don't spawn the testing agent before backend + frontend finish** — tests will fail against non-existent code
+- **Don't wait to spawn the testing agent until backend finishes** — test scaffolding (conftest, fixtures, skip markers) and domain-level BDD steps can be written in parallel. Only API-level integration tests need the full backend
 - **Don't let agents modify files outside their ownership** — causes merge conflicts
 - **Don't skip final verification** — agents may report success but have cross-cutting issues
 - **Don't keep the team alive after phase completion** — clean up resources
 - **Don't use team mode for single-owner phases** — overhead exceeds benefit
+- **Don't use a single backend agent for 8+ backend tasks** — it becomes the bottleneck while frontend finishes quickly. Split into backend-domain, backend-infra, and backend-app agents
+- **Don't let backend-app start before backend-domain finishes** — app layer imports from domain interfaces
+- **Don't let two backend agents touch the same directory** — strict layer ownership prevents conflicts

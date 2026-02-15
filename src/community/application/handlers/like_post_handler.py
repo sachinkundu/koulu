@@ -79,6 +79,7 @@ class LikePostHandler:
                 PostLiked(
                     reaction_id=reaction.id,
                     post_id=post_id,
+                    community_id=post.community_id,
                     user_id=user_id,
                     author_id=post.author_id,
                 )

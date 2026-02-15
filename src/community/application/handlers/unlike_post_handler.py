@@ -5,7 +5,7 @@ import structlog
 from src.community.application.commands import UnlikePostCommand
 from src.community.domain.events import PostUnliked
 from src.community.domain.repositories import IPostRepository, IReactionRepository
-from src.community.domain.value_objects import PostId
+from src.community.domain.value_objects import CommunityId, PostId
 from src.identity.domain.value_objects import UserId
 from src.shared.infrastructure import event_bus
 
@@ -63,6 +63,7 @@ class UnlikePostHandler:
             [
                 PostUnliked(
                     post_id=PostId(command.post_id),
+                    community_id=post.community_id if post else CommunityId(command.post_id),
                     user_id=user_id,
                     author_id=author_id,
                 )

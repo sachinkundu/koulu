@@ -190,6 +190,42 @@ After defining all tasks, analyze inter-task dependencies to enable `/implement-
 - `testing` — BDD step definitions, integration test wiring, E2E Playwright specs, final verification
 - If a task spans both backend and frontend (rare — avoid this), split it into two tasks
 
+**Multi-backend agent splitting (for phases with 8+ backend tasks):**
+
+When the backend has many tasks (8+), split the `backend` owner into sub-owners by architectural layer to enable parallel execution by multiple backend agents:
+
+- `backend-domain` — Domain entities, value objects, events, exceptions, repository interfaces, domain unit tests. Owns: `src/{context}/domain/`, `tests/unit/{context}/domain/`
+- `backend-infra` — SQLAlchemy models, Alembic migrations, repository implementations, cross-context event enrichment. Owns: `src/{context}/infrastructure/`, `alembic/versions/`, cross-context files (e.g., `src/community/domain/events.py`)
+- `backend-app` — Application commands/queries/handlers, event handlers, API routes/schemas/dependencies, app wiring, application unit tests. Owns: `src/{context}/application/`, `src/{context}/interface/`, `tests/unit/{context}/application/`
+
+When to split:
+- Phase has 8+ backend tasks with independent sub-chains across layers
+- Domain and infrastructure foundations can be built in parallel (e.g., domain entities and DB models don't depend on each other)
+- Application layer naturally waits for both domain interfaces and infrastructure to be ready
+
+When NOT to split (keep single `backend` owner):
+- Phase has <8 backend tasks
+- Tasks are highly sequential with no parallelism opportunity
+- Most tasks touch the same files/directories
+
+**Testing task splitting (for parallel test development):**
+
+Instead of a single final testing task that depends on ALL implementation, split testing work into phases that can start earlier:
+
+- `testing-setup` — Conftest fixtures (community/user creation helpers, auth helpers), skip markers for future-phase scenarios, step definition shells. Depends on: **none** (uses existing test infrastructure patterns). Owns: `tests/features/{context}/conftest.py`, `tests/features/{context}/__init__.py`
+- `testing-domain` — BDD step definitions for domain-level scenarios (e.g., "new member starts at Level 1", "member levels up", "points cannot go below zero"). These test domain logic directly, not via API. Depends on: **backend-domain** tasks only. Owns: domain-level step definitions in `tests/features/{context}/test_{feature}.py`
+- `testing-integration` — BDD step definitions for API-level scenarios (e.g., "member earns a point when their post is liked") + final verification run. Depends on: **all backend + frontend** tasks. Owns: API-level step definitions, runs `./scripts/verify.sh`
+
+When to split testing:
+- Phase has 10+ BDD scenarios to enable
+- Some scenarios test pure domain logic (can run without API)
+- Testing setup (conftest, fixtures) is non-trivial
+
+When NOT to split (keep single `testing` owner):
+- Phase has <10 BDD scenarios
+- All scenarios require API-level testing
+- Simple fixture setup
+
 **Common dependency patterns (architecture-aware):**
 - Application layer (handlers, DTOs) → typically independent, can start first
 - Domain interface extensions → depend on knowing what the handler needs
@@ -197,7 +233,9 @@ After defining all tasks, analyze inter-task dependencies to enable `/implement-
 - API endpoints → depend on the application handler they wire up
 - Frontend types/hooks → do NOT depend on backend files (they mirror the API contract)
 - Frontend components → depend on frontend types/hooks
-- BDD tests → depend on the full backend stack they exercise
+- BDD test setup (conftest, fixtures, skip markers) → do NOT depend on backend (uses existing patterns)
+- BDD domain-level tests → depend on domain layer only (entities, value objects)
+- BDD API-level tests → depend on the full backend stack they exercise
 - Final verification → depends on ALL other tasks
 
 **Cross-agent independence:** Backend and frontend agents can run fully in parallel because the frontend codes against the API contract defined in the TDD document, not against live backend code. Testing agent starts after both complete.
@@ -401,8 +439,21 @@ Each `{feature}-phase-N-tasks.md` follows this structure:
 | frontend | Task 5, 6, 7 | Immediately | — |
 | testing | Task 8, 9 | After backend + frontend | All implementation tasks complete |
 
+**For phases with 8+ backend tasks, use multi-backend split:**
+
+| Agent | Tasks | Starts | Blocked Until |
+|-------|-------|--------|---------------|
+| backend-domain | Task 1, 2, 3, 4, 5, 6 | Immediately | — |
+| backend-infra | Task 7, 8, 9 | Immediately | — |
+| backend-app | Task 10, 11, 12, 13, 14 | After backend-domain + backend-infra | Domain interfaces + persistence ready |
+| frontend | Task 15, 16, 17 | Immediately | — |
+| testing | Task 18 | After all implementation agents | All implementation tasks complete |
+
 **File ownership boundaries (no overlap allowed):**
-- `backend` owns: `src/{context}/`, `tests/unit/{context}/`, `alembic/`
+- `backend` owns: `src/{context}/`, `tests/unit/{context}/`, `alembic/` (single-agent mode)
+- `backend-domain` owns: `src/{context}/domain/`, `tests/unit/{context}/domain/` (multi-agent mode)
+- `backend-infra` owns: `src/{context}/infrastructure/`, `alembic/versions/`, cross-context event files (multi-agent mode)
+- `backend-app` owns: `src/{context}/application/`, `src/{context}/interface/`, `tests/unit/{context}/application/` (multi-agent mode)
 - `frontend` owns: `frontend/src/features/{context}/`, `frontend/src/types/`
 - `testing` owns: `tests/features/{context}/`, `tests/e2e/`
 - Shared files (e.g., `__init__.py` re-exports): assign to ONE agent only
