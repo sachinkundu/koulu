@@ -1,7 +1,7 @@
 # Koulu - Product Requirements Document (Overview)
 
 **Version:** 1.0  
-**Last Updated:** February 5, 2026  
+**Last Updated:** February 15, 2026  
 **Status:** Draft  
 **Document Type:** Master Overview PRD
 
@@ -678,7 +678,7 @@ Private 1-on-1 communication between members.
 - ✅ Basic course structure (modules, lessons)
 - ✅ Lesson progress tracking
 - ✅ Member directory
-- ⚠️ Basic search (Phase 2/3 — member & post search working, pagination UI complete, edge cases & security hardening pending)
+- ✅ Basic search (member & post search, pagination, stemming, validation, edge cases & security — 30/30 scenarios)
 
 ### 6.2 Phase 2
 
