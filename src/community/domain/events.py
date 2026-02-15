@@ -160,6 +160,7 @@ class CommentAdded(DomainEvent):
 
     comment_id: CommentId
     post_id: PostId
+    community_id: CommunityId
     author_id: UserId
     content: str
     parent_comment_id: CommentId | None
@@ -202,6 +203,7 @@ class PostLiked(DomainEvent):
 
     reaction_id: ReactionId
     post_id: PostId
+    community_id: CommunityId
     user_id: UserId
     author_id: UserId  # content author (for gamification)
     timestamp: datetime = datetime.now(UTC)
@@ -216,6 +218,7 @@ class PostUnliked(DomainEvent):
     """Event published when a post is unliked."""
 
     post_id: PostId
+    community_id: CommunityId
     user_id: UserId
     author_id: UserId  # content author (for gamification)
     timestamp: datetime = datetime.now(UTC)
@@ -231,6 +234,7 @@ class CommentLiked(DomainEvent):
 
     reaction_id: ReactionId
     comment_id: CommentId
+    community_id: CommunityId
     user_id: UserId
     author_id: UserId  # content author (for gamification)
     timestamp: datetime = datetime.now(UTC)
@@ -245,6 +249,7 @@ class CommentUnliked(DomainEvent):
     """Event published when a comment is unliked."""
 
     comment_id: CommentId
+    community_id: CommunityId
     user_id: UserId
     author_id: UserId  # content author (for gamification)
     timestamp: datetime = datetime.now(UTC)

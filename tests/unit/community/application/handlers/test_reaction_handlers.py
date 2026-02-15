@@ -51,6 +51,7 @@ def comment() -> Comment:
         post_id=PostId(uuid4()),
         author_id=UserId(uuid4()),
         content=CommentContent("A test comment content here."),
+        community_id=CommunityId(uuid4()),
     )
 
 
@@ -195,17 +196,21 @@ class TestLikeCommentHandler:
         self,
         mock_event_bus: AsyncMock,
         comment: Comment,
+        post: Post,
         user_id: UserId,
     ) -> None:
         mock_reaction_repo = AsyncMock()
         mock_comment_repo = AsyncMock()
+        mock_post_repo = AsyncMock()
         mock_comment_repo.get_by_id.return_value = comment
         mock_reaction_repo.find_by_user_and_target.return_value = None
+        mock_post_repo.get_by_id.return_value = post
         mock_event_bus.publish_all = AsyncMock()
 
         handler = LikeCommentHandler(
             reaction_repository=mock_reaction_repo,
             comment_repository=mock_comment_repo,
+            post_repository=mock_post_repo,
         )
 
         command = LikeCommentCommand(comment_id=comment.id.value, user_id=user_id.value)
@@ -229,12 +234,14 @@ class TestLikeCommentHandler:
         )
         mock_reaction_repo = AsyncMock()
         mock_comment_repo = AsyncMock()
+        mock_post_repo = AsyncMock()
         mock_comment_repo.get_by_id.return_value = comment
         mock_reaction_repo.find_by_user_and_target.return_value = existing_reaction
 
         handler = LikeCommentHandler(
             reaction_repository=mock_reaction_repo,
             comment_repository=mock_comment_repo,
+            post_repository=mock_post_repo,
         )
 
         command = LikeCommentCommand(comment_id=comment.id.value, user_id=user_id.value)
@@ -246,11 +253,13 @@ class TestLikeCommentHandler:
     async def test_like_comment_not_found(self, user_id: UserId) -> None:
         mock_reaction_repo = AsyncMock()
         mock_comment_repo = AsyncMock()
+        mock_post_repo = AsyncMock()
         mock_comment_repo.get_by_id.return_value = None
 
         handler = LikeCommentHandler(
             reaction_repository=mock_reaction_repo,
             comment_repository=mock_comment_repo,
+            post_repository=mock_post_repo,
         )
 
         command = LikeCommentCommand(comment_id=uuid4(), user_id=user_id.value)
@@ -270,6 +279,7 @@ class TestUnlikeCommentHandler:
         self,
         mock_event_bus: AsyncMock,
         comment: Comment,
+        post: Post,
         user_id: UserId,
     ) -> None:
         existing_reaction = Reaction.create(
@@ -279,13 +289,16 @@ class TestUnlikeCommentHandler:
         )
         mock_reaction_repo = AsyncMock()
         mock_comment_repo = AsyncMock()
+        mock_post_repo = AsyncMock()
         mock_reaction_repo.find_by_user_and_target.return_value = existing_reaction
         mock_comment_repo.get_by_id.return_value = comment
+        mock_post_repo.get_by_id.return_value = post
         mock_event_bus.publish_all = AsyncMock()
 
         handler = UnlikeCommentHandler(
             reaction_repository=mock_reaction_repo,
             comment_repository=mock_comment_repo,
+            post_repository=mock_post_repo,
         )
 
         command = UnlikeCommentCommand(comment_id=comment.id.value, user_id=user_id.value)
@@ -297,11 +310,13 @@ class TestUnlikeCommentHandler:
     async def test_unlike_comment_not_liked_idempotent(self, user_id: UserId) -> None:
         mock_reaction_repo = AsyncMock()
         mock_comment_repo = AsyncMock()
+        mock_post_repo = AsyncMock()
         mock_reaction_repo.find_by_user_and_target.return_value = None
 
         handler = UnlikeCommentHandler(
             reaction_repository=mock_reaction_repo,
             comment_repository=mock_comment_repo,
+            post_repository=mock_post_repo,
         )
 
         command = UnlikeCommentCommand(comment_id=uuid4(), user_id=user_id.value)

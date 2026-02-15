@@ -4,8 +4,12 @@ import structlog
 
 from src.community.application.commands import UnlikeCommentCommand
 from src.community.domain.events import CommentUnliked
-from src.community.domain.repositories import ICommentRepository, IReactionRepository
-from src.community.domain.value_objects import CommentId
+from src.community.domain.repositories import (
+    ICommentRepository,
+    IPostRepository,
+    IReactionRepository,
+)
+from src.community.domain.value_objects import CommentId, CommunityId
 from src.identity.domain.value_objects import UserId
 from src.shared.infrastructure import event_bus
 
@@ -19,10 +23,12 @@ class UnlikeCommentHandler:
         self,
         reaction_repository: IReactionRepository,
         comment_repository: ICommentRepository,
+        post_repository: IPostRepository,
     ) -> None:
         """Initialize with dependencies."""
         self._reaction_repository = reaction_repository
         self._comment_repository = comment_repository
+        self._post_repository = post_repository
 
     async def handle(self, command: UnlikeCommentCommand) -> None:
         """
@@ -53,9 +59,16 @@ class UnlikeCommentHandler:
             )
             return
 
-        # Look up comment to get author_id
+        # Look up comment to get author_id and community_id
         comment = await self._comment_repository.get_by_id(CommentId(command.comment_id))
         author_id = comment.author_id if comment else user_id
+
+        # Look up post to get community_id
+        community_id = CommunityId(command.comment_id)
+        if comment:
+            post = await self._post_repository.get_by_id(comment.post_id)
+            if post:
+                community_id = post.community_id
 
         # Delete reaction
         await self._reaction_repository.delete(existing.id)
@@ -65,6 +78,7 @@ class UnlikeCommentHandler:
             [
                 CommentUnliked(
                     comment_id=CommentId(command.comment_id),
+                    community_id=community_id,
                     user_id=user_id,
                     author_id=author_id,
                 )

@@ -6,8 +6,12 @@ from src.community.application.commands import LikeCommentCommand
 from src.community.domain.entities import Reaction
 from src.community.domain.events import CommentLiked
 from src.community.domain.exceptions import CommentNotFoundError
-from src.community.domain.repositories import ICommentRepository, IReactionRepository
-from src.community.domain.value_objects import CommentId
+from src.community.domain.repositories import (
+    ICommentRepository,
+    IPostRepository,
+    IReactionRepository,
+)
+from src.community.domain.value_objects import CommentId, CommunityId
 from src.identity.domain.value_objects import UserId
 from src.shared.infrastructure import event_bus
 
@@ -21,10 +25,12 @@ class LikeCommentHandler:
         self,
         reaction_repository: IReactionRepository,
         comment_repository: ICommentRepository,
+        post_repository: IPostRepository,
     ) -> None:
         """Initialize with dependencies."""
         self._reaction_repository = reaction_repository
         self._comment_repository = comment_repository
+        self._post_repository = post_repository
 
     async def handle(self, command: LikeCommentCommand) -> None:
         """
@@ -75,12 +81,17 @@ class LikeCommentHandler:
         # Save reaction
         await self._reaction_repository.save(reaction)
 
+        # Look up post to get community_id
+        post = await self._post_repository.get_by_id(comment.post_id)
+        community_id = post.community_id if post else CommunityId(comment.post_id.value)
+
         # Publish event
         await event_bus.publish_all(
             [
                 CommentLiked(
                     reaction_id=reaction.id,
                     comment_id=comment_id,
+                    community_id=community_id,
                     user_id=user_id,
                     author_id=comment.author_id,
                 )

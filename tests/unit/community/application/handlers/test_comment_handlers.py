@@ -80,20 +80,22 @@ def member(author_id: UserId, community_id: CommunityId) -> CommunityMember:
 
 
 @pytest.fixture
-def comment(author_id: UserId) -> Comment:
+def comment(author_id: UserId, community_id: CommunityId) -> Comment:
     return Comment.create(
         post_id=PostId(uuid4()),
         author_id=author_id,
         content=CommentContent("Test comment content here."),
+        community_id=community_id,
     )
 
 
 @pytest.fixture
-def reply(author_id: UserId, comment: Comment) -> Comment:
+def reply(author_id: UserId, comment: Comment, community_id: CommunityId) -> Comment:
     return Comment.create(
         post_id=comment.post_id,
         author_id=author_id,
         content=CommentContent("This is a reply."),
+        community_id=community_id,
         parent_comment_id=comment.id,
     )
 

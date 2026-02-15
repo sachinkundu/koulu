@@ -98,6 +98,7 @@ class AddCommentHandler:
             post_id=post_id,
             author_id=author_id,
             content=content,
+            community_id=post.community_id,
             parent_comment_id=parent_comment_id,
         )
 

@@ -13,6 +13,7 @@ from src.community.domain.exceptions import (
 from src.community.domain.value_objects import (
     CommentContent,
     CommentId,
+    CommunityId,
     MemberRole,
     PostId,
 )
@@ -38,12 +39,19 @@ def content() -> CommentContent:
 
 
 @pytest.fixture
-def comment(post_id: PostId, author_id: UserId, content: CommentContent) -> Comment:
+def community_id() -> CommunityId:
+    """Create a test community ID."""
+    return CommunityId(value=uuid4())
+
+
+@pytest.fixture
+def comment(post_id: PostId, author_id: UserId, content: CommentContent, community_id: CommunityId) -> Comment:
     """Create a test comment."""
     return Comment.create(
         post_id=post_id,
         author_id=author_id,
         content=content,
+        community_id=community_id,
     )
 
 
@@ -51,13 +59,14 @@ class TestCommentCreate:
     """Tests for Comment.create() factory method."""
 
     def test_create_comment_with_required_fields(
-        self, post_id: PostId, author_id: UserId, content: CommentContent
+        self, post_id: PostId, author_id: UserId, content: CommentContent, community_id: CommunityId
     ) -> None:
         """Comment.create() should create a comment with all required fields."""
         comment = Comment.create(
             post_id=post_id,
             author_id=author_id,
             content=content,
+            community_id=community_id,
         )
 
         assert isinstance(comment.id, CommentId)
@@ -71,7 +80,7 @@ class TestCommentCreate:
         assert comment.edited_at is None
 
     def test_create_reply_comment(
-        self, post_id: PostId, author_id: UserId, content: CommentContent
+        self, post_id: PostId, author_id: UserId, content: CommentContent, community_id: CommunityId
     ) -> None:
         """Comment.create() with parent_comment_id should create a reply."""
         parent_id = CommentId(value=uuid4())
@@ -80,19 +89,21 @@ class TestCommentCreate:
             post_id=post_id,
             author_id=author_id,
             content=content,
+            community_id=community_id,
             parent_comment_id=parent_id,
         )
 
         assert reply.parent_comment_id == parent_id
 
     def test_create_comment_publishes_comment_added_event(
-        self, post_id: PostId, author_id: UserId, content: CommentContent
+        self, post_id: PostId, author_id: UserId, content: CommentContent, community_id: CommunityId
     ) -> None:
         """Comment.create() should publish CommentAdded event."""
         comment = Comment.create(
             post_id=post_id,
             author_id=author_id,
             content=content,
+            community_id=community_id,
         )
 
         events = comment.events
@@ -105,7 +116,7 @@ class TestCommentCreate:
         assert events[0].parent_comment_id is None
 
     def test_create_reply_event_includes_parent_id(
-        self, post_id: PostId, author_id: UserId, content: CommentContent
+        self, post_id: PostId, author_id: UserId, content: CommentContent, community_id: CommunityId
     ) -> None:
         """CommentAdded event for a reply should include parent_comment_id."""
         parent_id = CommentId(value=uuid4())
@@ -114,6 +125,7 @@ class TestCommentCreate:
             post_id=post_id,
             author_id=author_id,
             content=content,
+            community_id=community_id,
             parent_comment_id=parent_id,
         )
 
@@ -360,7 +372,7 @@ class TestCommentEquality:
         self, comment: Comment, post_id: PostId, author_id: UserId, content: CommentContent
     ) -> None:
         """Two comments with different IDs should not be equal."""
-        other = Comment.create(post_id=post_id, author_id=author_id, content=content)
+        other = Comment.create(post_id=post_id, author_id=author_id, content=content, community_id=CommunityId(uuid4()))
         assert comment != other
 
     def test_comment_can_be_used_in_set(self, comment: Comment) -> None:

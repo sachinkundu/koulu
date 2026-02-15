@@ -12,6 +12,7 @@ from src.community.domain.exceptions import (
 from src.community.domain.value_objects import (
     CommentContent,
     CommentId,
+    CommunityId,
     MemberRole,
     PostId,
 )
@@ -46,6 +47,7 @@ class Comment:
         post_id: PostId,
         author_id: UserId,
         content: CommentContent,
+        community_id: CommunityId,
         parent_comment_id: CommentId | None = None,
     ) -> "Comment":
         """
@@ -55,6 +57,7 @@ class Comment:
             post_id: The post this comment belongs to
             author_id: The user creating the comment
             content: The comment content (already validated)
+            community_id: The community the post belongs to
             parent_comment_id: Optional parent comment for threading
 
         Returns:
@@ -73,6 +76,7 @@ class Comment:
             CommentAdded(
                 comment_id=comment_id,
                 post_id=post_id,
+                community_id=community_id,
                 author_id=author_id,
                 content=str(content),
                 parent_comment_id=parent_comment_id,
