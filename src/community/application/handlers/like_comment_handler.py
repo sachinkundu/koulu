@@ -82,6 +82,7 @@ class LikeCommentHandler:
                     reaction_id=reaction.id,
                     comment_id=comment_id,
                     user_id=user_id,
+                    author_id=comment.author_id,
                 )
             ]
         )

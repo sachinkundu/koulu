@@ -145,16 +145,22 @@ class TestUnlikePostHandler:
     async def test_unlike_post_success(
         self,
         mock_event_bus: AsyncMock,
+        post: Post,
         user_id: UserId,
         reaction: Reaction,
     ) -> None:
         mock_reaction_repo = AsyncMock()
+        mock_post_repo = AsyncMock()
         mock_reaction_repo.find_by_user_and_target.return_value = reaction
+        mock_post_repo.get_by_id.return_value = post
         mock_event_bus.publish_all = AsyncMock()
 
-        handler = UnlikePostHandler(reaction_repository=mock_reaction_repo)
+        handler = UnlikePostHandler(
+            reaction_repository=mock_reaction_repo,
+            post_repository=mock_post_repo,
+        )
 
-        command = UnlikePostCommand(post_id=uuid4(), user_id=user_id.value)
+        command = UnlikePostCommand(post_id=post.id.value, user_id=user_id.value)
         await handler.handle(command)
 
         mock_reaction_repo.delete.assert_called_once_with(reaction.id)
@@ -163,9 +169,13 @@ class TestUnlikePostHandler:
     @pytest.mark.asyncio
     async def test_unlike_post_not_liked_idempotent(self, user_id: UserId) -> None:
         mock_reaction_repo = AsyncMock()
+        mock_post_repo = AsyncMock()
         mock_reaction_repo.find_by_user_and_target.return_value = None
 
-        handler = UnlikePostHandler(reaction_repository=mock_reaction_repo)
+        handler = UnlikePostHandler(
+            reaction_repository=mock_reaction_repo,
+            post_repository=mock_post_repo,
+        )
 
         command = UnlikePostCommand(post_id=uuid4(), user_id=user_id.value)
         await handler.handle(command)
@@ -259,20 +269,26 @@ class TestUnlikeCommentHandler:
     async def test_unlike_comment_success(
         self,
         mock_event_bus: AsyncMock,
+        comment: Comment,
         user_id: UserId,
     ) -> None:
         existing_reaction = Reaction.create(
             user_id=user_id,
             target_type="comment",
-            target_id=CommentId(uuid4()),
+            target_id=comment.id,
         )
         mock_reaction_repo = AsyncMock()
+        mock_comment_repo = AsyncMock()
         mock_reaction_repo.find_by_user_and_target.return_value = existing_reaction
+        mock_comment_repo.get_by_id.return_value = comment
         mock_event_bus.publish_all = AsyncMock()
 
-        handler = UnlikeCommentHandler(reaction_repository=mock_reaction_repo)
+        handler = UnlikeCommentHandler(
+            reaction_repository=mock_reaction_repo,
+            comment_repository=mock_comment_repo,
+        )
 
-        command = UnlikeCommentCommand(comment_id=uuid4(), user_id=user_id.value)
+        command = UnlikeCommentCommand(comment_id=comment.id.value, user_id=user_id.value)
         await handler.handle(command)
 
         mock_reaction_repo.delete.assert_called_once_with(existing_reaction.id)
@@ -280,9 +296,13 @@ class TestUnlikeCommentHandler:
     @pytest.mark.asyncio
     async def test_unlike_comment_not_liked_idempotent(self, user_id: UserId) -> None:
         mock_reaction_repo = AsyncMock()
+        mock_comment_repo = AsyncMock()
         mock_reaction_repo.find_by_user_and_target.return_value = None
 
-        handler = UnlikeCommentHandler(reaction_repository=mock_reaction_repo)
+        handler = UnlikeCommentHandler(
+            reaction_repository=mock_reaction_repo,
+            comment_repository=mock_comment_repo,
+        )
 
         command = UnlikeCommentCommand(comment_id=uuid4(), user_id=user_id.value)
         await handler.handle(command)

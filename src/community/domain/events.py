@@ -203,6 +203,7 @@ class PostLiked(DomainEvent):
     reaction_id: ReactionId
     post_id: PostId
     user_id: UserId
+    author_id: UserId  # content author (for gamification)
     timestamp: datetime = datetime.now(UTC)
 
     @property
@@ -216,6 +217,7 @@ class PostUnliked(DomainEvent):
 
     post_id: PostId
     user_id: UserId
+    author_id: UserId  # content author (for gamification)
     timestamp: datetime = datetime.now(UTC)
 
     @property
@@ -230,6 +232,7 @@ class CommentLiked(DomainEvent):
     reaction_id: ReactionId
     comment_id: CommentId
     user_id: UserId
+    author_id: UserId  # content author (for gamification)
     timestamp: datetime = datetime.now(UTC)
 
     @property
@@ -243,6 +246,7 @@ class CommentUnliked(DomainEvent):
 
     comment_id: CommentId
     user_id: UserId
+    author_id: UserId  # content author (for gamification)
     timestamp: datetime = datetime.now(UTC)
 
     @property

@@ -80,6 +80,7 @@ class LikePostHandler:
                     reaction_id=reaction.id,
                     post_id=post_id,
                     user_id=user_id,
+                    author_id=post.author_id,
                 )
             ]
         )

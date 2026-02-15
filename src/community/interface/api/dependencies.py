@@ -251,10 +251,12 @@ def get_like_post_handler(
 
 def get_unlike_post_handler(
     reaction_repo: ReactionRepositoryDep,
+    post_repo: PostRepositoryDep,
 ) -> UnlikePostHandler:
     """Get unlike post handler."""
     return UnlikePostHandler(
         reaction_repository=reaction_repo,
+        post_repository=post_repo,
     )
 
 
@@ -271,10 +273,12 @@ def get_like_comment_handler(
 
 def get_unlike_comment_handler(
     reaction_repo: ReactionRepositoryDep,
+    comment_repo: CommentRepositoryDep,
 ) -> UnlikeCommentHandler:
     """Get unlike comment handler."""
     return UnlikeCommentHandler(
         reaction_repository=reaction_repo,
+        comment_repository=comment_repo,
     )
 
 

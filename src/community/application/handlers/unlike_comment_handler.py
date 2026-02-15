@@ -4,7 +4,7 @@ import structlog
 
 from src.community.application.commands import UnlikeCommentCommand
 from src.community.domain.events import CommentUnliked
-from src.community.domain.repositories import IReactionRepository
+from src.community.domain.repositories import ICommentRepository, IReactionRepository
 from src.community.domain.value_objects import CommentId
 from src.identity.domain.value_objects import UserId
 from src.shared.infrastructure import event_bus
@@ -18,9 +18,11 @@ class UnlikeCommentHandler:
     def __init__(
         self,
         reaction_repository: IReactionRepository,
+        comment_repository: ICommentRepository,
     ) -> None:
         """Initialize with dependencies."""
         self._reaction_repository = reaction_repository
+        self._comment_repository = comment_repository
 
     async def handle(self, command: UnlikeCommentCommand) -> None:
         """
@@ -51,6 +53,10 @@ class UnlikeCommentHandler:
             )
             return
 
+        # Look up comment to get author_id
+        comment = await self._comment_repository.get_by_id(CommentId(command.comment_id))
+        author_id = comment.author_id if comment else user_id
+
         # Delete reaction
         await self._reaction_repository.delete(existing.id)
 
@@ -60,6 +66,7 @@ class UnlikeCommentHandler:
                 CommentUnliked(
                     comment_id=CommentId(command.comment_id),
                     user_id=user_id,
+                    author_id=author_id,
                 )
             ]
         )
