@@ -175,13 +175,20 @@ Write `docs/features/{context}/{feature}-phase-1-tasks.md` following the Granula
 
 **Task dependency analysis (REQUIRED for parallel execution):**
 
-After defining all tasks, analyze inter-task dependencies to enable `/implement-feature` to dispatch independent tasks in parallel:
+After defining all tasks, analyze inter-task dependencies to enable `/implement-feature` or `/implement-phase-team` to dispatch independent tasks in parallel:
 
 1. **For each task, identify what it creates/modifies** — already captured in the Files section
 2. **Check imports/usage:** If Task B's code imports from files Task A creates, B depends on A
 3. **Check file overlap:** If two tasks modify the same file, they must be sequential
 4. **Declare `Depends on:` field** on each task — list task numbers, or "none" if independent
-5. **Generate a dependency graph and parallel execution summary** at the top of the task plan
+5. **Declare `Owner:` field** on each task — one of: `backend`, `frontend`, `testing`
+6. **Generate a dependency graph, parallel execution summary, AND agent execution plan** at the top of the task plan
+
+**Owner assignment rules:**
+- `backend` — Domain entities, value objects, application handlers, repositories, infrastructure, API endpoints, database migrations, unit tests for backend code
+- `frontend` — TypeScript types, API hooks, React components, pages, routes, Vitest component tests
+- `testing` — BDD step definitions, integration test wiring, E2E Playwright specs, final verification
+- If a task spans both backend and frontend (rare — avoid this), split it into two tasks
 
 **Common dependency patterns (architecture-aware):**
 - Application layer (handlers, DTOs) → typically independent, can start first
@@ -192,6 +199,8 @@ After defining all tasks, analyze inter-task dependencies to enable `/implement-
 - Frontend components → depend on frontend types/hooks
 - BDD tests → depend on the full backend stack they exercise
 - Final verification → depends on ALL other tasks
+
+**Cross-agent independence:** Backend and frontend agents can run fully in parallel because the frontend codes against the API contract defined in the TDD document, not against live backend code. Testing agent starts after both complete.
 
 ### Step 9: Present Granular Plan
 
@@ -382,10 +391,27 @@ Each `{feature}-phase-N-tasks.md` follows this structure:
 **Sequential execution:** {N} tasks
 **Parallel execution:** {M} batches (estimated ~{P}% time savings)
 
+### Agent Execution Plan
+
+> Used by `/implement-phase-team` to assign tasks to team agents.
+
+| Agent | Tasks | Starts | Blocked Until |
+|-------|-------|--------|---------------|
+| backend | Task 1, 2, 3, 4 | Immediately | — |
+| frontend | Task 5, 6, 7 | Immediately | — |
+| testing | Task 8, 9 | After backend + frontend | All implementation tasks complete |
+
+**File ownership boundaries (no overlap allowed):**
+- `backend` owns: `src/{context}/`, `tests/unit/{context}/`, `alembic/`
+- `frontend` owns: `frontend/src/features/{context}/`, `frontend/src/types/`
+- `testing` owns: `tests/features/{context}/`, `tests/e2e/`
+- Shared files (e.g., `__init__.py` re-exports): assign to ONE agent only
+
 ---
 
 ### Task 1: {Component Name}
 
+**Owner:** backend | frontend | testing
 **Depends on:** none | Task X, Task Y
 
 **Files:**
