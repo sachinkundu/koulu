@@ -25,16 +25,16 @@ logger = structlog.get_logger()
 
 def _get_award_handler() -> AwardPointsHandler:
     """Get an AwardPointsHandler with a fresh DB session."""
-    from src.gamification.interface.api.dependencies import create_award_handler  # type: ignore[import-untyped]
+    from src.gamification.interface.api.dependencies import create_award_handler
 
-    return create_award_handler()  # type: ignore[no-any-return]
+    return create_award_handler()
 
 
 def _get_deduct_handler() -> DeductPointsHandler:
     """Get a DeductPointsHandler with a fresh DB session."""
     from src.gamification.interface.api.dependencies import create_deduct_handler
 
-    return create_deduct_handler()  # type: ignore[no-any-return]
+    return create_deduct_handler()
 
 
 async def handle_post_created(event: PostCreated) -> None:
