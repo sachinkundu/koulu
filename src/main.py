@@ -20,6 +20,14 @@ from src.classroom.interface.api import (
     modules_router,
     progress_router,
 )
+from src.community.domain.events import (
+    CommentAdded,
+    CommentLiked,
+    CommentUnliked,
+    PostCreated,
+    PostLiked,
+    PostUnliked,
+)
 from src.community.interface.api import (
     categories_router,
     comments_router,
@@ -29,6 +37,17 @@ from src.community.interface.api import (
     search_router,
 )
 from src.config import settings
+from src.gamification.application.event_handlers.community_event_handlers import (
+    handle_comment_added,
+    handle_comment_liked,
+    handle_comment_unliked,
+    handle_post_created,
+    handle_post_liked,
+    handle_post_unliked,
+)
+from src.gamification.interface.api.gamification_controller import (
+    router as gamification_router,
+)
 from src.identity.domain.exceptions import RateLimitExceededError
 from src.identity.infrastructure.services import limiter
 from src.identity.interface.api import auth_router, user_router
@@ -62,6 +81,17 @@ logger = structlog.get_logger()
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler."""
     logger.info("application_startup", env=settings.app_env)
+
+    # Register gamification event handlers
+    from src.shared.infrastructure.event_bus import event_bus
+
+    event_bus.register_handler(PostCreated, handle_post_created)  # type: ignore[arg-type]
+    event_bus.register_handler(PostLiked, handle_post_liked)  # type: ignore[arg-type]
+    event_bus.register_handler(PostUnliked, handle_post_unliked)  # type: ignore[arg-type]
+    event_bus.register_handler(CommentAdded, handle_comment_added)  # type: ignore[arg-type]
+    event_bus.register_handler(CommentLiked, handle_comment_liked)  # type: ignore[arg-type]
+    event_bus.register_handler(CommentUnliked, handle_comment_unliked)  # type: ignore[arg-type]
+
     yield
     logger.info("application_shutdown")
 
@@ -158,6 +188,7 @@ app.include_router(courses_router, prefix="/api/v1")
 app.include_router(modules_router, prefix="/api/v1")
 app.include_router(lessons_router, prefix="/api/v1")
 app.include_router(progress_router, prefix="/api/v1")
+app.include_router(gamification_router, prefix="/api/v1")
 
 # Serve React SPA in production (static/ directory exists from Docker build)
 _static_dir = Path(__file__).resolve().parent.parent / "static"
