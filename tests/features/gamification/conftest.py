@@ -22,14 +22,23 @@ from src.gamification.application.commands.award_points import (
 from src.gamification.application.commands.deduct_points import (
     DeductPointsHandler,
 )
+from src.gamification.application.commands.set_course_level_requirement import (
+    SetCourseLevelRequirementHandler,
+)
 from src.gamification.application.commands.update_level_config import (
     UpdateLevelConfigHandler,
+)
+from src.gamification.application.queries.check_course_access import (
+    CheckCourseAccessHandler,
 )
 from src.gamification.application.queries.get_level_definitions import (
     GetLevelDefinitionsHandler,
 )
 from src.gamification.application.queries.get_member_level import (
     GetMemberLevelHandler,
+)
+from src.gamification.infrastructure.persistence.course_level_requirement_repository import (
+    SqlAlchemyCourseLevelRequirementRepository,
 )
 from src.gamification.infrastructure.persistence.level_config_repository import (
     SqlAlchemyLevelConfigRepository,
@@ -104,6 +113,38 @@ async def update_level_config_handler(
 ) -> UpdateLevelConfigHandler:
     """Update level config command handler using test DB session."""
     return UpdateLevelConfigHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
+
+
+@pytest_asyncio.fixture
+async def course_req_repo(
+    db_session: AsyncSession,
+) -> SqlAlchemyCourseLevelRequirementRepository:
+    """Course level requirement repository backed by test DB session."""
+    return SqlAlchemyCourseLevelRequirementRepository(db_session)
+
+
+@pytest_asyncio.fixture
+async def check_course_access_handler(
+    course_req_repo: SqlAlchemyCourseLevelRequirementRepository,
+    mp_repo: SqlAlchemyMemberPointsRepository,
+    lc_repo: SqlAlchemyLevelConfigRepository,
+) -> CheckCourseAccessHandler:
+    """Check course access query handler using test DB session."""
+    return CheckCourseAccessHandler(
+        course_req_repo=course_req_repo, member_points_repo=mp_repo, level_config_repo=lc_repo
+    )
+
+
+@pytest_asyncio.fixture
+async def set_course_req_handler(
+    course_req_repo: SqlAlchemyCourseLevelRequirementRepository,
+    mp_repo: SqlAlchemyMemberPointsRepository,
+    lc_repo: SqlAlchemyLevelConfigRepository,
+) -> SetCourseLevelRequirementHandler:
+    """Set course level requirement command handler using test DB session."""
+    return SetCourseLevelRequirementHandler(
+        course_req_repo=course_req_repo, member_points_repo=mp_repo, level_config_repo=lc_repo
+    )
 
 
 @pytest_asyncio.fixture

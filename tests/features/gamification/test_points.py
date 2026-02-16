@@ -1,24 +1,10 @@
 """BDD step definitions for gamification points & levels.
 
-Total: 40 scenarios
+Total: 40 scenarios — all enabled (Phase 3 complete).
 
-Phase 1 (15 enabled):
-- Earning points: likes received (3), creating content (2), lesson completion (2)
-- Level progression (4)
-- Level ratchet (2)
-- Edge cases: accumulation (1), zero floor (1)
-
-Phase 2 (9 enabled):
-- Level badge display (3)
-- Level definitions view (2)
-- Admin level configuration (3)
-- Admin threshold ratchet (1)
-
-Phase 3 (16 skipped):
-- Course access gating (4)
-- Validation errors: points (1), admin config (4)
-- Security (4)
-- Course gating edge cases (3)
+Phase 1 (15): Earning points, level progression, ratchet, edge cases
+Phase 2 (9): Level display, definitions, admin config
+Phase 3 (16): Course gating, validation errors, security
 
 NOTE: Step functions have intentionally "unused" parameters like `client` for pytest-bdd
 fixture dependency ordering.
@@ -41,10 +27,18 @@ from src.gamification.application.commands.deduct_points import (
     DeductPointsCommand,
     DeductPointsHandler,
 )
+from src.gamification.application.commands.set_course_level_requirement import (
+    SetCourseLevelRequirementCommand,
+    SetCourseLevelRequirementHandler,
+)
 from src.gamification.application.commands.update_level_config import (
     LevelUpdate,
     UpdateLevelConfigCommand,
     UpdateLevelConfigHandler,
+)
+from src.gamification.application.queries.check_course_access import (
+    CheckCourseAccessHandler,
+    CheckCourseAccessQuery,
 )
 from src.gamification.application.queries.get_level_definitions import (
     GetLevelDefinitionsHandler,
@@ -54,7 +48,11 @@ from src.gamification.application.queries.get_member_level import (
     GetMemberLevelHandler,
     GetMemberLevelQuery,
 )
-from src.gamification.domain.exceptions import DuplicateLessonCompletionError
+from src.gamification.domain.exceptions import (
+    DuplicateLessonCompletionError,
+    InvalidLevelNameError,
+    InvalidThresholdError,
+)
 from src.gamification.domain.value_objects.point_source import PointSource
 from src.gamification.infrastructure.persistence.level_config_repository import (
     SqlAlchemyLevelConfigRepository,
@@ -133,101 +131,85 @@ def test_level_ratchet_preserved_when_thresholds_change() -> None:
 
 
 # ============================================================================
-# PHASE 3 SKIPPED SCENARIOS — Course Gating + Validation + Security
+# PHASE 3 SCENARIOS — Course Gating + Validation + Security (16 enabled)
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 3: Requires course access gating infrastructure")
 @scenario("points.feature", "Member can access course when at required level")
 def test_member_can_access_course_when_at_required_level() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires course access gating infrastructure")
 @scenario("points.feature", "Member cannot access course below required level")
 def test_member_cannot_access_course_below_required_level() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires course list with lock indicator")
 @scenario("points.feature", "Locked course visible in course list with lock indicator")
 def test_locked_course_visible_in_course_list_with_lock_indicator() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires course access gating infrastructure")
 @scenario("points.feature", "Course with no level requirement is accessible to all")
 def test_course_with_no_level_requirement_is_accessible_to_all() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires self-like validation at API layer")
 @scenario("points.feature", "No points awarded for self-like attempt")
 def test_no_points_awarded_for_self_like_attempt() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires admin level config validation endpoint")
 @scenario("points.feature", "Level name too long is rejected")
 def test_level_name_too_long_is_rejected() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires admin level config validation endpoint")
 @scenario("points.feature", "Empty level name is rejected")
 def test_empty_level_name_is_rejected() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires admin level config validation endpoint")
 @scenario("points.feature", "Duplicate level names are rejected")
 def test_duplicate_level_names_are_rejected() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires admin threshold validation endpoint")
 @scenario("points.feature", "Non-increasing thresholds are rejected")
 def test_non_increasing_thresholds_are_rejected() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires admin threshold validation endpoint")
 @scenario("points.feature", "Zero threshold for level 2 is rejected")
 def test_zero_threshold_for_level_2_is_rejected() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires auth guard on gamification endpoints")
 @scenario("points.feature", "Unauthenticated user cannot view points")
 def test_unauthenticated_user_cannot_view_points() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires admin role check on level config endpoint")
 @scenario("points.feature", "Non-admin cannot configure levels")
 def test_non_admin_cannot_configure_levels() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires admin role check on course level endpoint")
 @scenario("points.feature", "Non-admin cannot set course level requirements")
 def test_non_admin_cannot_set_course_level_requirements() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires XSS sanitization on level name input")
 @scenario("points.feature", "Level name input is sanitized")
 def test_level_name_input_is_sanitized() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires admin course level requirement change")
 @scenario("points.feature", "Admin lowers course level requirement grants immediate access")
 def test_admin_lowers_course_level_requirement_grants_immediate_access() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 3: Requires admin course level requirement change")
 @scenario("points.feature", "Admin raises course level requirement revokes access")
 def test_admin_raises_course_level_requirement_revokes_access() -> None:
     pass
@@ -639,9 +621,28 @@ async def course_with_min_level(
     name: str,
     level: int,
     context: dict[str, Any],
+    set_course_req_handler: SetCourseLevelRequirementHandler,
 ) -> None:
-    """Create a course with minimum level (stub for Phase 3)."""
-    pass
+    """Create a course with minimum level requirement."""
+    community_id = context["community_id"]
+    course_id = uuid4()
+    context.setdefault("courses", {})[name] = {"course_id": course_id}
+
+    admin_email = context.get("auth_email")
+    admin_id = (
+        context["users"][admin_email]["user_id"]
+        if admin_email and admin_email in context.get("users", {})
+        else uuid4()
+    )
+
+    await set_course_req_handler.handle(
+        SetCourseLevelRequirementCommand(
+            community_id=community_id,
+            course_id=course_id,
+            admin_user_id=admin_id,
+            minimum_level=level,
+        )
+    )
 
 
 @given(parsers.parse('a course "{name}" exists with no minimum level'))
@@ -650,8 +651,9 @@ async def course_with_no_min_level(
     name: str,
     context: dict[str, Any],
 ) -> None:
-    """Create a course with no minimum level (stub for Phase 3)."""
-    pass
+    """Create a course with no minimum level requirement."""
+    course_id = uuid4()
+    context.setdefault("courses", {})[name] = {"course_id": course_id}
 
 
 @given(parsers.parse('a course "{name}" exists'))
@@ -660,8 +662,9 @@ async def course_exists(
     name: str,
     context: dict[str, Any],
 ) -> None:
-    """Create a course (stub for Phase 3)."""
-    pass
+    """Create a course (no level requirement)."""
+    course_id = uuid4()
+    context.setdefault("courses", {})[name] = {"course_id": course_id}
 
 
 # ============================================================================
@@ -1229,9 +1232,21 @@ async def attempt_access_course(
     email: str,
     name: str,
     context: dict[str, Any],
+    check_course_access_handler: CheckCourseAccessHandler,
 ) -> None:
-    """Attempt course access (stub for Phase 3)."""
-    pass
+    """Attempt course access via CheckCourseAccessQuery."""
+    user_id = context["users"][email]["user_id"]
+    community_id = context["community_id"]
+    course_id = context["courses"][name]["course_id"]
+
+    result = await check_course_access_handler.handle(
+        CheckCourseAccessQuery(
+            community_id=community_id,
+            course_id=course_id,
+            user_id=user_id,
+        )
+    )
+    context["course_access_result"] = result
 
 
 @when(parsers.parse('"{email}" views the course list'))
@@ -1239,9 +1254,22 @@ async def view_course_list(
     client: AsyncClient,
     email: str,
     context: dict[str, Any],
+    check_course_access_handler: CheckCourseAccessHandler,
 ) -> None:
-    """View course list (stub for Phase 3)."""
-    pass
+    """View course list — check access for all courses."""
+    user_id = context["users"][email]["user_id"]
+    community_id = context["community_id"]
+    context["course_list_results"] = {}
+
+    for course_name, course_data in context.get("courses", {}).items():
+        result = await check_course_access_handler.handle(
+            CheckCourseAccessQuery(
+                community_id=community_id,
+                course_id=course_data["course_id"],
+                user_id=user_id,
+            )
+        )
+        context["course_list_results"][course_name] = result
 
 
 @when(parsers.parse('"{email}" attempts to like their own post'))
@@ -1250,8 +1278,15 @@ async def attempt_self_like(
     email: str,
     context: dict[str, Any],
 ) -> None:
-    """Attempt to self-like (stub for Phase 3)."""
-    pass
+    """Attempt to self-like via API (should be rejected)."""
+    post_id = context["post_id"]
+    token = await _get_auth_token(client, email)
+
+    response = await client.post(
+        f"/api/v1/posts/{post_id}/like",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["self_like_response"] = response
 
 
 @when(
@@ -1262,9 +1297,37 @@ async def admin_set_long_name(
     level: int,
     length: int,
     context: dict[str, Any],
+    update_level_config_handler: UpdateLevelConfigHandler,
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """Admin attempts long level name (stub for Phase 3)."""
-    pass
+    """Admin attempts long level name."""
+    community_id = context["community_id"]
+    config = await lc_repo.get_by_community(community_id)
+    assert config is not None
+
+    long_name = "A" * length
+    levels = [
+        LevelUpdate(
+            level=ld.level,
+            name=long_name if ld.level == level else ld.name,
+            threshold=ld.threshold,
+        )
+        for ld in config.levels
+    ]
+
+    admin_email = context.get("auth_email", "admin@example.com")
+    admin_id = context["users"][admin_email]["user_id"]
+
+    try:
+        await update_level_config_handler.handle(
+            UpdateLevelConfigCommand(
+                community_id=community_id,
+                admin_user_id=admin_id,
+                levels=levels,
+            )
+        )
+    except InvalidLevelNameError as e:
+        context["validation_error"] = str(e)
 
 
 @when(parsers.parse('the admin attempts to set level {level:d} name to "{name}"'))
@@ -1273,9 +1336,36 @@ async def admin_set_level_name(
     level: int,
     name: str,
     context: dict[str, Any],
+    update_level_config_handler: UpdateLevelConfigHandler,
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """Admin attempts to set level name (stub for Phase 3)."""
-    pass
+    """Admin attempts to set level name (may fail with validation)."""
+    community_id = context["community_id"]
+    config = await lc_repo.get_by_community(community_id)
+    assert config is not None
+
+    levels = [
+        LevelUpdate(
+            level=ld.level,
+            name=name if ld.level == level else ld.name,
+            threshold=ld.threshold,
+        )
+        for ld in config.levels
+    ]
+
+    admin_email = context.get("auth_email", "admin@example.com")
+    admin_id = context["users"][admin_email]["user_id"]
+
+    try:
+        await update_level_config_handler.handle(
+            UpdateLevelConfigCommand(
+                community_id=community_id,
+                admin_user_id=admin_id,
+                levels=levels,
+            )
+        )
+    except (InvalidLevelNameError, InvalidThresholdError) as e:
+        context["validation_error"] = str(e)
 
 
 @when(parsers.parse('the admin attempts to set level {level:d} name to ""'))
@@ -1283,9 +1373,36 @@ async def admin_set_empty_name(
     client: AsyncClient,
     level: int,
     context: dict[str, Any],
+    update_level_config_handler: UpdateLevelConfigHandler,
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """Admin attempts empty level name (stub for Phase 3)."""
-    pass
+    """Admin attempts empty level name."""
+    community_id = context["community_id"]
+    config = await lc_repo.get_by_community(community_id)
+    assert config is not None
+
+    levels = [
+        LevelUpdate(
+            level=ld.level,
+            name="" if ld.level == level else ld.name,
+            threshold=ld.threshold,
+        )
+        for ld in config.levels
+    ]
+
+    admin_email = context.get("auth_email", "admin@example.com")
+    admin_id = context["users"][admin_email]["user_id"]
+
+    try:
+        await update_level_config_handler.handle(
+            UpdateLevelConfigCommand(
+                community_id=community_id,
+                admin_user_id=admin_id,
+                levels=levels,
+            )
+        )
+    except InvalidLevelNameError as e:
+        context["validation_error"] = str(e)
 
 
 @when(
@@ -1300,9 +1417,40 @@ async def admin_set_bad_threshold(
     other_level: int,
     other: int,
     context: dict[str, Any],
+    update_level_config_handler: UpdateLevelConfigHandler,
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """Admin attempts non-increasing threshold (stub for Phase 3)."""
-    pass
+    """Admin attempts non-increasing threshold."""
+    community_id = context["community_id"]
+    config = await lc_repo.get_by_community(community_id)
+    assert config is not None
+
+    levels = [
+        LevelUpdate(
+            level=ld.level,
+            name=ld.name,
+            threshold=(
+                threshold
+                if ld.level == level
+                else (other if ld.level == other_level else ld.threshold)
+            ),
+        )
+        for ld in config.levels
+    ]
+
+    admin_email = context.get("auth_email", "admin@example.com")
+    admin_id = context["users"][admin_email]["user_id"]
+
+    try:
+        await update_level_config_handler.handle(
+            UpdateLevelConfigCommand(
+                community_id=community_id,
+                admin_user_id=admin_id,
+                levels=levels,
+            )
+        )
+    except InvalidThresholdError as e:
+        context["validation_error"] = str(e)
 
 
 @when(parsers.parse("the admin attempts to set level {level:d} threshold to {threshold:d}"))
@@ -1311,9 +1459,36 @@ async def admin_set_zero_threshold(
     level: int,
     threshold: int,
     context: dict[str, Any],
+    update_level_config_handler: UpdateLevelConfigHandler,
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """Admin attempts zero threshold (stub for Phase 3)."""
-    pass
+    """Admin attempts zero/invalid threshold."""
+    community_id = context["community_id"]
+    config = await lc_repo.get_by_community(community_id)
+    assert config is not None
+
+    levels = [
+        LevelUpdate(
+            level=ld.level,
+            name=ld.name,
+            threshold=threshold if ld.level == level else ld.threshold,
+        )
+        for ld in config.levels
+    ]
+
+    admin_email = context.get("auth_email", "admin@example.com")
+    admin_id = context["users"][admin_email]["user_id"]
+
+    try:
+        await update_level_config_handler.handle(
+            UpdateLevelConfigCommand(
+                community_id=community_id,
+                admin_user_id=admin_id,
+                levels=levels,
+            )
+        )
+    except InvalidThresholdError as e:
+        context["validation_error"] = str(e)
 
 
 @when("an unauthenticated user attempts to view member points")
@@ -1321,8 +1496,13 @@ async def unauthenticated_view_points(
     client: AsyncClient,
     context: dict[str, Any],
 ) -> None:
-    """Unauthenticated view attempt (stub for Phase 3)."""
-    pass
+    """Unauthenticated view attempt via HTTP API."""
+    community_id = context["community_id"]
+    # Use a random user_id — the endpoint should reject before looking it up
+    response = await client.get(
+        f"/api/v1/communities/{community_id}/members/{uuid4()}/level",
+    )
+    context["api_response"] = response
 
 
 @when(parsers.parse('"{email}" attempts to update level {level:d} name to "{name}"'))
@@ -1333,8 +1513,28 @@ async def member_attempts_update_level(
     name: str,
     context: dict[str, Any],
 ) -> None:
-    """Member attempts admin action (stub for Phase 3)."""
-    pass
+    """Non-admin member attempts to update level config via HTTP API."""
+    community_id = context["community_id"]
+    token = await _get_auth_token(client, email)
+
+    # Build a full level config update request
+    from src.gamification.domain.entities.level_configuration import DEFAULT_LEVELS
+
+    levels_data = [
+        {
+            "level": ld.level,
+            "name": name if ld.level == level else ld.name,
+            "threshold": ld.threshold,
+        }
+        for ld in DEFAULT_LEVELS
+    ]
+
+    response = await client.put(
+        f"/api/v1/communities/{community_id}/levels",
+        json={"levels": levels_data},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["api_response"] = response
 
 
 @when(parsers.parse('"{email}" attempts to set minimum level {level:d} on course "{name}"'))
@@ -1345,8 +1545,17 @@ async def member_attempts_set_course_level(
     name: str,
     context: dict[str, Any],
 ) -> None:
-    """Member attempts admin course level action (stub for Phase 3)."""
-    pass
+    """Non-admin member attempts to set course level requirement via HTTP API."""
+    community_id = context["community_id"]
+    course_id = context["courses"][name]["course_id"]
+    token = await _get_auth_token(client, email)
+
+    response = await client.put(
+        f"/api/v1/communities/{community_id}/courses/{course_id}/level-requirement",
+        json={"minimum_level": level},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    context["api_response"] = response
 
 
 @when(
@@ -1358,9 +1567,41 @@ async def admin_set_xss_name(
     client: AsyncClient,
     level: int,
     context: dict[str, Any],
+    update_level_config_handler: UpdateLevelConfigHandler,
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """Admin attempts XSS level name (stub for Phase 3)."""
-    pass
+    """Admin attempts XSS level name — domain strips HTML tags."""
+    community_id = context["community_id"]
+    config = await lc_repo.get_by_community(community_id)
+    assert config is not None
+
+    xss_name = "<script>alert('xss')</script>"
+    levels = [
+        LevelUpdate(
+            level=ld.level,
+            name=xss_name if ld.level == level else ld.name,
+            threshold=ld.threshold,
+        )
+        for ld in config.levels
+    ]
+
+    admin_email = context.get("auth_email", "admin@example.com")
+    admin_id = context["users"][admin_email]["user_id"]
+
+    try:
+        await update_level_config_handler.handle(
+            UpdateLevelConfigCommand(
+                community_id=community_id,
+                admin_user_id=admin_id,
+                levels=levels,
+            )
+        )
+        # XSS name was sanitized to "alert('xss')" — store updated config
+        config = await lc_repo.get_by_community(community_id)
+        context["level_config"] = config
+        context["xss_sanitized"] = True
+    except InvalidLevelNameError:
+        context["xss_sanitized"] = False
 
 
 @when(parsers.parse('the admin changes minimum level for "{course}" from {old:d} to {new:d}'))
@@ -1370,9 +1611,23 @@ async def admin_changes_course_level(
     old: int,
     new: int,
     context: dict[str, Any],
+    set_course_req_handler: SetCourseLevelRequirementHandler,
 ) -> None:
-    """Admin changes course level requirement (stub for Phase 3)."""
-    pass
+    """Admin changes course level requirement."""
+    community_id = context["community_id"]
+    course_id = context["courses"][course]["course_id"]
+
+    admin_email = context.get("auth_email", "admin@example.com")
+    admin_id = context["users"][admin_email]["user_id"]
+
+    await set_course_req_handler.handle(
+        SetCourseLevelRequirementCommand(
+            community_id=community_id,
+            course_id=course_id,
+            admin_user_id=admin_id,
+            minimum_level=new,
+        )
+    )
 
 
 # ============================================================================
@@ -1587,7 +1842,7 @@ async def should_not_see_level_up_message(
 
 
 # ============================================================================
-# THEN STEPS — STUBS FOR PHASE 2/3
+# THEN STEPS — LEVEL DISPLAY & COURSE GATING
 # ============================================================================
 
 
@@ -1733,8 +1988,12 @@ async def access_granted(
     client: AsyncClient,
     context: dict[str, Any],
 ) -> None:
-    """Access granted (stub for Phase 3)."""
-    pass
+    """Assert course access was granted."""
+    result = context["course_access_result"]
+    assert result.has_access is True, (
+        f"Expected access to be granted, but was denied (current level: {result.current_level}, "
+        f"minimum: {result.minimum_level})"
+    )
 
 
 @then("access should be denied")
@@ -1742,8 +2001,12 @@ async def access_denied(
     client: AsyncClient,
     context: dict[str, Any],
 ) -> None:
-    """Access denied (stub for Phase 3)."""
-    pass
+    """Assert course access was denied."""
+    result = context["course_access_result"]
+    assert result.has_access is False, (
+        f"Expected access to be denied, but was granted (current level: {result.current_level}, "
+        f"minimum: {result.minimum_level})"
+    )
 
 
 @then(parsers.parse('the response should indicate "{text}"'))
@@ -1752,8 +2015,14 @@ async def response_indicates(
     text: str,
     context: dict[str, Any],
 ) -> None:
-    """Response indicates text (stub for Phase 3)."""
-    pass
+    """Assert course access result contains the expected indication text."""
+    result = context["course_access_result"]
+    # Text like "Unlock at Level 3 - Builder" — check minimum_level_name is in text
+    if result.minimum_level_name is not None:
+        expected = f"Unlock at Level {result.minimum_level} - {result.minimum_level_name}"
+        assert expected == text, f"Expected indication '{text}', got '{expected}'"
+    else:
+        pytest.fail(f"Expected indication '{text}' but no minimum_level_name set")
 
 
 @then(parsers.parse('the course "{name}" should be visible'))
@@ -1762,8 +2031,11 @@ async def course_visible(
     name: str,
     context: dict[str, Any],
 ) -> None:
-    """Course visible (stub for Phase 3)."""
-    pass
+    """Assert course is present in the course list results."""
+    results = context["course_list_results"]
+    assert name in results, (
+        f"Expected course '{name}' to be visible, but not found in results: {list(results.keys())}"
+    )
 
 
 @then(parsers.parse('the course "{name}" should show a lock indicator'))
@@ -1772,8 +2044,13 @@ async def course_shows_lock(
     name: str,
     context: dict[str, Any],
 ) -> None:
-    """Course shows lock (stub for Phase 3)."""
-    pass
+    """Assert course shows a lock indicator (access denied)."""
+    results = context["course_list_results"]
+    assert name in results, f"Course '{name}' not found in results"
+    result = results[name]
+    assert result.has_access is False, (
+        f"Expected course '{name}' to show lock (access denied), but access was granted"
+    )
 
 
 @then(parsers.parse('the course should display "{text}"'))
@@ -1782,8 +2059,20 @@ async def course_displays_text(
     text: str,
     context: dict[str, Any],
 ) -> None:
-    """Course displays text (stub for Phase 3)."""
-    pass
+    """Assert course displays the expected text (e.g. 'Unlock at Level 3')."""
+    # Find the course that's locked in the results
+    results = context["course_list_results"]
+    locked_courses = {n: r for n, r in results.items() if not r.has_access}
+    assert len(locked_courses) > 0, "Expected at least one locked course"
+    # Check the text against any locked course
+    for _name, result in locked_courses.items():
+        expected = f"Unlock at Level {result.minimum_level}"
+        if expected == text:
+            return
+    pytest.fail(
+        f"No locked course displays '{text}'. "
+        f"Locked courses: {[(n, f'Unlock at Level {r.minimum_level}') for n, r in locked_courses.items()]}"
+    )
 
 
 @then("the like should be rejected")
@@ -1791,8 +2080,11 @@ async def like_rejected(
     client: AsyncClient,
     context: dict[str, Any],
 ) -> None:
-    """Like rejected (stub for Phase 3)."""
-    pass
+    """Assert that the self-like attempt was rejected."""
+    response = context["self_like_response"]
+    assert response.status_code in (400, 403, 422), (
+        f"Expected self-like to be rejected (400/403/422), got {response.status_code}"
+    )
 
 
 @then(parsers.parse('the update should fail with error "{error}"'))
@@ -1801,18 +2093,25 @@ async def update_fails_with_error(
     error: str,
     context: dict[str, Any],
 ) -> None:
-    """Update fails (stub for Phase 3)."""
-    pass
+    """Assert update failed with expected validation error message."""
+    validation_error = context.get("validation_error")
+    assert validation_error is not None, "Expected a validation error but none was raised"
+    assert error in validation_error, (
+        f"Expected error containing '{error}', got '{validation_error}'"
+    )
 
 
-@then(parsers.parse("the request should fail with a {status:d} error"))
+@then(parsers.parse("the request should fail with a {status_code:d} error"))
 async def request_fails_with_status(
     client: AsyncClient,
-    status: int,
+    status_code: int,
     context: dict[str, Any],
 ) -> None:
-    """Request fails with status (stub for Phase 3)."""
-    pass
+    """Assert the API request failed with the expected HTTP status code."""
+    response = context["api_response"]
+    assert response.status_code == status_code, (
+        f"Expected status {status_code}, got {response.status_code}. Body: {response.text}"
+    )
 
 
 @then("the level name should be sanitized")
@@ -1820,17 +2119,29 @@ async def level_name_sanitized(
     client: AsyncClient,
     context: dict[str, Any],
 ) -> None:
-    """Level name sanitized (stub for Phase 3)."""
-    pass
+    """Assert that the XSS attempt was sanitized (HTML tags stripped)."""
+    assert context.get("xss_sanitized") is True, (
+        "Expected level name to be sanitized (HTML stripped), but it was rejected or not processed"
+    )
 
 
 @then("no script tags should be stored")
 async def no_script_tags(
     client: AsyncClient,
     context: dict[str, Any],
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """No script tags (stub for Phase 3)."""
-    pass
+    """Assert no script tags are stored in level names."""
+    community_id = context["community_id"]
+    config = await lc_repo.get_by_community(community_id)
+    assert config is not None, "No level config found"
+    for ld in config.levels:
+        assert "<script>" not in ld.name, (
+            f"Found <script> tag in level {ld.level} name: '{ld.name}'"
+        )
+        assert "</script>" not in ld.name, (
+            f"Found </script> tag in level {ld.level} name: '{ld.name}'"
+        )
 
 
 @then(parsers.parse('"{email}" should be able to access "{course}"'))
@@ -1839,9 +2150,24 @@ async def user_can_access_course(
     email: str,
     course: str,
     context: dict[str, Any],
+    check_course_access_handler: CheckCourseAccessHandler,
 ) -> None:
-    """User can access course (stub for Phase 3)."""
-    pass
+    """Assert user can access the specified course."""
+    user_id = context["users"][email]["user_id"]
+    community_id = context["community_id"]
+    course_id = context["courses"][course]["course_id"]
+
+    result = await check_course_access_handler.handle(
+        CheckCourseAccessQuery(
+            community_id=community_id,
+            course_id=course_id,
+            user_id=user_id,
+        )
+    )
+    assert result.has_access is True, (
+        f"Expected {email} to have access to '{course}', but access denied "
+        f"(current level: {result.current_level}, minimum: {result.minimum_level})"
+    )
 
 
 @then(parsers.parse('"{email}" should not be able to access "{course}"'))
@@ -1850,9 +2176,24 @@ async def user_cannot_access_course(
     email: str,
     course: str,
     context: dict[str, Any],
+    check_course_access_handler: CheckCourseAccessHandler,
 ) -> None:
-    """User cannot access course (stub for Phase 3)."""
-    pass
+    """Assert user cannot access the specified course."""
+    user_id = context["users"][email]["user_id"]
+    community_id = context["community_id"]
+    course_id = context["courses"][course]["course_id"]
+
+    result = await check_course_access_handler.handle(
+        CheckCourseAccessQuery(
+            community_id=community_id,
+            course_id=course_id,
+            user_id=user_id,
+        )
+    )
+    assert result.has_access is False, (
+        f"Expected {email} to NOT have access to '{course}', but access was granted "
+        f"(current level: {result.current_level}, minimum: {result.minimum_level})"
+    )
 
 
 @then(parsers.parse('"{email}" should still be at level {level:d}'))

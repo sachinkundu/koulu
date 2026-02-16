@@ -4,13 +4,23 @@ from typing import Annotated
 from uuid import UUID
 
 import structlog
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
-from src.community.interface.api.dependencies import CurrentUserIdDep
+from src.community.domain.value_objects import CommunityId, MemberRole
+from src.community.infrastructure.persistence import SqlAlchemyMemberRepository
+from src.community.interface.api.dependencies import CurrentUserIdDep, MemberRepositoryDep
+from src.gamification.application.commands.set_course_level_requirement import (
+    SetCourseLevelRequirementCommand,
+    SetCourseLevelRequirementHandler,
+)
 from src.gamification.application.commands.update_level_config import (
     LevelUpdate,
     UpdateLevelConfigCommand,
     UpdateLevelConfigHandler,
+)
+from src.gamification.application.queries.check_course_access import (
+    CheckCourseAccessHandler,
+    CheckCourseAccessQuery,
 )
 from src.gamification.application.queries.get_level_definitions import (
     GetLevelDefinitionsHandler,
@@ -20,21 +30,47 @@ from src.gamification.application.queries.get_member_level import (
     GetMemberLevelHandler,
     GetMemberLevelQuery,
 )
+from src.gamification.domain.exceptions import (
+    GamificationDomainError,
+    InvalidLevelNameError,
+    InvalidThresholdError,
+)
 from src.gamification.infrastructure.api.schemas import (
+    CourseAccessResponse,
     LevelDefinitionSchema,
     LevelDefinitionsResponse,
     MemberLevelResponse,
+    SetCourseLevelRequirementRequest,
     UpdateLevelConfigRequest,
 )
 from src.gamification.interface.api.dependencies import (
+    get_check_course_access_handler,
     get_get_level_definitions_handler,
     get_get_member_level_handler,
+    get_set_course_level_requirement_handler,
     get_update_level_config_handler,
 )
+from src.identity.domain.value_objects import UserId
 
 logger = structlog.get_logger()
 
 router = APIRouter(prefix="/communities", tags=["Gamification"])
+
+
+async def _require_admin(
+    member_repo: SqlAlchemyMemberRepository,
+    community_id: UUID,
+    user_id: UUID,
+) -> None:
+    """Check that user is an admin of the community. Raises 403 if not."""
+    member = await member_repo.get_by_user_and_community(
+        UserId(value=user_id), CommunityId(value=community_id)
+    )
+    if member is None or member.role != MemberRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to perform this action",
+        )
 
 
 @router.get(
@@ -102,14 +138,78 @@ async def update_level_config(
     current_user_id: CurrentUserIdDep,
     body: UpdateLevelConfigRequest,
     handler: Annotated[UpdateLevelConfigHandler, Depends(get_update_level_config_handler)],
+    member_repo: MemberRepositoryDep,
 ) -> dict[str, str]:
-    """Update level configuration for a community."""
-    command = UpdateLevelConfigCommand(
+    """Update level configuration for a community (admin only)."""
+    await _require_admin(member_repo, community_id, current_user_id)
+
+    try:
+        command = UpdateLevelConfigCommand(
+            community_id=community_id,
+            admin_user_id=current_user_id,
+            levels=[
+                LevelUpdate(level=lu.level, name=lu.name, threshold=lu.threshold)
+                for lu in body.levels
+            ],
+        )
+        await handler.handle(command)
+        return {"status": "ok"}
+    except InvalidLevelNameError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+    except InvalidThresholdError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+    except GamificationDomainError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from e
+
+
+@router.get(
+    "/{community_id}/courses/{course_id}/access",
+    response_model=CourseAccessResponse,
+)
+async def check_course_access(
+    community_id: UUID,
+    course_id: UUID,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[CheckCourseAccessHandler, Depends(get_check_course_access_handler)],
+) -> CourseAccessResponse:
+    """Check if user can access a course based on level requirements."""
+    query = CheckCourseAccessQuery(
         community_id=community_id,
+        course_id=course_id,
+        user_id=current_user_id,
+    )
+    result = await handler.handle(query)
+    return CourseAccessResponse(
+        course_id=result.course_id,
+        has_access=result.has_access,
+        minimum_level=result.minimum_level,
+        minimum_level_name=result.minimum_level_name,
+        current_level=result.current_level,
+    )
+
+
+@router.put(
+    "/{community_id}/courses/{course_id}/level-requirement",
+    status_code=200,
+)
+async def set_course_level_requirement(
+    community_id: UUID,
+    course_id: UUID,
+    current_user_id: CurrentUserIdDep,
+    body: SetCourseLevelRequirementRequest,
+    handler: Annotated[
+        SetCourseLevelRequirementHandler, Depends(get_set_course_level_requirement_handler)
+    ],
+    member_repo: MemberRepositoryDep,
+) -> dict[str, str]:
+    """Set minimum level requirement for a course (admin only)."""
+    await _require_admin(member_repo, community_id, current_user_id)
+
+    command = SetCourseLevelRequirementCommand(
+        community_id=community_id,
+        course_id=course_id,
         admin_user_id=current_user_id,
-        levels=[
-            LevelUpdate(level=lu.level, name=lu.name, threshold=lu.threshold) for lu in body.levels
-        ],
+        minimum_level=body.minimum_level,
     )
     await handler.handle(command)
     return {"status": "ok"}

@@ -33,3 +33,15 @@ export interface LevelUpdateRequest {
     threshold: number;
   }>;
 }
+
+export interface CourseAccessResponse {
+  course_id: string;
+  has_access: boolean;
+  minimum_level: number | null;
+  minimum_level_name: string | null;
+  current_level: number;
+}
+
+export interface SetCourseLevelRequirementRequest {
+  minimum_level: number;
+}

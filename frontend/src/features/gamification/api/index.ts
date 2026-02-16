@@ -1,1 +1,7 @@
-export { getLevelDefinitions, getMemberLevel, updateLevelConfig } from './gamificationApi';
+export {
+  checkCourseAccess,
+  getLevelDefinitions,
+  getMemberLevel,
+  setCourseLevelRequirement,
+  updateLevelConfig,
+} from './gamificationApi';

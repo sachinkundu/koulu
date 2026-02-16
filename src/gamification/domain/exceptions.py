@@ -33,3 +33,10 @@ class DuplicateLessonCompletionError(GamificationDomainError):
     def __init__(self, lesson_id: str) -> None:
         super().__init__(f"Points already awarded for lesson: {lesson_id}")
         self.lesson_id = lesson_id
+
+
+class NotAdminError(GamificationDomainError):
+    """Raised when a non-admin attempts an admin-only action."""
+
+    def __init__(self) -> None:
+        super().__init__("You don't have permission to perform this action")

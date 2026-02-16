@@ -46,3 +46,19 @@ class UpdateLevelConfigRequest(BaseModel):
     """Request body for PUT /communities/{id}/levels."""
 
     levels: list[LevelUpdateSchema]
+
+
+class CourseAccessResponse(BaseModel):
+    """Response for GET /communities/{id}/courses/{course_id}/access."""
+
+    course_id: UUID
+    has_access: bool
+    minimum_level: int | None
+    minimum_level_name: str | None
+    current_level: int
+
+
+class SetCourseLevelRequirementRequest(BaseModel):
+    """Request body for PUT /communities/{id}/courses/{course_id}/level-requirement."""
+
+    minimum_level: int
