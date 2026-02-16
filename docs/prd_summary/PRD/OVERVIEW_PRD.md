@@ -683,11 +683,10 @@ Private 1-on-1 communication between members.
 ### 6.2 Phase 2
 
 **Should Have:**
-- ⚠️ Leaderboards and gamification (Points & Levels Phase 2/3 complete — level display, definitions, admin config working)
+- ✅ Leaderboards and gamification (Points & Levels complete — all 3 phases: core engine, level display/admin config, course gating & security)
 - ❌ Calendar and events
 - ❌ Direct messaging
 - ❌ Notifications (in-app)
-- ❌ Level-based access control
 - ❌ Email notifications
 
 ### 6.3 Phase 3
@@ -818,7 +817,7 @@ Each feature will have a detailed PRD and BDD specification. The index below map
 | Member Directory | `docs/features/members/directory-prd.md` | `tests/features/members/directory.feature` | ✅ Complete — Browse, Search, Filter, Sort, Edge Cases & Security (23/23 scenarios) |
 | Member Map | `docs/features/members/map-prd.md` | `tests/features/members/map.feature` | ❌ Not started |
 | Leaderboards | `docs/features/gamification/leaderboards-prd.md` | `tests/features/gamification/leaderboards.feature` | ❌ Not started |
-| Points & Levels | `docs/features/gamification/points-prd.md` | `tests/features/gamification/points.feature` | 🟡 Phase 2/3 (Level display + admin config complete, 24/40 scenarios passing) |
+| Points & Levels | `docs/features/gamification/points-prd.md` | `tests/features/gamification/points.feature` | ✅ Complete — All 3 phases (Core engine, level display/admin config, course gating & security, 40/40 scenarios) |
 | Direct Messages | `docs/features/messaging/dm-prd.md` | `tests/features/messaging/dm.feature` | ❌ Not started |
 | Notifications | `docs/features/notifications/notifications-prd.md` | `tests/features/notifications/notifications.feature` | ❌ Not started |
 | Search | `docs/features/search/search-prd.md` | `tests/features/search/search.feature` | ✅ Complete — Member & Post Search, Pagination, Stemming, Validation, Edge Cases & Security (30/30 scenarios) |
