@@ -6,7 +6,25 @@ Skool.com clone: community platform with feed, classroom, calendar, members, lea
 
 Python backend with FastAPI, Alembic migrations, DDD/hexagonal architecture, vertical slicing, pytest with multi-agent isolation. Frontend is React + TypeScript (strict) + TailwindCSS. Vitest for frontend tests, pytest-bdd for backend. OpenTelemetry tracing, structlog logging.
 
-Always run `./scripts/verify.sh` after changes, not ad-hoc pytest commands. Verify runs: ruff check, ruff format, mypy, then `test.sh --all`.
+## Python Environment (Non-Negotiable)
+
+**ALWAYS use pyenv with the `v2cl` virtualenv.** NEVER use `source .venv/bin/activate` or create new virtual environments.
+
+```bash
+eval "$(pyenv init -)" && eval "$(pyenv virtualenv-init -)" && pyenv activate v2cl
+```
+
+All Python commands (pytest, ruff, mypy, pip, etc.) MUST run inside this environment. Subagents must also use this activation sequence.
+
+## Verification (Non-Negotiable)
+
+**ALWAYS use `./scripts/verify.sh` for verification — NEVER run ad-hoc pytest/ruff/mypy commands.**
+
+- verify.sh runs: ruff check, ruff format --check, mypy, then `test.sh --all` with proper coverage and test scope
+- It handles test database setup, proper ignores (e.g., `tests/features/identity/`), and `--cov-fail-under=80`
+- If verify.sh fails on DB connectivity: run `docker compose up -d postgres`, create test DB if needed, then re-run verify.sh
+- **ALL tests must pass — including pre-existing failures.** If verify.sh reveals failures from ANY context (identity, members, search, etc.), fix them FIRST before starting new work. Zero failures is non-negotiable.
+- The ONLY exception for running individual test commands is targeted debugging after verify.sh identifies a failure
 
 ## Scope Rules (Non-Negotiable)
 
@@ -62,6 +80,9 @@ src/{context}/
 
 - When implementing phased plans, only implement tasks for phases that are already complete on the backend. Do not start work on phases that haven't been built yet unless explicitly asked.
 - Frontend REQUIRED for user-facing features. No UI = Not Done. Exceptions (require explicit approval): background jobs, internal admin APIs, migration services.
+- **Multi-backend agents:** When a phase has 8+ backend tasks, split into multiple parallel backend agents by layer (domain, infra, app) — never use a single backend agent as bottleneck. See MEMORY.md for file ownership boundaries and start conditions.
+- **Read summaries first:** Before implementing Phase N+1, read `docs/summaries/{context}/{feature}-phase-N-summary.md` for a quick overview of what exists. Do NOT re-read every implementation file individually.
+- **Subagents inherit environment rules:** Every subagent MUST use `pyenv activate v2cl` and `./scripts/verify.sh`. Pass these instructions explicitly when dispatching agents.
 
 ## Debugging
 
