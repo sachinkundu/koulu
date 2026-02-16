@@ -1,6 +1,9 @@
 """Event handlers for Classroom context events."""
 
+from uuid import UUID
+
 import structlog
+from sqlalchemy import text
 
 from src.classroom.domain.events.progress_events import LessonCompleted
 from src.gamification.application.commands.award_points import (
@@ -19,22 +22,22 @@ def _get_award_handler() -> AwardPointsHandler:
     return create_award_handler()
 
 
-async def _resolve_community_id() -> object:
+async def _resolve_community_id() -> UUID | None:
     """Resolve the community_id for the platform.
 
     In a single-community Skool clone, courses belong to the one community.
     This queries the first active community as a default resolution.
     """
-    from sqlalchemy import select, text
+    from src.identity.interface.api.dependencies import get_database
 
-    from src.shared.infrastructure.database import async_session_factory
-
-    async with async_session_factory() as session:
-        result = await session.execute(
-            select(text("id")).select_from(text("communities")).limit(1)
-        )
+    db = get_database()
+    session = db._session_factory()  # noqa: SLF001
+    try:
+        result = await session.execute(text("SELECT id FROM communities LIMIT 1"))
         row = result.scalar_one_or_none()
-        return row
+        return UUID(str(row)) if row is not None else None
+    finally:
+        await session.close()
 
 
 async def handle_lesson_completed(event: LessonCompleted) -> None:

@@ -45,6 +45,11 @@ echo "=========================================="
 echo ""
 
 # ============================================
+# STEP 0: Install Missing Prerequisites
+# ============================================
+source "${SCRIPT_DIR}/scripts/install-prereqs.sh"
+
+# ============================================
 # STEP 1: Check Prerequisites
 # ============================================
 info "Checking prerequisites..."
@@ -225,6 +230,22 @@ else
     success "Database migrations complete"
 fi
 echo ""
+
+# ============================================
+# STEP 5b: Seed Database (optional)
+# ============================================
+if [ -f scripts/seed_db.py ]; then
+    read -p "$(echo -e "${YELLOW}[INFO]${NC} Seed database with sample data? [y/N] ")" -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        info "Seeding database..."
+        python3 scripts/seed_db.py
+        success "Database seeded"
+    else
+        info "Skipping database seeding"
+    fi
+    echo ""
+fi
 
 # ============================================
 # STEP 6: Install Frontend Dependencies

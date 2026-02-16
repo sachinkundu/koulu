@@ -1,1 +1,1 @@
-export { getMemberLevel } from './gamificationApi';
+export { getLevelDefinitions, getMemberLevel, updateLevelConfig } from './gamificationApi';

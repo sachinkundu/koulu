@@ -16,3 +16,33 @@ class MemberLevelResponse(BaseModel):
     total_points: int
     points_to_next_level: int | None
     is_max_level: bool
+
+
+class LevelDefinitionSchema(BaseModel):
+    """A single level definition."""
+
+    level: int
+    name: str
+    threshold: int
+    member_percentage: float
+
+
+class LevelDefinitionsResponse(BaseModel):
+    """Response for GET /communities/{id}/levels."""
+
+    levels: list[LevelDefinitionSchema]
+    current_user_level: int
+
+
+class LevelUpdateSchema(BaseModel):
+    """A single level update in a request."""
+
+    level: int
+    name: str
+    threshold: int
+
+
+class UpdateLevelConfigRequest(BaseModel):
+    """Request body for PUT /communities/{id}/levels."""
+
+    levels: list[LevelUpdateSchema]

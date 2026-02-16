@@ -3,10 +3,20 @@
  */
 
 import { Link } from 'react-router-dom';
+import { ProfileLevelSection } from '@/features/gamification/components/ProfileLevelSection';
 import type { ProfileDetail } from '../types';
+
+interface LevelInfo {
+  level: number;
+  levelName: string;
+  totalPoints: number;
+  pointsToNextLevel: number | null;
+  isMaxLevel: boolean;
+}
 
 interface ProfileSidebarProps {
   profile: ProfileDetail;
+  levelInfo?: LevelInfo;
 }
 
 function formatLocation(city: string | null, country: string | null): string | null {
@@ -16,7 +26,7 @@ function formatLocation(city: string | null, country: string | null): string | n
   return null;
 }
 
-export function ProfileSidebar({ profile }: ProfileSidebarProps): JSX.Element {
+export function ProfileSidebar({ profile, levelInfo }: ProfileSidebarProps): JSX.Element {
   const location = formatLocation(profile.location_city, profile.location_country);
 
   return (
@@ -61,6 +71,17 @@ export function ProfileSidebar({ profile }: ProfileSidebarProps): JSX.Element {
           </p>
         )}
       </div>
+
+      {/* Level info */}
+      {levelInfo !== undefined && (
+        <ProfileLevelSection
+          level={levelInfo.level}
+          levelName={levelInfo.levelName}
+          totalPoints={levelInfo.totalPoints}
+          pointsToNextLevel={levelInfo.pointsToNextLevel}
+          isMaxLevel={levelInfo.isMaxLevel}
+        />
+      )}
 
       {/* Social links */}
       <SocialLinks profile={profile} />

@@ -8,7 +8,7 @@ Phase 1 (15 enabled):
 - Level ratchet (2)
 - Edge cases: accumulation (1), zero floor (1)
 
-Phase 2 (9 skipped):
+Phase 2 (9 enabled):
 - Level badge display (3)
 - Level definitions view (2)
 - Admin level configuration (3)
@@ -40,6 +40,15 @@ from src.gamification.application.commands.award_points import (
 from src.gamification.application.commands.deduct_points import (
     DeductPointsCommand,
     DeductPointsHandler,
+)
+from src.gamification.application.commands.update_level_config import (
+    LevelUpdate,
+    UpdateLevelConfigCommand,
+    UpdateLevelConfigHandler,
+)
+from src.gamification.application.queries.get_level_definitions import (
+    GetLevelDefinitionsHandler,
+    GetLevelDefinitionsQuery,
 )
 from src.gamification.application.queries.get_member_level import (
     GetMemberLevelHandler,
@@ -73,60 +82,51 @@ async def _get_auth_token(
 
 
 # ============================================================================
-# PHASE 2 SKIPPED SCENARIOS — Display + Admin Config
+# PHASE 2 SCENARIOS — Display + Admin Config (9 enabled)
 # Must be declared BEFORE scenarios() to prevent auto-generation.
 # ============================================================================
 
 
-@pytest.mark.skip(reason="Phase 2: Requires feed integration for avatar badge display")
 @scenario("points.feature", "Level badge shown on post author avatar")
 def test_level_badge_shown_on_post_author_avatar() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires member directory integration")
 @scenario("points.feature", "Level badge shown in member directory")
 def test_level_badge_shown_in_member_directory() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires profile integration for level display")
 @scenario("points.feature", "Level information shown on member profile")
 def test_level_information_shown_on_member_profile() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires level definitions query endpoint")
 @scenario("points.feature", "Member can view all level definitions")
 def test_member_can_view_all_level_definitions() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires level definitions with member distribution")
 @scenario("points.feature", "Level definitions show percentage of members at each level")
 def test_level_definitions_show_percentage_of_members_at_each_level() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires admin level config update endpoint")
 @scenario("points.feature", "Admin customizes level names")
 def test_admin_customizes_level_names() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires admin level config update endpoint")
 @scenario("points.feature", "Admin customizes point thresholds")
 def test_admin_customizes_point_thresholds() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires admin threshold change with recalculation")
 @scenario("points.feature", "Threshold change recalculates member levels")
 def test_threshold_change_recalculates_member_levels() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Requires admin threshold change with ratchet preservation")
 @scenario("points.feature", "Level ratchet preserved when thresholds change")
 def test_level_ratchet_preserved_when_thresholds_change() -> None:
     pass
@@ -581,9 +581,18 @@ async def community_has_members(
     client: AsyncClient,
     count: int,
     context: dict[str, Any],
+    create_user: Any,
+    create_member: Any,
 ) -> None:
-    """Create specified number of members (stub for Phase 2)."""
-    pass
+    """Create specified number of members in the community."""
+    community_id = context["community_id"]
+    context["bulk_members"] = []
+
+    for i in range(count):
+        email = f"member{i}@example.com"
+        user = await create_user(email=email, display_name=f"Member {i}")
+        await create_member(community_id=community_id, user_id=user.id, role="MEMBER")
+        context["bulk_members"].append({"user": user, "user_id": user.id, "email": email})
 
 
 @given(parsers.parse("{count:d} members are at level {level:d}"))
@@ -592,9 +601,36 @@ async def members_at_level(
     count: int,
     level: int,
     context: dict[str, Any],
+    mp_repo: SqlAlchemyMemberPointsRepository,
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """Set member distribution (stub for Phase 2)."""
-    pass
+    """Set specified number of members to a given level."""
+    from src.gamification.domain.entities.level_configuration import LevelConfiguration
+    from src.gamification.domain.entities.member_points import MemberPoints
+
+    community_id = context["community_id"]
+    bulk_members = context.get("bulk_members", [])
+
+    # Get the config to determine threshold for the level
+    config = await lc_repo.get_by_community(community_id)
+    if config is None:
+        config = LevelConfiguration.create_default(community_id)
+        await lc_repo.save(config)
+
+    # Track how many we've assigned
+    if "assigned_count" not in context:
+        context["assigned_count"] = 0
+
+    start = context["assigned_count"]
+    for i in range(start, start + count):
+        user_id = bulk_members[i]["user_id"]
+        # Create MemberPoints at the desired level
+        mp = MemberPoints.create(community_id=community_id, user_id=user_id)
+        mp.total_points = config.threshold_for_level(level)
+        mp.current_level = level
+        await mp_repo.save(mp)
+
+    context["assigned_count"] = start + count
 
 
 @given(parsers.parse('a course "{name}" exists with minimum level {level:d}'))
@@ -1004,27 +1040,65 @@ async def point_deduction_attempted(
 async def view_community_feed(
     client: AsyncClient,
     context: dict[str, Any],
+    level_query_handler: GetMemberLevelHandler,
 ) -> None:
-    """View community feed (stub for Phase 2)."""
-    pass
+    """View community feed — query level data for post authors."""
+    # For feed display test, we verify level data is available via the query handler
+    email = context.get("post_author_email")
+    if email and email in context.get("users", {}):
+        user_id = context["users"][email]["user_id"]
+        community_id = context["community_id"]
+        result = await level_query_handler.handle(
+            GetMemberLevelQuery(
+                community_id=community_id,
+                user_id=user_id,
+                requesting_user_id=user_id,
+            )
+        )
+        context["feed_level_result"] = result
 
 
 @when("I view the member directory")
 async def view_member_directory(
     client: AsyncClient,
     context: dict[str, Any],
+    level_query_handler: GetMemberLevelHandler,
 ) -> None:
-    """View member directory (stub for Phase 2)."""
-    pass
+    """View member directory — query level data for listed members."""
+    # Query level for all users in context
+    community_id = context["community_id"]
+    context["directory_levels"] = {}
+    for email, user_data in context.get("users", {}).items():
+        result = await level_query_handler.handle(
+            GetMemberLevelQuery(
+                community_id=community_id,
+                user_id=user_data["user_id"],
+                requesting_user_id=user_data["user_id"],
+            )
+        )
+        context["directory_levels"][email] = result
 
 
 @when("I view the level definitions")
 async def view_level_definitions(
     client: AsyncClient,
     context: dict[str, Any],
+    level_definitions_handler: GetLevelDefinitionsHandler,
 ) -> None:
-    """View level definitions (stub for Phase 2)."""
-    pass
+    """View level definitions via the query handler."""
+    community_id = context["community_id"]
+    # Use the first user as the requester
+    requesting_user_id = next(
+        (u["user_id"] for u in context.get("users", {}).values()),
+        uuid4(),
+    )
+    result = await level_definitions_handler.handle(
+        GetLevelDefinitionsQuery(
+            community_id=community_id,
+            requesting_user_id=requesting_user_id,
+        )
+    )
+    context["level_definitions_result"] = result
 
 
 @when(parsers.parse('the admin updates level {level:d} name to "{name}"'))
@@ -1033,9 +1107,39 @@ async def admin_updates_level_name(
     level: int,
     name: str,
     context: dict[str, Any],
+    update_level_config_handler: UpdateLevelConfigHandler,
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """Admin updates level name (stub for Phase 2)."""
-    pass
+    """Admin updates a level name via the UpdateLevelConfig command."""
+    community_id = context["community_id"]
+    config = await lc_repo.get_by_community(community_id)
+    if config is None:
+        config = context.get("level_config")
+    assert config is not None
+
+    # Build full levels list, replacing the target level's name
+    levels = [
+        LevelUpdate(
+            level=ld.level,
+            name=name if ld.level == level else ld.name,
+            threshold=ld.threshold,
+        )
+        for ld in config.levels
+    ]
+
+    admin_email = context.get("auth_email", "admin@example.com")
+    admin_id = context["users"][admin_email]["user_id"]
+
+    await update_level_config_handler.handle(
+        UpdateLevelConfigCommand(
+            community_id=community_id,
+            admin_user_id=admin_id,
+            levels=levels,
+        )
+    )
+    # Update context config
+    config = await lc_repo.get_by_community(community_id)
+    context["level_config"] = config
 
 
 @when("the admin updates level thresholds:")
@@ -1043,9 +1147,40 @@ async def admin_updates_thresholds(
     client: AsyncClient,
     context: dict[str, Any],
     datatable: list[dict[str, str]],
+    update_level_config_handler: UpdateLevelConfigHandler,
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """Admin updates thresholds (stub for Phase 2)."""
-    pass
+    """Admin updates thresholds via the UpdateLevelConfig command."""
+    community_id = context["community_id"]
+    config = await lc_repo.get_by_community(community_id)
+    if config is None:
+        config = context.get("level_config")
+    assert config is not None
+
+    # Build threshold overrides from datatable
+    threshold_overrides = {int(row["level"]): int(row["threshold"]) for row in datatable}
+
+    levels = [
+        LevelUpdate(
+            level=ld.level,
+            name=ld.name,
+            threshold=threshold_overrides.get(ld.level, ld.threshold),
+        )
+        for ld in config.levels
+    ]
+
+    admin_email = context.get("auth_email", "admin@example.com")
+    admin_id = context["users"][admin_email]["user_id"]
+
+    await update_level_config_handler.handle(
+        UpdateLevelConfigCommand(
+            community_id=community_id,
+            admin_user_id=admin_id,
+            levels=levels,
+        )
+    )
+    config = await lc_repo.get_by_community(community_id)
+    context["level_config"] = config
 
 
 @when(parsers.parse("the admin updates level {level:d} threshold from {old:d} to {new:d}"))
@@ -1055,9 +1190,37 @@ async def admin_updates_single_threshold(
     old: int,
     new: int,
     context: dict[str, Any],
+    update_level_config_handler: UpdateLevelConfigHandler,
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """Admin updates a single threshold (stub for Phase 2)."""
-    pass
+    """Admin updates a single threshold via the UpdateLevelConfig command."""
+    community_id = context["community_id"]
+    config = await lc_repo.get_by_community(community_id)
+    if config is None:
+        config = context.get("level_config")
+    assert config is not None
+
+    levels = [
+        LevelUpdate(
+            level=ld.level,
+            name=ld.name,
+            threshold=new if ld.level == level else ld.threshold,
+        )
+        for ld in config.levels
+    ]
+
+    admin_email = context.get("auth_email", "admin@example.com")
+    admin_id = context["users"][admin_email]["user_id"]
+
+    await update_level_config_handler.handle(
+        UpdateLevelConfigCommand(
+            community_id=community_id,
+            admin_user_id=admin_id,
+            levels=levels,
+        )
+    )
+    config = await lc_repo.get_by_community(community_id)
+    context["level_config"] = config
 
 
 @when(parsers.parse('"{email}" attempts to access the course "{name}"'))
@@ -1435,8 +1598,12 @@ async def post_shows_level_badge(
     level: int,
     context: dict[str, Any],
 ) -> None:
-    """Post shows level badge (stub for Phase 2)."""
-    pass
+    """Post author's level badge data is available via query."""
+    result = context.get("feed_level_result")
+    assert result is not None, "Feed level result not available"
+    assert result.level == level, (
+        f"Expected post author {email} to show level badge {level}, got {result.level}"
+    )
 
 
 @then(parsers.parse('"{email}" should show level badge {level:d}'))
@@ -1446,8 +1613,13 @@ async def member_shows_level_badge(
     level: int,
     context: dict[str, Any],
 ) -> None:
-    """Member shows level badge (stub for Phase 2)."""
-    pass
+    """Member directory shows correct level badge."""
+    directory_levels = context.get("directory_levels", {})
+    result = directory_levels.get(email)
+    assert result is not None, f"No directory level result for {email}"
+    assert result.level == level, (
+        f"Expected {email} to show level badge {level}, got {result.level}"
+    )
 
 
 @then(parsers.parse('the profile should show "{text}"'))
@@ -1456,8 +1628,10 @@ async def profile_shows_text(
     text: str,
     context: dict[str, Any],
 ) -> None:
-    """Profile shows text (stub for Phase 2)."""
-    pass
+    """Profile shows level text (e.g. 'Level 3 - Builder')."""
+    result = context["level_result"]
+    expected_text = f"Level {result.level} - {result.level_name}"
+    assert text == expected_text, f"Expected profile to show '{text}', computed '{expected_text}'"
 
 
 @then(parsers.parse("the profile should show level badge {level:d}"))
@@ -1466,8 +1640,9 @@ async def profile_shows_badge(
     level: int,
     context: dict[str, Any],
 ) -> None:
-    """Profile shows badge (stub for Phase 2)."""
-    pass
+    """Profile shows level badge."""
+    result = context["level_result"]
+    assert result.level == level, f"Expected profile level badge {level}, got {result.level}"
 
 
 @then(parsers.parse("I should see {count:d} levels displayed"))
@@ -1476,8 +1651,11 @@ async def see_levels_displayed(
     count: int,
     context: dict[str, Any],
 ) -> None:
-    """See levels displayed (stub for Phase 2)."""
-    pass
+    """Level definitions grid shows expected number of levels."""
+    result = context["level_definitions_result"]
+    assert len(result.levels) == count, (
+        f"Expected {count} levels displayed, got {len(result.levels)}"
+    )
 
 
 @then(parsers.parse('level {level:d} should be named "{name}" with threshold {threshold:d}'))
@@ -1488,8 +1666,14 @@ async def level_named_with_threshold(
     threshold: int,
     context: dict[str, Any],
 ) -> None:
-    """Level named with threshold (stub for Phase 2)."""
-    pass
+    """Level definition has expected name and threshold."""
+    result = context["level_definitions_result"]
+    ld = next((lvl for lvl in result.levels if lvl.level == level), None)
+    assert ld is not None, f"Level {level} not found in definitions"
+    assert ld.name == name, f"Expected level {level} name '{name}', got '{ld.name}'"
+    assert ld.threshold == threshold, (
+        f"Expected level {level} threshold {threshold}, got {ld.threshold}"
+    )
 
 
 @then(parsers.parse('level {level:d} should be named "{name}"'))
@@ -1498,9 +1682,14 @@ async def level_named(
     level: int,
     name: str,
     context: dict[str, Any],
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """Level named (stub for Phase 2)."""
-    pass
+    """Level has expected name (from config)."""
+    community_id = context["community_id"]
+    config = await lc_repo.get_by_community(community_id)
+    assert config is not None, "No level config found"
+    actual_name = config.name_for_level(level)
+    assert actual_name == name, f"Expected level {level} name '{name}', got '{actual_name}'"
 
 
 @then(parsers.parse('level {level:d} should show "{text}"'))
@@ -1510,8 +1699,15 @@ async def level_shows_text(
     text: str,
     context: dict[str, Any],
 ) -> None:
-    """Level shows text (stub for Phase 2)."""
-    pass
+    """Level definition shows expected distribution text."""
+    result = context["level_definitions_result"]
+    ld = next((lvl for lvl in result.levels if lvl.level == level), None)
+    assert ld is not None, f"Level {level} not found in definitions"
+    # Parse "50% of members" text
+    expected_pct = float(text.split("%")[0])
+    assert ld.member_percentage == expected_pct, (
+        f"Expected level {level} to show '{text}', got {ld.member_percentage}% of members"
+    )
 
 
 @then(parsers.parse("level {level:d} should have threshold {threshold:d}"))
@@ -1520,9 +1716,16 @@ async def level_has_threshold(
     level: int,
     threshold: int,
     context: dict[str, Any],
+    lc_repo: SqlAlchemyLevelConfigRepository,
 ) -> None:
-    """Level has threshold (stub for Phase 2)."""
-    pass
+    """Level has expected threshold (from config)."""
+    community_id = context["community_id"]
+    config = await lc_repo.get_by_community(community_id)
+    assert config is not None, "No level config found"
+    actual_threshold = config.threshold_for_level(level)
+    assert actual_threshold == threshold, (
+        f"Expected level {level} threshold {threshold}, got {actual_threshold}"
+    )
 
 
 @then("access should be granted")
@@ -1658,6 +1861,14 @@ async def user_still_at_level(
     email: str,
     level: int,
     context: dict[str, Any],
+    mp_repo: SqlAlchemyMemberPointsRepository,
 ) -> None:
-    """User still at level (stub for Phase 2)."""
-    pass
+    """User still at level (ratchet preserved)."""
+    user_id = context["users"][email]["user_id"]
+    community_id = context["community_id"]
+
+    mp = await mp_repo.get_by_community_and_user(community_id, user_id)
+    assert mp is not None, f"No MemberPoints record for {email}"
+    assert mp.current_level == level, (
+        f"Expected {email} to still be at level {level}, got {mp.current_level}"
+    )

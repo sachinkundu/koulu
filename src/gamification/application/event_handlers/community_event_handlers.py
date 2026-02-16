@@ -39,7 +39,9 @@ def _get_deduct_handler() -> DeductPointsHandler:
 
 async def handle_post_created(event: PostCreated) -> None:
     """Award 2 points to post author."""
-    logger.info("gamification.post_created", post_id=str(event.post_id), author_id=str(event.author_id))
+    logger.info(
+        "gamification.post_created", post_id=str(event.post_id), author_id=str(event.author_id)
+    )
     handler = _get_award_handler()
     await handler.handle(
         AwardPointsCommand(
@@ -53,7 +55,9 @@ async def handle_post_created(event: PostCreated) -> None:
 
 async def handle_post_liked(event: PostLiked) -> None:
     """Award 1 point to post author (not the liker)."""
-    logger.info("gamification.post_liked", post_id=str(event.post_id), author_id=str(event.author_id))
+    logger.info(
+        "gamification.post_liked", post_id=str(event.post_id), author_id=str(event.author_id)
+    )
     handler = _get_award_handler()
     await handler.handle(
         AwardPointsCommand(
@@ -67,7 +71,9 @@ async def handle_post_liked(event: PostLiked) -> None:
 
 async def handle_post_unliked(event: PostUnliked) -> None:
     """Deduct 1 point from post author."""
-    logger.info("gamification.post_unliked", post_id=str(event.post_id), author_id=str(event.author_id))
+    logger.info(
+        "gamification.post_unliked", post_id=str(event.post_id), author_id=str(event.author_id)
+    )
     handler = _get_deduct_handler()
     await handler.handle(
         DeductPointsCommand(
@@ -81,7 +87,11 @@ async def handle_post_unliked(event: PostUnliked) -> None:
 
 async def handle_comment_added(event: CommentAdded) -> None:
     """Award 1 point to comment author."""
-    logger.info("gamification.comment_added", comment_id=str(event.comment_id), author_id=str(event.author_id))
+    logger.info(
+        "gamification.comment_added",
+        comment_id=str(event.comment_id),
+        author_id=str(event.author_id),
+    )
     handler = _get_award_handler()
     await handler.handle(
         AwardPointsCommand(
@@ -95,7 +105,11 @@ async def handle_comment_added(event: CommentAdded) -> None:
 
 async def handle_comment_liked(event: CommentLiked) -> None:
     """Award 1 point to comment author (not the liker)."""
-    logger.info("gamification.comment_liked", comment_id=str(event.comment_id), author_id=str(event.author_id))
+    logger.info(
+        "gamification.comment_liked",
+        comment_id=str(event.comment_id),
+        author_id=str(event.author_id),
+    )
     handler = _get_award_handler()
     await handler.handle(
         AwardPointsCommand(
@@ -109,7 +123,11 @@ async def handle_comment_liked(event: CommentLiked) -> None:
 
 async def handle_comment_unliked(event: CommentUnliked) -> None:
     """Deduct 1 point from comment author."""
-    logger.info("gamification.comment_unliked", comment_id=str(event.comment_id), author_id=str(event.author_id))
+    logger.info(
+        "gamification.comment_unliked",
+        comment_id=str(event.comment_id),
+        author_id=str(event.author_id),
+    )
     handler = _get_deduct_handler()
     await handler.handle(
         DeductPointsCommand(

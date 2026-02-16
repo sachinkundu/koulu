@@ -8,7 +8,6 @@ import pytest
 from src.gamification.application.queries.get_member_level import (
     GetMemberLevelHandler,
     GetMemberLevelQuery,
-    MemberLevelResult,
 )
 from src.gamification.domain.entities.level_configuration import LevelConfiguration
 from src.gamification.domain.entities.member_points import MemberPoints

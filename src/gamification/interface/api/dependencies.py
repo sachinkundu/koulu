@@ -6,6 +6,8 @@ from fastapi import Depends
 
 from src.gamification.application.commands.award_points import AwardPointsHandler
 from src.gamification.application.commands.deduct_points import DeductPointsHandler
+from src.gamification.application.commands.update_level_config import UpdateLevelConfigHandler
+from src.gamification.application.queries.get_level_definitions import GetLevelDefinitionsHandler
 from src.gamification.application.queries.get_member_level import GetMemberLevelHandler
 from src.gamification.infrastructure.persistence.level_config_repository import (
     SqlAlchemyLevelConfigRepository,
@@ -36,6 +38,22 @@ def get_get_member_level_handler(
 ) -> GetMemberLevelHandler:
     """Get member level query handler."""
     return GetMemberLevelHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
+
+
+def get_get_level_definitions_handler(
+    mp_repo: MemberPointsRepoDep,
+    lc_repo: LevelConfigRepoDep,
+) -> GetLevelDefinitionsHandler:
+    """Get level definitions query handler."""
+    return GetLevelDefinitionsHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
+
+
+def get_update_level_config_handler(
+    mp_repo: MemberPointsRepoDep,
+    lc_repo: LevelConfigRepoDep,
+) -> UpdateLevelConfigHandler:
+    """Get update level config command handler."""
+    return UpdateLevelConfigHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
 
 
 def get_award_handler(

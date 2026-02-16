@@ -3,7 +3,6 @@
 import pytest
 
 from src.gamification.domain.exceptions import (
-    GamificationDomainError,
     InvalidLevelNameError,
     InvalidLevelNumberError,
 )

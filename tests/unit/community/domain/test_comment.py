@@ -45,7 +45,9 @@ def community_id() -> CommunityId:
 
 
 @pytest.fixture
-def comment(post_id: PostId, author_id: UserId, content: CommentContent, community_id: CommunityId) -> Comment:
+def comment(
+    post_id: PostId, author_id: UserId, content: CommentContent, community_id: CommunityId
+) -> Comment:
     """Create a test comment."""
     return Comment.create(
         post_id=post_id,
@@ -372,7 +374,9 @@ class TestCommentEquality:
         self, comment: Comment, post_id: PostId, author_id: UserId, content: CommentContent
     ) -> None:
         """Two comments with different IDs should not be equal."""
-        other = Comment.create(post_id=post_id, author_id=author_id, content=content, community_id=CommunityId(uuid4()))
+        other = Comment.create(
+            post_id=post_id, author_id=author_id, content=content, community_id=CommunityId(uuid4())
+        )
         assert comment != other
 
     def test_comment_can_be_used_in_set(self, comment: Comment) -> None:

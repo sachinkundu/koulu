@@ -683,7 +683,7 @@ Private 1-on-1 communication between members.
 ### 6.2 Phase 2
 
 **Should Have:**
-- ❌ Leaderboards and gamification
+- ⚠️ Leaderboards and gamification (Points & Levels Phase 1/3 complete — core engine + level calculation, no leaderboard UI yet)
 - ❌ Calendar and events
 - ❌ Direct messaging
 - ❌ Notifications (in-app)

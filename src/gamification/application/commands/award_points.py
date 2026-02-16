@@ -47,9 +47,7 @@ class AwardPointsHandler:
             command.community_id, command.user_id
         )
         if mp is None:
-            mp = MemberPoints.create(
-                community_id=command.community_id, user_id=command.user_id
-            )
+            mp = MemberPoints.create(community_id=command.community_id, user_id=command.user_id)
 
         # Award points
         mp.award_points(

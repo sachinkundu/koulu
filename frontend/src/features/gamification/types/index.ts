@@ -13,3 +13,23 @@ export type PointSource =
   | 'post_liked'
   | 'comment_liked'
   | 'lesson_completed';
+
+export interface LevelDefinition {
+  level: number;
+  name: string;
+  threshold: number;
+  member_percentage: number;
+}
+
+export interface LevelDefinitionsResponse {
+  levels: LevelDefinition[];
+  current_user_level: number;
+}
+
+export interface LevelUpdateRequest {
+  levels: Array<{
+    level: number;
+    name: string;
+    threshold: number;
+  }>;
+}

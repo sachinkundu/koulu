@@ -22,6 +22,12 @@ from src.gamification.application.commands.award_points import (
 from src.gamification.application.commands.deduct_points import (
     DeductPointsHandler,
 )
+from src.gamification.application.commands.update_level_config import (
+    UpdateLevelConfigHandler,
+)
+from src.gamification.application.queries.get_level_definitions import (
+    GetLevelDefinitionsHandler,
+)
 from src.gamification.application.queries.get_member_level import (
     GetMemberLevelHandler,
 )
@@ -80,6 +86,24 @@ async def level_query_handler(
 ) -> GetMemberLevelHandler:
     """Get member level query handler using test DB session."""
     return GetMemberLevelHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
+
+
+@pytest_asyncio.fixture
+async def level_definitions_handler(
+    mp_repo: SqlAlchemyMemberPointsRepository,
+    lc_repo: SqlAlchemyLevelConfigRepository,
+) -> GetLevelDefinitionsHandler:
+    """Get level definitions query handler using test DB session."""
+    return GetLevelDefinitionsHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
+
+
+@pytest_asyncio.fixture
+async def update_level_config_handler(
+    mp_repo: SqlAlchemyMemberPointsRepository,
+    lc_repo: SqlAlchemyLevelConfigRepository,
+) -> UpdateLevelConfigHandler:
+    """Update level config command handler using test DB session."""
+    return UpdateLevelConfigHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
 
 
 @pytest_asyncio.fixture

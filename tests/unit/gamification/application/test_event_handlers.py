@@ -5,8 +5,21 @@ from uuid import uuid4
 
 import pytest
 
-from src.community.domain.events import CommentAdded, CommentLiked, CommentUnliked, PostCreated, PostLiked, PostUnliked
-from src.community.domain.value_objects import CategoryId, CommentId, CommunityId, PostId, ReactionId
+from src.community.domain.events import (
+    CommentAdded,
+    CommentLiked,
+    CommentUnliked,
+    PostCreated,
+    PostLiked,
+    PostUnliked,
+)
+from src.community.domain.value_objects import (
+    CategoryId,
+    CommentId,
+    CommunityId,
+    PostId,
+    ReactionId,
+)
 from src.gamification.application.event_handlers.community_event_handlers import (
     handle_comment_added,
     handle_comment_liked,
@@ -21,7 +34,9 @@ from src.identity.domain.value_objects import UserId
 
 class TestPostCreatedHandler:
     @pytest.mark.asyncio
-    @patch("src.gamification.application.event_handlers.community_event_handlers._get_award_handler")
+    @patch(
+        "src.gamification.application.event_handlers.community_event_handlers._get_award_handler"
+    )
     async def test_awards_2_points_to_author(self, mock_get_handler: AsyncMock) -> None:
         mock_handler = AsyncMock()
         mock_get_handler.return_value = mock_handler
@@ -47,7 +62,9 @@ class TestPostCreatedHandler:
 
 class TestPostLikedHandler:
     @pytest.mark.asyncio
-    @patch("src.gamification.application.event_handlers.community_event_handlers._get_award_handler")
+    @patch(
+        "src.gamification.application.event_handlers.community_event_handlers._get_award_handler"
+    )
     async def test_awards_1_point_to_author(self, mock_get_handler: AsyncMock) -> None:
         mock_handler = AsyncMock()
         mock_get_handler.return_value = mock_handler
@@ -69,7 +86,9 @@ class TestPostLikedHandler:
 
 class TestPostUnlikedHandler:
     @pytest.mark.asyncio
-    @patch("src.gamification.application.event_handlers.community_event_handlers._get_deduct_handler")
+    @patch(
+        "src.gamification.application.event_handlers.community_event_handlers._get_deduct_handler"
+    )
     async def test_deducts_1_point_from_author(self, mock_get_handler: AsyncMock) -> None:
         mock_handler = AsyncMock()
         mock_get_handler.return_value = mock_handler
@@ -90,7 +109,9 @@ class TestPostUnlikedHandler:
 
 class TestCommentAddedHandler:
     @pytest.mark.asyncio
-    @patch("src.gamification.application.event_handlers.community_event_handlers._get_award_handler")
+    @patch(
+        "src.gamification.application.event_handlers.community_event_handlers._get_award_handler"
+    )
     async def test_awards_1_point_to_author(self, mock_get_handler: AsyncMock) -> None:
         mock_handler = AsyncMock()
         mock_get_handler.return_value = mock_handler
@@ -113,7 +134,9 @@ class TestCommentAddedHandler:
 
 class TestCommentLikedHandler:
     @pytest.mark.asyncio
-    @patch("src.gamification.application.event_handlers.community_event_handlers._get_award_handler")
+    @patch(
+        "src.gamification.application.event_handlers.community_event_handlers._get_award_handler"
+    )
     async def test_awards_1_point_to_comment_author(self, mock_get_handler: AsyncMock) -> None:
         mock_handler = AsyncMock()
         mock_get_handler.return_value = mock_handler
@@ -135,7 +158,9 @@ class TestCommentLikedHandler:
 
 class TestCommentUnlikedHandler:
     @pytest.mark.asyncio
-    @patch("src.gamification.application.event_handlers.community_event_handlers._get_deduct_handler")
+    @patch(
+        "src.gamification.application.event_handlers.community_event_handlers._get_deduct_handler"
+    )
     async def test_deducts_1_point_from_comment_author(self, mock_get_handler: AsyncMock) -> None:
         mock_handler = AsyncMock()
         mock_get_handler.return_value = mock_handler

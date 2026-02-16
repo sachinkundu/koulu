@@ -33,8 +33,7 @@ class SqlAlchemyLevelConfigRepository(ILevelConfigRepository):
         existing = await self._session.get(LevelConfigurationModel, config.id)
 
         levels_data = [
-            {"level": ld.level, "name": ld.name, "threshold": ld.threshold}
-            for ld in config.levels
+            {"level": ld.level, "name": ld.name, "threshold": ld.threshold} for ld in config.levels
         ]
 
         if existing is None:

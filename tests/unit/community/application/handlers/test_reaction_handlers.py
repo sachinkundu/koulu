@@ -20,7 +20,6 @@ from src.community.domain.exceptions import CommentNotFoundError, PostNotFoundEr
 from src.community.domain.value_objects import (
     CategoryId,
     CommentContent,
-    CommentId,
     CommunityId,
     PostContent,
     PostId,
