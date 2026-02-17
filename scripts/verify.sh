@@ -6,7 +6,11 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 cd "${PROJECT_ROOT}"
 
-echo "🔍 Running Python Verification..."
+# =============================================================================
+# Backend Verification
+# =============================================================================
+
+echo "🔍 Running Backend Verification..."
 
 echo ""
 echo "1️⃣  Linting (ruff)..."
@@ -25,4 +29,20 @@ echo "4️⃣  Running Tests with Coverage..."
 "${SCRIPT_DIR}/test.sh" --all --ignore=tests/features/identity/ --cov=src --cov-fail-under=80
 
 echo ""
-echo "✅ All Checks Passed!"
+echo "✅ Backend Verification Passed!"
+
+# =============================================================================
+# Frontend Verification
+# =============================================================================
+
+if [ -d "${PROJECT_ROOT}/frontend" ]; then
+  echo ""
+  echo "🔍 Running Frontend Verification..."
+  "${SCRIPT_DIR}/verify-frontend.sh"
+else
+  echo ""
+  echo "⚠️  No frontend/ directory found, skipping frontend verification."
+fi
+
+echo ""
+echo "✅ All Checks Passed (backend + frontend)!"

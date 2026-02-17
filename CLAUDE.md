@@ -18,13 +18,16 @@ All Python commands (pytest, ruff, mypy, pip, etc.) MUST run inside this environ
 
 ## Verification (Non-Negotiable)
 
-**ALWAYS use `./scripts/verify.sh` for verification — NEVER run ad-hoc pytest/ruff/mypy commands.**
+**ALWAYS use `./scripts/verify.sh` for verification — NEVER run ad-hoc pytest/ruff/mypy/eslint commands.**
 
-- verify.sh runs: ruff check, ruff format --check, mypy, then `test.sh --all` with proper coverage and test scope
+verify.sh runs **everything except E2E tests**:
+- **Backend:** ruff check, ruff format --check, mypy, then `test.sh --all` with coverage and test scope
+- **Frontend:** ESLint, TypeScript typecheck, Vitest tests, production build (via `verify-frontend.sh`)
 - It handles test database setup, proper ignores (e.g., `tests/features/identity/`), and `--cov-fail-under=80`
 - If verify.sh fails on DB connectivity: run `docker compose up -d postgres`, create test DB if needed, then re-run verify.sh
-- **ALL tests must pass — including pre-existing failures.** If verify.sh reveals failures from ANY context (identity, members, search, etc.), fix them FIRST before starting new work. Zero failures is non-negotiable.
+- **ALL checks must pass — backend AND frontend.** If verify.sh reveals failures from ANY layer, fix them FIRST before starting new work. Zero failures is non-negotiable.
 - The ONLY exception for running individual test commands is targeted debugging after verify.sh identifies a failure
+- E2E tests are run separately via `./scripts/run-e2e-tests.sh` (not part of verify.sh)
 
 ## Scope Rules (Non-Negotiable)
 
