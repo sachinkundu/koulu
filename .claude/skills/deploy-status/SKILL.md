@@ -36,6 +36,16 @@ gh run list --commit <sha> --json status,conclusion,name,url,databaseId --limit 
 
 **If no runs found:** Report "No CI runs found for this commit yet" and stop.
 
+**If a run is found, check individual job statuses:**
+
+```bash
+gh run view <databaseId> --json jobs --jq '.jobs[] | {name, status, conclusion}'
+```
+
+**If all jobs have `conclusion: skipped`:**
+- This means the `changes` job detected no code changes. Report: "CI: ⏭️ Skipped (no code changes)"
+- Proceed to Railway check (Railway also skips via `watchPatterns` for non-code changes).
+
 **If any job has `status: in_progress`:**
 - Show which jobs are still running.
 - Poll with `gh run watch <databaseId>` to wait for completion, then re-check.
@@ -62,23 +72,28 @@ railway status
 **If linked:**
 
 ```bash
-railway logs --limit 5
+railway deployment list --limit 3 --json
 ```
 
-Check the most recent deployment status. Report the state (SUCCESS, BUILDING, DEPLOYING, FAILED, CRASHED, etc.).
+Check the most recent deployment. Compare `meta.commitHash` with current `<sha>`.
+
+- If latest deployment matches `<sha>` and status is `SUCCESS` → deployed
+- If latest deployment matches `<sha>` and status is `BUILDING`/`DEPLOYING` → in progress
+- If latest deployment does NOT match `<sha>` → Railway skipped this commit (no code changes, via `watchPatterns`), report: "Railway: ⏭️ Skipped (no deployable changes)"
 
 ### 4. Output Summary
 
 Print a concise status block:
 
 ```
-Commit: abc1234 feat(community): add member search
+Commit:  abc1234 feat(community): add member search
 CI:      ✅ All 3 jobs passed
 Railway: ✅ Deployed successfully
 ```
 
 Adapt icons based on status:
 - ✅ = success/deployed
+- ⏭️ = skipped (no code changes)
 - ⏳ = in progress/building
 - ❌ = failed/crashed
 - ⚠️ = unknown/not linked

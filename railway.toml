@@ -1,6 +1,7 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
+watchPatterns = ["src/**", "tests/**", "alembic/**", "frontend/**", "scripts/**", "pyproject.toml", "Dockerfile", "railway.toml"]
 
 [deploy]
 healthcheckPath = "/health"

@@ -44,8 +44,9 @@ Run `git branch --show-current`.
 1. Run `git status` (never `-uall`), `git diff` (staged + unstaged), and `git log --oneline -5` in parallel.
 2. Do NOT commit files that look like secrets (`.env`, credentials, tokens).
 3. Draft commit message: `type(scope): summary` (max 72 chars). Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `style`.
-4. Stage specific files by name (`git add <files>`), not `git add .`.
-5. Commit using HEREDOC:
+4. **Check if CI can be skipped:** If ALL changed files are outside code paths (`src/`, `tests/`, `frontend/`, `scripts/`, `pyproject.toml`, `alembic/`, `Dockerfile`), append `[skip ci]` to the commit message summary line. Examples of skip-eligible changes: `.claude/`, `docs/`, `*.md`, `.gitignore`. If ANY file is in a code path, do NOT add `[skip ci]`.
+5. Stage specific files by name (`git add <files>`), not `git add .`.
+6. Commit using HEREDOC:
 ```bash
 git commit -m "$(cat <<'EOF'
 type(scope): summary
