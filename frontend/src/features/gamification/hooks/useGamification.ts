@@ -1,8 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { getMemberLevel, getLevelDefinitions, checkCourseAccess } from '../api/gamificationApi';
-import type { MemberLevel, LevelDefinitionsResponse, CourseAccessResponse } from '../types';
+import type { MemberLevel, LevelDefinition, LevelDefinitionsResponse, CourseAccessResponse } from '../types';
 
-export function useMemberLevel(userId: string | undefined) {
+interface UseMemberLevelResult {
+  memberLevel: MemberLevel | undefined;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+export function useMemberLevel(userId: string | undefined): UseMemberLevelResult {
   const { data, isLoading, error } = useQuery<MemberLevel>({
     queryKey: ['memberLevel', userId],
     queryFn: () => getMemberLevel(userId!),
@@ -12,7 +18,14 @@ export function useMemberLevel(userId: string | undefined) {
   return { memberLevel: data, isLoading, error };
 }
 
-export function useLevelDefinitions() {
+interface UseLevelDefinitionsResult {
+  levels: LevelDefinition[] | undefined;
+  currentUserLevel: number | undefined;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+export function useLevelDefinitions(): UseLevelDefinitionsResult {
   const { data, isLoading, error } = useQuery<LevelDefinitionsResponse>({
     queryKey: ['levelDefinitions'],
     queryFn: getLevelDefinitions,
@@ -26,7 +39,13 @@ export function useLevelDefinitions() {
   };
 }
 
-export function useCourseAccess(courseId: string) {
+interface UseCourseAccessResult {
+  access: CourseAccessResponse | undefined;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+export function useCourseAccess(courseId: string): UseCourseAccessResult {
   const { data, isLoading, error } = useQuery<CourseAccessResponse>({
     queryKey: ['courseAccess', courseId],
     queryFn: () => checkCourseAccess(courseId),

@@ -8,7 +8,7 @@ export function CourseCardLock({
   minimumLevel,
   minimumLevelName,
   currentLevel,
-}: CourseCardLockProps) {
+}: CourseCardLockProps): JSX.Element | null {
   const isLocked = currentLevel < minimumLevel;
 
   if (!isLocked) {
