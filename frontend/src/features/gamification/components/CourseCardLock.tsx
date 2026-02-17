@@ -16,7 +16,7 @@ export function CourseCardLock({
   }
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-gray-900/60 rounded-lg">
+    <div className="absolute inset-0 flex items-center justify-center bg-gray-900/60 rounded-lg" data-testid="course-card-lock">
       <div className="text-center text-white p-4">
         <svg
           className="mx-auto h-8 w-8 mb-2"
