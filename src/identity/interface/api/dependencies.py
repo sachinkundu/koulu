@@ -29,6 +29,7 @@ from src.identity.application.queries import (
     GetProfileStatsHandler,
 )
 from src.identity.domain.entities import User
+from src.identity.domain.services import IEmailService
 from src.identity.infrastructure.persistence import (
     RedisRefreshTokenRepository,
     SqlAlchemyResetTokenRepository,
@@ -55,7 +56,12 @@ def get_database() -> Database:
     """Get database instance (singleton)."""
     global _database
     if _database is None:
-        _database = Database(url=settings.database_url, echo=settings.app_debug)
+        _database = Database(
+            url=settings.database_url,
+            echo=settings.app_debug,
+            pool_size=settings.db_pool_size,
+            max_overflow=settings.db_max_overflow,
+        )
     return _database
 
 
@@ -105,15 +111,24 @@ def get_avatar_generator() -> InitialsAvatarGenerator:
     return InitialsAvatarGenerator()
 
 
-def get_email_service() -> EmailService:
-    """Get email service instance."""
+def get_email_service() -> IEmailService:
+    """Get email service instance.
+
+    Uses SMTP (MailHog) when smtp_host is configured, otherwise Resend HTTP API.
+    """
+    if settings.smtp_host:
+        from src.identity.infrastructure.services.smtp_email_service import (
+            SmtpEmailService,
+        )
+
+        return SmtpEmailService()
     return EmailService()
 
 
 PasswordHasherDep = Annotated[Argon2PasswordHasher, Depends(get_password_hasher)]
 TokenGeneratorDep = Annotated[JWTService, Depends(get_token_generator)]
 AvatarGeneratorDep = Annotated[InitialsAvatarGenerator, Depends(get_avatar_generator)]
-EmailServiceDep = Annotated[EmailService, Depends(get_email_service)]
+EmailServiceDep = Annotated[IEmailService, Depends(get_email_service)]
 
 
 # ============================================================================

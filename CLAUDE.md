@@ -8,10 +8,10 @@ Python backend with FastAPI, Alembic migrations, DDD/hexagonal architecture, ver
 
 ## Python Environment (Non-Negotiable)
 
-**ALWAYS use pyenv with the `v2cl` virtualenv.** NEVER use `source .venv/bin/activate` or create new virtual environments.
+**ALWAYS use pyenv with the `koulu` virtualenv.** NEVER use `source .venv/bin/activate` or create new virtual environments.
 
 ```bash
-eval "$(pyenv init -)" && eval "$(pyenv virtualenv-init -)" && pyenv activate v2cl
+eval "$(pyenv init -)" && eval "$(pyenv virtualenv-init -)" && pyenv activate koulu
 ```
 
 All Python commands (pytest, ruff, mypy, pip, etc.) MUST run inside this environment. Subagents must also use this activation sequence.
@@ -82,7 +82,7 @@ src/{context}/
 - Frontend REQUIRED for user-facing features. No UI = Not Done. Exceptions (require explicit approval): background jobs, internal admin APIs, migration services.
 - **Multi-backend agents:** When a phase has 8+ backend tasks, split into multiple parallel backend agents by layer (domain, infra, app) — never use a single backend agent as bottleneck. See MEMORY.md for file ownership boundaries and start conditions.
 - **Read summaries first:** Before implementing Phase N+1, read `docs/summaries/{context}/{feature}-phase-N-summary.md` for a quick overview of what exists. Do NOT re-read every implementation file individually.
-- **Subagents inherit environment rules:** Every subagent MUST use `pyenv activate v2cl` and `./scripts/verify.sh`. Pass these instructions explicitly when dispatching agents.
+- **Subagents inherit environment rules:** Every subagent MUST use `pyenv activate koulu` and `./scripts/verify.sh`. Pass these instructions explicitly when dispatching agents.
 
 ## Debugging
 

@@ -38,8 +38,16 @@ class Settings(BaseSettings):
     mail_from: str = "onboarding@resend.dev"
     mail_from_name: str = "Koulu"
 
+    # SMTP (for local dev / E2E with MailHog — used when smtp_host is set)
+    smtp_host: str = ""
+    smtp_port: int = 1025
+
     # Frontend URL (for email links)
     frontend_url: str = "http://localhost:5173"
+
+    # Database pool
+    db_pool_size: int = 5
+    db_max_overflow: int = 10
 
     # Rate Limiting
     rate_limit_enabled: bool = True

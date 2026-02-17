@@ -41,25 +41,24 @@ export class FeedPage extends BasePage {
   ): Promise<void> {
     await this.openCreatePostModal();
 
-    await this.page.fill(this.postTitleInput, title);
-    await this.page.fill(this.postContentInput, content);
+    // Wait for categories to load (more than just the placeholder option)
+    const select = this.page.locator(this.postCategorySelect);
+    await select.locator('option:not([value=""])').first().waitFor({ state: 'attached', timeout: 10_000 });
 
+    await this.page.fill(this.postTitleInput, title);
+
+    // Select category BEFORE content so react-hook-form registers the change
     if (categoryName !== undefined) {
-      const select = this.page.locator(this.postCategorySelect);
       await select.selectOption({ label: new RegExp(categoryName) });
     } else {
       // Select the first non-empty category option
-      const select = this.page.locator(this.postCategorySelect);
-      const options = select.locator('option');
-      const count = await options.count();
-      for (let i = 0; i < count; i++) {
-        const value = await options.nth(i).getAttribute('value');
-        if (value !== null && value !== '') {
-          await select.selectOption(value);
-          break;
-        }
+      const firstOption = await select.locator('option:not([value=""])').first().getAttribute('value');
+      if (firstOption) {
+        await select.selectOption(firstOption);
       }
     }
+
+    await this.page.fill(this.postContentInput, content);
 
     await this.page.click(this.modalSubmitButton);
   }
