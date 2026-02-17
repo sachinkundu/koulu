@@ -26,6 +26,12 @@ from src.shared.infrastructure import Base
 # Use rsplit to replace only the database name at the end, not the username
 _base_url, _db_name = settings.database_url.rsplit("/", 1)
 _test_db_name = os.getenv("KOULU_TEST_DB_NAME", "koulu_test")
+
+# pytest-xdist: each worker gets its own database to avoid DDL conflicts
+_xdist_worker = os.getenv("PYTEST_XDIST_WORKER", "")
+if _xdist_worker:
+    _test_db_name = f"{_test_db_name}_{_xdist_worker}"
+
 TEST_DATABASE_URL = f"{_base_url}/{_test_db_name}"
 
 

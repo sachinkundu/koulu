@@ -26,6 +26,7 @@ error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 # ============================================
 TEST_TYPE="all"  # Default: run all tests
 PYTEST_ARGS=()
+NUM_WORKERS="auto"  # Default: auto-detect CPU count
 
 show_usage() {
     echo "Usage: $0 [OPTIONS] [PYTEST_ARGS...]"
@@ -34,13 +35,15 @@ show_usage() {
     echo "  --unit          Run only unit tests (tests/unit/)"
     echo "  --integration   Run only integration tests (tests/features/)"
     echo "  --all           Run all tests (default)"
+    echo "  --workers N     Number of parallel workers (default: auto). Use 1 to disable."
     echo "  -h, --help      Show this help message"
     echo ""
     echo "Examples:"
     echo "  $0                           # Run all tests"
     echo "  $0 --unit                    # Run only unit tests"
-    echo "  $0 --integration             # Run only integration tests"
-    echo "  $0 --integration -v          # Run integration tests with verbose output"
+    echo "  $0 --integration             # Run integration tests"
+    echo "  $0 --workers 4               # Run with 4 parallel workers"
+    echo "  $0 --workers 1               # Run without parallelism"
     echo "  $0 --unit -k test_user       # Run unit tests matching 'test_user'"
     echo ""
 }
@@ -58,6 +61,10 @@ while [[ $# -gt 0 ]]; do
         --all)
             TEST_TYPE="all"
             shift
+            ;;
+        --workers)
+            NUM_WORKERS="$2"
+            shift 2
             ;;
         -h|--help)
             show_usage
@@ -119,7 +126,7 @@ fi
 
 success "PostgreSQL is running"
 
-# Check if test database exists
+# Create the main test database
 DB_EXISTS=$($COMPOSE_CMD exec -T postgres psql -U koulu -tAc "SELECT 1 FROM pg_database WHERE datname='${TEST_DB_NAME}'" 2>/dev/null || echo "")
 
 if [ -z "$DB_EXISTS" ]; then
@@ -130,12 +137,41 @@ else
     success "Test database exists: ${TEST_DB_NAME}"
 fi
 
+# Create per-worker databases for pytest-xdist
+# Determine actual worker count
+if [ "${NUM_WORKERS}" = "auto" ]; then
+    ACTUAL_WORKERS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+elif [ "${NUM_WORKERS}" = "1" ]; then
+    ACTUAL_WORKERS=1
+else
+    ACTUAL_WORKERS="${NUM_WORKERS}"
+fi
+
+if [ "${ACTUAL_WORKERS}" -gt 1 ]; then
+    info "Creating per-worker databases for ${ACTUAL_WORKERS} xdist workers..."
+    for i in $(seq 0 $((ACTUAL_WORKERS - 1))); do
+        WORKER_DB="${TEST_DB_NAME}_gw${i}"
+        WDB_EXISTS=$($COMPOSE_CMD exec -T postgres psql -U koulu -tAc "SELECT 1 FROM pg_database WHERE datname='${WORKER_DB}'" 2>/dev/null || echo "")
+        if [ -z "$WDB_EXISTS" ]; then
+            $COMPOSE_CMD exec -T postgres psql -U koulu -c "CREATE DATABASE ${WORKER_DB};" > /dev/null
+        fi
+    done
+    success "Worker databases ready (gw0..gw$((ACTUAL_WORKERS - 1)))"
+fi
+
 echo ""
 
 # ============================================
 # Run Tests
 # ============================================
 info "Running ${TEST_TYPE} tests for project: ${COMPOSE_PROJECT_NAME}"
+
+# Add parallel workers flag unless disabled
+if [ "${NUM_WORKERS}" != "1" ]; then
+    info "Using ${NUM_WORKERS} parallel workers (pytest-xdist)"
+    PYTEST_ARGS+=("-n" "${NUM_WORKERS}")
+fi
+
 echo ""
 
 cd "${PROJECT_ROOT}"
