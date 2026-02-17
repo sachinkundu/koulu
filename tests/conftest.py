@@ -8,10 +8,10 @@ from typing import Any
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
-    async_sessionmaker,
     create_async_engine,
 )
 
@@ -34,6 +34,9 @@ if _xdist_worker:
 
 TEST_DATABASE_URL = f"{_base_url}/{_test_db_name}"
 
+# Process-level flag: DDL runs once per worker process, not per test.
+_tables_created = False
+
 
 @pytest.fixture(scope="session")
 def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
@@ -45,28 +48,53 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 
 @pytest_asyncio.fixture(scope="function")
 async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
-    """Create test database engine."""
+    """Create test database engine.
+
+    Tables are created once per process (guarded by _tables_created flag)
+    instead of per-test. Tables are never dropped — test DBs are ephemeral.
+    """
+    global _tables_created  # noqa: PLW0603
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    if not _tables_created:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        _tables_created = True
 
     yield engine
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
 
     await engine.dispose()
 
 
 @pytest_asyncio.fixture(scope="function")
 async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
-    """Create test database session."""
-    session_factory = async_sessionmaker(db_engine, class_=AsyncSession, expire_on_commit=False)
+    """Create test database session with savepoint rollback for isolation.
 
-    async with session_factory() as session:
+    Uses connection-level transaction control: the connection holds an outer
+    transaction that is never committed. The session operates inside savepoints
+    (begin_nested). When test code calls session.commit(), it only commits the
+    savepoint. An event listener auto-restarts a new savepoint after each commit
+    so subsequent operations continue inside savepoints. At teardown, the outer
+    connection transaction is rolled back, wiping all test data.
+    """
+    async with db_engine.connect() as conn:
+        trans = await conn.begin()  # outer transaction — never committed
+        session = AsyncSession(bind=conn, expire_on_commit=False)
+        await conn.begin_nested()  # initial SAVEPOINT
+
+        # After each savepoint ends (commit or rollback), start a new one
+        # so subsequent session operations stay inside savepoints.
+        @event.listens_for(session.sync_session, "after_transaction_end")
+        def _restart_savepoint(_sync_session: Any, _transaction: Any) -> None:
+            if conn.closed:
+                return
+            if not conn.in_nested_transaction() and conn.sync_connection:
+                conn.sync_connection.begin_nested()
+
         yield session
-        await session.rollback()
+
+        await session.close()
+        await trans.rollback()
 
 
 @pytest_asyncio.fixture(scope="function")
