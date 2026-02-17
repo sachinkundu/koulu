@@ -10,6 +10,7 @@
   - Phase 1: `docs/summaries/gamification/points-phase-1-summary.md`
   - Phase 2: `docs/summaries/gamification/points-phase-2-summary.md`
   - Phase 3: `docs/summaries/gamification/points-phase-3-summary.md`
+  - E2E Tests: `docs/summaries/gamification/points-e2e-tests-summary.md`
 **Bounded Context:** Gamification
 **PRD Type:** Feature Specification
 
