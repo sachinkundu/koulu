@@ -15,6 +15,7 @@ import {
   LessonViewPage,
   MembersPage,
   SearchPage,
+  LeaderboardsPage,
 } from '@/pages';
 import { PostDetailPage } from '@/pages';
 import {
@@ -35,6 +36,7 @@ const APP_TABS = [
   { label: 'Community', path: '/' },
   { label: 'Classroom', path: '/classroom' },
   { label: 'Members', path: '/members' },
+  { label: 'Leaderboards', path: '/leaderboards' },
 ];
 
 function FullPageSpinner(): JSX.Element {
@@ -323,6 +325,16 @@ function App(): JSX.Element {
         element={
           <ProtectedRoute>
             <MembersLayout><MembersPage /></MembersLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Leaderboards route */}
+      <Route
+        path="/leaderboards"
+        element={
+          <ProtectedRoute>
+            <MembersLayout><LeaderboardsPage /></MembersLayout>
           </ProtectedRoute>
         }
       />

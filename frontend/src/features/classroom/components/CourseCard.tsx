@@ -2,6 +2,8 @@ import { useNavigate } from 'react-router-dom';
 import { useStartCourse } from '../hooks';
 import { getContinueLesson } from '../api';
 import type { Course } from '../types';
+import { useCourseAccess } from '@/features/gamification/hooks';
+import { CourseCardLock } from '@/features/gamification/components/CourseCardLock';
 
 interface CourseCardProps {
   course: Course;
@@ -10,6 +12,7 @@ interface CourseCardProps {
 export function CourseCard({ course }: CourseCardProps): JSX.Element {
   const navigate = useNavigate();
   const { start, data: startData, isPending } = useStartCourse(course.id);
+  const { access } = useCourseAccess(course.id);
   const progress = course.progress;
 
   const handleAction = async (e: React.MouseEvent): Promise<void> => {
@@ -51,7 +54,7 @@ export function CourseCard({ course }: CourseCardProps): JSX.Element {
   return (
     <div
       onClick={() => navigate(`/classroom/courses/${course.id}`)}
-      className="cursor-pointer rounded-lg bg-white p-6 shadow hover:shadow-md transition-shadow"
+      className="relative cursor-pointer rounded-lg bg-white p-6 shadow hover:shadow-md transition-shadow"
       data-testid={`course-card-${course.id}`}
     >
       {course.cover_image_url !== null && (
@@ -104,6 +107,15 @@ export function CourseCard({ course }: CourseCardProps): JSX.Element {
       >
         {isPending ? 'Loading...' : getButtonText()}
       </button>
+
+      {/* Level gate overlay */}
+      {access !== undefined && access.minimum_level !== null && !access.has_access && (
+        <CourseCardLock
+          minimumLevel={access.minimum_level}
+          minimumLevelName={access.minimum_level_name ?? ''}
+          currentLevel={access.current_level}
+        />
+      )}
     </div>
   );
 }

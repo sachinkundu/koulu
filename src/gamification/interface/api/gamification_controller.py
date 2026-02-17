@@ -5,10 +5,16 @@ from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 
 from src.community.domain.value_objects import CommunityId, MemberRole
 from src.community.infrastructure.persistence import SqlAlchemyMemberRepository
-from src.community.interface.api.dependencies import CurrentUserIdDep, MemberRepositoryDep
+from src.community.infrastructure.persistence.models import CommunityModel
+from src.community.interface.api.dependencies import (
+    CurrentUserIdDep,
+    MemberRepositoryDep,
+    SessionDep,
+)
 from src.gamification.application.commands.set_course_level_requirement import (
     SetCourseLevelRequirementCommand,
     SetCourseLevelRequirementHandler,
@@ -55,6 +61,26 @@ from src.identity.domain.value_objects import UserId
 logger = structlog.get_logger()
 
 router = APIRouter(prefix="/communities", tags=["Gamification"])
+
+# Auto-resolving router (no community_id in URL — matches pattern used by post/member controllers)
+default_router = APIRouter(prefix="/community", tags=["Gamification"])
+
+
+async def _get_default_community_id(session: SessionDep) -> UUID:
+    """Get the default community ID (first community by creation date)."""
+    result = await session.execute(
+        select(CommunityModel.id).order_by(CommunityModel.created_at).limit(1)
+    )
+    community_id = result.scalar_one_or_none()
+    if community_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No community found",
+        )
+    return community_id
+
+
+DefaultCommunityIdDep = Annotated[UUID, Depends(_get_default_community_id)]
 
 
 async def _require_admin(
@@ -213,3 +239,90 @@ async def set_course_level_requirement(
     )
     await handler.handle(command)
     return {"status": "ok"}
+
+
+# ============================================================================
+# Auto-resolving convenience routes (no community_id in URL)
+# ============================================================================
+
+
+@default_router.get(
+    "/members/{user_id}/level",
+    response_model=MemberLevelResponse,
+)
+async def get_member_level_default(
+    user_id: UUID,
+    community_id: DefaultCommunityIdDep,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[GetMemberLevelHandler, Depends(get_get_member_level_handler)],
+) -> MemberLevelResponse:
+    """Get a member's level and points (auto-resolves community)."""
+    query = GetMemberLevelQuery(
+        community_id=community_id,
+        user_id=user_id,
+        requesting_user_id=current_user_id,
+    )
+    result = await handler.handle(query)
+    return MemberLevelResponse(
+        user_id=result.user_id,
+        level=result.level,
+        level_name=result.level_name,
+        total_points=result.total_points,
+        points_to_next_level=result.points_to_next_level,
+        is_max_level=result.is_max_level,
+    )
+
+
+@default_router.get(
+    "/levels",
+    response_model=LevelDefinitionsResponse,
+)
+async def get_level_definitions_default(
+    community_id: DefaultCommunityIdDep,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[GetLevelDefinitionsHandler, Depends(get_get_level_definitions_handler)],
+) -> LevelDefinitionsResponse:
+    """Get level definitions with member distribution (auto-resolves community)."""
+    query = GetLevelDefinitionsQuery(
+        community_id=community_id,
+        requesting_user_id=current_user_id,
+    )
+    result = await handler.handle(query)
+    return LevelDefinitionsResponse(
+        levels=[
+            LevelDefinitionSchema(
+                level=ld.level,
+                name=ld.name,
+                threshold=ld.threshold,
+                member_percentage=ld.member_percentage,
+            )
+            for ld in result.levels
+        ],
+        current_user_level=result.current_user_level,
+    )
+
+
+@default_router.get(
+    "/courses/{course_id}/access",
+    response_model=CourseAccessResponse,
+)
+async def check_course_access_default(
+    course_id: UUID,
+    community_id: DefaultCommunityIdDep,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[CheckCourseAccessHandler, Depends(get_check_course_access_handler)],
+) -> CourseAccessResponse:
+    """Check if user can access a course based on level requirements (auto-resolves community)."""
+    query = CheckCourseAccessQuery(
+        community_id=community_id,
+        course_id=course_id,
+        user_id=current_user_id,
+    )
+    result = await handler.handle(query)
+    return CourseAccessResponse(
+        course_id=result.course_id,
+        has_access=result.has_access,
+        minimum_level=result.minimum_level,
+        minimum_level_name=result.minimum_level_name,
+        current_level=result.current_level,
+    )

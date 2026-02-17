@@ -10,14 +10,17 @@ import {
   ProfileStats,
 } from '@/features/identity/components';
 import { useAuth, useProfile, useProfileStats } from '@/features/identity/hooks';
+import { useMemberLevel } from '@/features/gamification/hooks';
 
 export function ProfileViewPage(): JSX.Element {
   const { userId } = useParams<{ userId: string }>();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
 
   // Use userId from URL, or undefined for own profile
   const { profile, isLoading: profileLoading, error } = useProfile(userId);
   const { stats, isLoading: statsLoading } = useProfileStats(userId ?? 'me');
+  const levelUserId = userId ?? user?.id;
+  const { memberLevel } = useMemberLevel(levelUserId);
 
   if (authLoading) {
     return (
@@ -64,7 +67,16 @@ export function ProfileViewPage(): JSX.Element {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="md:col-span-1">
-            <ProfileSidebar profile={profile} />
+            <ProfileSidebar
+              profile={profile}
+              levelInfo={memberLevel !== undefined ? {
+                level: memberLevel.level,
+                levelName: memberLevel.level_name,
+                totalPoints: memberLevel.total_points,
+                pointsToNextLevel: memberLevel.points_to_next_level,
+                isMaxLevel: memberLevel.is_max_level,
+              } : undefined}
+            />
           </div>
           <div className="space-y-6 md:col-span-2">
             <ProfileStats stats={stats} isLoading={statsLoading} />

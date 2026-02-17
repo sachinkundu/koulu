@@ -8,26 +8,23 @@ import type {
 } from '../types';
 
 /**
- * Get a member's level and points in a community.
+ * Get a member's level and points (auto-resolves community).
  */
 export async function getMemberLevel(
-  communityId: string,
   userId: string,
 ): Promise<MemberLevel> {
   const response = await apiClient.get<MemberLevel>(
-    `/api/communities/${communityId}/members/${userId}/level`,
+    `/community/members/${userId}/level`,
   );
   return response.data;
 }
 
 /**
- * Get level definitions for a community.
+ * Get level definitions (auto-resolves community).
  */
-export async function getLevelDefinitions(
-  communityId: string,
-): Promise<LevelDefinitionsResponse> {
+export async function getLevelDefinitions(): Promise<LevelDefinitionsResponse> {
   const response = await apiClient.get<LevelDefinitionsResponse>(
-    `/api/communities/${communityId}/levels`,
+    `/community/levels`,
   );
   return response.data;
 }
@@ -39,18 +36,17 @@ export async function updateLevelConfig(
   communityId: string,
   data: LevelUpdateRequest,
 ): Promise<void> {
-  await apiClient.put(`/api/communities/${communityId}/levels`, data);
+  await apiClient.put(`/communities/${communityId}/levels`, data);
 }
 
 /**
- * Check if a member can access a course based on level requirements.
+ * Check if the current user can access a course based on level requirements (auto-resolves community).
  */
 export async function checkCourseAccess(
-  communityId: string,
   courseId: string,
 ): Promise<CourseAccessResponse> {
   const response = await apiClient.get<CourseAccessResponse>(
-    `/api/communities/${communityId}/courses/${courseId}/access`,
+    `/community/courses/${courseId}/access`,
   );
   return response.data;
 }
@@ -64,7 +60,7 @@ export async function setCourseLevelRequirement(
   data: SetCourseLevelRequirementRequest,
 ): Promise<void> {
   await apiClient.put(
-    `/api/communities/${communityId}/courses/${courseId}/level-requirement`,
+    `/communities/${communityId}/courses/${courseId}/level-requirement`,
     data,
   );
 }

@@ -17,3 +17,4 @@ export { CourseDetailPage } from './CourseDetailPage';
 export { LessonViewPage } from './LessonViewPage';
 export { MembersPage } from './MembersPage';
 export { SearchPage } from './SearchPage';
+export { LeaderboardsPage } from './LeaderboardsPage';

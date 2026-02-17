@@ -46,6 +46,9 @@ from src.gamification.application.event_handlers.community_event_handlers import
     handle_post_unliked,
 )
 from src.gamification.interface.api.gamification_controller import (
+    default_router as gamification_default_router,
+)
+from src.gamification.interface.api.gamification_controller import (
     router as gamification_router,
 )
 from src.identity.domain.exceptions import RateLimitExceededError
@@ -189,6 +192,7 @@ app.include_router(modules_router, prefix="/api/v1")
 app.include_router(lessons_router, prefix="/api/v1")
 app.include_router(progress_router, prefix="/api/v1")
 app.include_router(gamification_router, prefix="/api/v1")
+app.include_router(gamification_default_router, prefix="/api/v1")
 
 # Serve React SPA in production (static/ directory exists from Docker build)
 _static_dir = Path(__file__).resolve().parent.parent / "static"

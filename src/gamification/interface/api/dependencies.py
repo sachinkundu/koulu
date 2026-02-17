@@ -107,5 +107,3 @@ def get_deduct_handler(
 ) -> DeductPointsHandler:
     """Get deduct points handler."""
     return DeductPointsHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
-
-
