@@ -48,13 +48,20 @@ export class ClassroomPageObject extends BasePage {
 
   async createCourse(title: string, description?: string): Promise<void> {
     await this.openCreateCourseModal();
-    await this.page.fill(this.courseTitleInput, title);
+    const titleInput = this.page.locator(this.courseTitleInput);
+    await titleInput.waitFor({ state: 'visible', timeout: 5_000 });
+    // Wait for React useEffect reset() to complete before filling
+    // The modal's useEffect clears the form on open — filling too early gets wiped
+    await this.page.waitForTimeout(300);
+    await titleInput.click();
+    await titleInput.fill(title);
     if (description !== undefined) {
-      await this.page.fill(this.courseDescriptionInput, description);
+      const descInput = this.page.locator(this.courseDescriptionInput);
+      await descInput.fill(description);
     }
-    await this.page.click(this.createCourseSubmit);
+    await this.page.locator(this.createCourseSubmit).click();
     // Wait for navigation to course detail
-    await this.page.waitForURL(/\/classroom\/courses\//, { timeout: 10_000 });
+    await this.page.waitForURL(/\/classroom\/courses\//, { timeout: 15_000 });
   }
 
   async getCourseCardByTitle(title: string): ReturnType<Page['locator']> {

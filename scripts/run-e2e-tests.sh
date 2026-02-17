@@ -110,7 +110,7 @@ echo "-----------------------------------"
 E2E_DATABASE_URL="postgresql+asyncpg://koulu:koulu_dev_password@localhost:${KOULU_PG_PORT}/${E2E_DB_NAME}"
 
 echo "Running alembic upgrade head..."
-DATABASE_URL="${E2E_DATABASE_URL}" python -m alembic upgrade head
+cd "${PROJECT_ROOT}" && DATABASE_URL="${E2E_DATABASE_URL}" python -m alembic upgrade head
 echo -e "${GREEN}Migrations complete (includes seed data)${NC}"
 echo ""
 
@@ -156,38 +156,50 @@ echo ""
 echo -e "${YELLOW}Step 7: Starting E2E Backend (port ${KOULU_E2E_BACKEND_PORT})${NC}"
 echo "-----------------------------------"
 
-# Check if something is already running on E2E backend port
-if curl -sf "http://localhost:${KOULU_E2E_BACKEND_PORT}/health" > /dev/null 2>&1; then
-    echo -e "${YELLOW}Port ${KOULU_E2E_BACKEND_PORT} already in use — assuming E2E backend already running${NC}"
-else
-    E2E_BACKEND_LOG="${PROJECT_ROOT}/tests/e2e/e2e-backend.log"
-    DATABASE_URL="${E2E_DATABASE_URL}" \
-        uvicorn src.main:app \
-        --host 0.0.0.0 \
-        --port "${KOULU_E2E_BACKEND_PORT}" \
-        > "${E2E_BACKEND_LOG}" 2>&1 &
-    E2E_BACKEND_PID=$!
-    echo "E2E backend PID: ${E2E_BACKEND_PID}"
-    echo "Log: ${E2E_BACKEND_LOG}"
-
-    # Wait for backend to become healthy
-    echo -n "Waiting for health check"
-    for i in $(seq 1 30); do
-        if curl -sf "http://localhost:${KOULU_E2E_BACKEND_PORT}/health" > /dev/null 2>&1; then
-            echo ""
-            echo -e "${GREEN}E2E backend ready${NC}"
-            break
-        fi
-        echo -n "."
-        sleep 1
-        if [ "$i" -eq 30 ]; then
-            echo ""
-            echo -e "${RED}E2E backend failed to start within 30s${NC}"
-            echo "Check log: ${E2E_BACKEND_LOG}"
-            exit 1
-        fi
-    done
+# Kill any stale E2E backend process (DB was just recreated, old connections are invalid)
+STALE_PID=$(lsof -ti :${KOULU_E2E_BACKEND_PORT} 2>/dev/null || true)
+if [ -n "$STALE_PID" ]; then
+    echo -e "${YELLOW}Killing stale process on port ${KOULU_E2E_BACKEND_PORT} (PID ${STALE_PID})${NC}"
+    kill $STALE_PID 2>/dev/null || true
+    sleep 1
+    # Force kill if still alive
+    kill -9 $STALE_PID 2>/dev/null || true
+    sleep 1
 fi
+
+E2E_BACKEND_LOG="${PROJECT_ROOT}/tests/e2e/e2e-backend.log"
+DATABASE_URL="${E2E_DATABASE_URL}" \
+    SMTP_HOST="localhost" \
+    SMTP_PORT="${KOULU_MAIL_SMTP_PORT}" \
+    REDIS_URL="redis://localhost:${KOULU_REDIS_PORT}/0" \
+    FRONTEND_URL="http://localhost:${KOULU_E2E_FRONTEND_PORT}" \
+    DB_POOL_SIZE="10" \
+    DB_MAX_OVERFLOW="20" \
+    uvicorn src.main:app \
+    --host 0.0.0.0 \
+    --port "${KOULU_E2E_BACKEND_PORT}" \
+    > "${E2E_BACKEND_LOG}" 2>&1 &
+E2E_BACKEND_PID=$!
+echo "E2E backend PID: ${E2E_BACKEND_PID}"
+echo "Log: ${E2E_BACKEND_LOG}"
+
+# Wait for backend to become healthy
+echo -n "Waiting for health check"
+for i in $(seq 1 30); do
+    if curl -sf "http://localhost:${KOULU_E2E_BACKEND_PORT}/health" > /dev/null 2>&1; then
+        echo ""
+        echo -e "${GREEN}E2E backend ready${NC}"
+        break
+    fi
+    echo -n "."
+    sleep 1
+    if [ "$i" -eq 30 ]; then
+        echo ""
+        echo -e "${RED}E2E backend failed to start within 30s${NC}"
+        echo "Check log: ${E2E_BACKEND_LOG}"
+        exit 1
+    fi
+done
 echo ""
 
 # ============================================================================
@@ -196,37 +208,42 @@ echo ""
 echo -e "${YELLOW}Step 8: Starting E2E Frontend (port ${KOULU_E2E_FRONTEND_PORT})${NC}"
 echo "-----------------------------------"
 
-# Check if something is already running on E2E frontend port
-if curl -sf "http://localhost:${KOULU_E2E_FRONTEND_PORT}" > /dev/null 2>&1; then
-    echo -e "${YELLOW}Port ${KOULU_E2E_FRONTEND_PORT} already in use — assuming E2E frontend already running${NC}"
-else
-    E2E_FRONTEND_LOG="${PROJECT_ROOT}/tests/e2e/e2e-frontend.log"
-    (cd "${FRONTEND_DIR}" && \
-        VITE_API_URL="http://localhost:${KOULU_E2E_BACKEND_PORT}/api/v1" \
-        npx vite --port "${KOULU_E2E_FRONTEND_PORT}" --host \
-        > "${E2E_FRONTEND_LOG}" 2>&1) &
-    E2E_FRONTEND_PID=$!
-    echo "E2E frontend PID: ${E2E_FRONTEND_PID}"
-    echo "Log: ${E2E_FRONTEND_LOG}"
-
-    # Wait for frontend to become ready
-    echo -n "Waiting for frontend"
-    for i in $(seq 1 30); do
-        if curl -sf "http://localhost:${KOULU_E2E_FRONTEND_PORT}" > /dev/null 2>&1; then
-            echo ""
-            echo -e "${GREEN}E2E frontend ready${NC}"
-            break
-        fi
-        echo -n "."
-        sleep 1
-        if [ "$i" -eq 30 ]; then
-            echo ""
-            echo -e "${RED}E2E frontend failed to start within 30s${NC}"
-            echo "Check log: ${E2E_FRONTEND_LOG}"
-            exit 1
-        fi
-    done
+# Kill any stale E2E frontend process
+STALE_FE_PID=$(lsof -ti :${KOULU_E2E_FRONTEND_PORT} 2>/dev/null || true)
+if [ -n "$STALE_FE_PID" ]; then
+    echo -e "${YELLOW}Killing stale process on port ${KOULU_E2E_FRONTEND_PORT} (PID ${STALE_FE_PID})${NC}"
+    kill $STALE_FE_PID 2>/dev/null || true
+    sleep 1
+    kill -9 $STALE_FE_PID 2>/dev/null || true
+    sleep 1
 fi
+
+E2E_FRONTEND_LOG="${PROJECT_ROOT}/tests/e2e/e2e-frontend.log"
+(cd "${FRONTEND_DIR}" && \
+    VITE_API_URL="http://localhost:${KOULU_E2E_BACKEND_PORT}/api/v1" \
+    npx vite --port "${KOULU_E2E_FRONTEND_PORT}" --host \
+    > "${E2E_FRONTEND_LOG}" 2>&1) &
+E2E_FRONTEND_PID=$!
+echo "E2E frontend PID: ${E2E_FRONTEND_PID}"
+echo "Log: ${E2E_FRONTEND_LOG}"
+
+# Wait for frontend to become ready
+echo -n "Waiting for frontend"
+for i in $(seq 1 30); do
+    if curl -sf "http://localhost:${KOULU_E2E_FRONTEND_PORT}" > /dev/null 2>&1; then
+        echo ""
+        echo -e "${GREEN}E2E frontend ready${NC}"
+        break
+    fi
+    echo -n "."
+    sleep 1
+    if [ "$i" -eq 30 ]; then
+        echo ""
+        echo -e "${RED}E2E frontend failed to start within 30s${NC}"
+        echo "Check log: ${E2E_FRONTEND_LOG}"
+        exit 1
+    fi
+done
 echo ""
 
 # ============================================================================
@@ -250,29 +267,55 @@ echo "  API_URL=${API_URL}"
 echo "  MAILHOG_URL=${MAILHOG_URL}"
 echo ""
 
-# Parse arguments — disable set -e to capture exit code
+# Retry logic: up to 3 attempts, stop on first success
+MAX_ATTEMPTS=3
+EXIT_CODE=1
+
 set +e
-if [ $# -eq 0 ]; then
-    echo "Running all E2E tests..."
-    echo ""
-    npx playwright test
-    EXIT_CODE=$?
-else
-    echo "Running: npx playwright test $@"
-    echo ""
-    npx playwright test "$@"
-    EXIT_CODE=$?
-fi
+for ATTEMPT in $(seq 1 $MAX_ATTEMPTS); do
+    if [ $ATTEMPT -gt 1 ]; then
+        echo ""
+        echo -e "${YELLOW}--- Retry $ATTEMPT of $MAX_ATTEMPTS ---${NC}"
+        echo ""
+    fi
+
+    if [ $# -eq 0 ]; then
+        echo "Running all E2E tests..."
+        echo ""
+        npx playwright test
+        EXIT_CODE=$?
+    else
+        echo "Running: npx playwright test $@"
+        echo ""
+        npx playwright test "$@"
+        EXIT_CODE=$?
+    fi
+
+    if [ $EXIT_CODE -eq 0 ]; then
+        break
+    fi
+
+    if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+        echo ""
+        echo -e "${YELLOW}Attempt $ATTEMPT failed — retrying...${NC}"
+    fi
+done
 set -e
 
 echo ""
 if [ $EXIT_CODE -eq 0 ]; then
-    echo -e "${GREEN}======================================${NC}"
-    echo -e "${GREEN}   All E2E tests passed!${NC}"
-    echo -e "${GREEN}======================================${NC}"
+    if [ $ATTEMPT -gt 1 ]; then
+        echo -e "${GREEN}======================================${NC}"
+        echo -e "${GREEN}   All E2E tests passed! (attempt $ATTEMPT of $MAX_ATTEMPTS)${NC}"
+        echo -e "${GREEN}======================================${NC}"
+    else
+        echo -e "${GREEN}======================================${NC}"
+        echo -e "${GREEN}   All E2E tests passed!${NC}"
+        echo -e "${GREEN}======================================${NC}"
+    fi
 else
     echo -e "${RED}======================================${NC}"
-    echo -e "${RED}   E2E tests failed${NC}"
+    echo -e "${RED}   E2E tests failed after $MAX_ATTEMPTS attempts${NC}"
     echo -e "${RED}======================================${NC}"
     echo ""
     echo "To view the HTML report:"

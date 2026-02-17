@@ -109,23 +109,3 @@ def get_deduct_handler(
     return DeductPointsHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
 
 
-def create_award_handler() -> AwardPointsHandler:
-    """Create AwardPointsHandler with a fresh session (for event handlers)."""
-    from src.identity.interface.api.dependencies import get_database
-
-    db = get_database()
-    session = db._session_factory()  # noqa: SLF001
-    mp_repo = SqlAlchemyMemberPointsRepository(session)
-    lc_repo = SqlAlchemyLevelConfigRepository(session)
-    return AwardPointsHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
-
-
-def create_deduct_handler() -> DeductPointsHandler:
-    """Create DeductPointsHandler with a fresh session (for event handlers)."""
-    from src.identity.interface.api.dependencies import get_database
-
-    db = get_database()
-    session = db._session_factory()  # noqa: SLF001
-    mp_repo = SqlAlchemyMemberPointsRepository(session)
-    lc_repo = SqlAlchemyLevelConfigRepository(session)
-    return DeductPointsHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)

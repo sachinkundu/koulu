@@ -11,15 +11,14 @@ from src.gamification.application.commands.award_points import (
     AwardPointsHandler,
 )
 from src.gamification.domain.value_objects.point_source import PointSource
+from src.gamification.infrastructure.persistence.level_config_repository import (
+    SqlAlchemyLevelConfigRepository,
+)
+from src.gamification.infrastructure.persistence.member_points_repository import (
+    SqlAlchemyMemberPointsRepository,
+)
 
 logger = structlog.get_logger()
-
-
-def _get_award_handler() -> AwardPointsHandler:
-    """Get an AwardPointsHandler with a fresh DB session."""
-    from src.gamification.interface.api.dependencies import create_award_handler
-
-    return create_award_handler()
 
 
 async def _resolve_community_id() -> UUID | None:
@@ -53,12 +52,25 @@ async def handle_lesson_completed(event: LessonCompleted) -> None:
         logger.warning("gamification.lesson_completed.no_community")
         return
 
-    handler = _get_award_handler()
-    await handler.handle(
-        AwardPointsCommand(
-            community_id=community_id,
-            user_id=event.user_id.value,
-            source=PointSource.LESSON_COMPLETED,
-            source_id=event.lesson_id.value,
+    from src.identity.interface.api.dependencies import get_database
+
+    db = get_database()
+    session = db._session_factory()  # noqa: SLF001
+    try:
+        mp_repo = SqlAlchemyMemberPointsRepository(session)
+        lc_repo = SqlAlchemyLevelConfigRepository(session)
+        handler = AwardPointsHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
+        await handler.handle(
+            AwardPointsCommand(
+                community_id=community_id,
+                user_id=event.user_id.value,
+                source=PointSource.LESSON_COMPLETED,
+                source_id=event.lesson_id.value,
+            )
         )
-    )
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        logger.exception("gamification.lesson_completed_failed")
+    finally:
+        await session.close()

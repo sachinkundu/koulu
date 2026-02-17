@@ -9,21 +9,22 @@ export default defineConfig({
   workers: process.env.CI ? 2 : 4,
   retries: process.env.CI ? 2 : 0,
 
+  globalTimeout: 5 * 60 * 1000,
   timeout: 30_000,
   expect: {
     timeout: 5_000,
   },
 
   reporter: [
-    ['html'],
+    ['html', { open: 'never' }],
     ['list'],
   ],
 
   use: {
     baseURL: BASE_URL,
-    trace: 'retain-on-failure',
+    trace: 'off',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: 'off',
   },
 
   projects: [

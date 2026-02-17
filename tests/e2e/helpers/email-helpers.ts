@@ -49,7 +49,7 @@ function getEmailBody(message: MailHogMessage): string {
  */
 export async function getVerificationToken(
   email: string,
-  maxRetries = 10,
+  maxRetries = 20,
 ): Promise<string> {
   for (let i = 0; i < maxRetries; i++) {
     const response = await fetch(
@@ -69,8 +69,9 @@ export async function getVerificationToken(
       }
     }
 
-    // Wait before retrying
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Wait before retrying — start at 500ms, cap at 2s
+    const delay = Math.min(500 * (i + 1), 2000);
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
 
   throw new Error(

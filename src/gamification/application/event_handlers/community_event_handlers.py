@@ -19,22 +19,52 @@ from src.gamification.application.commands.deduct_points import (
     DeductPointsHandler,
 )
 from src.gamification.domain.value_objects.point_source import PointSource
+from src.gamification.infrastructure.persistence.level_config_repository import (
+    SqlAlchemyLevelConfigRepository,
+)
+from src.gamification.infrastructure.persistence.member_points_repository import (
+    SqlAlchemyMemberPointsRepository,
+)
 
 logger = structlog.get_logger()
 
 
-def _get_award_handler() -> AwardPointsHandler:
-    """Get an AwardPointsHandler with a fresh DB session."""
-    from src.gamification.interface.api.dependencies import create_award_handler
+async def _run_award(command: AwardPointsCommand) -> None:
+    """Run award handler with a properly managed session."""
+    from src.identity.interface.api.dependencies import get_database
 
-    return create_award_handler()
+    db = get_database()
+    session = db._session_factory()  # noqa: SLF001
+    try:
+        mp_repo = SqlAlchemyMemberPointsRepository(session)
+        lc_repo = SqlAlchemyLevelConfigRepository(session)
+        handler = AwardPointsHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
+        await handler.handle(command)
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        logger.exception("gamification.award_points_failed", command=str(command))
+    finally:
+        await session.close()
 
 
-def _get_deduct_handler() -> DeductPointsHandler:
-    """Get a DeductPointsHandler with a fresh DB session."""
-    from src.gamification.interface.api.dependencies import create_deduct_handler
+async def _run_deduct(command: DeductPointsCommand) -> None:
+    """Run deduct handler with a properly managed session."""
+    from src.identity.interface.api.dependencies import get_database
 
-    return create_deduct_handler()
+    db = get_database()
+    session = db._session_factory()  # noqa: SLF001
+    try:
+        mp_repo = SqlAlchemyMemberPointsRepository(session)
+        lc_repo = SqlAlchemyLevelConfigRepository(session)
+        handler = DeductPointsHandler(member_points_repo=mp_repo, level_config_repo=lc_repo)
+        await handler.handle(command)
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        logger.exception("gamification.deduct_points_failed", command=str(command))
+    finally:
+        await session.close()
 
 
 async def handle_post_created(event: PostCreated) -> None:
@@ -42,8 +72,7 @@ async def handle_post_created(event: PostCreated) -> None:
     logger.info(
         "gamification.post_created", post_id=str(event.post_id), author_id=str(event.author_id)
     )
-    handler = _get_award_handler()
-    await handler.handle(
+    await _run_award(
         AwardPointsCommand(
             community_id=event.community_id.value,
             user_id=event.author_id.value,
@@ -58,8 +87,7 @@ async def handle_post_liked(event: PostLiked) -> None:
     logger.info(
         "gamification.post_liked", post_id=str(event.post_id), author_id=str(event.author_id)
     )
-    handler = _get_award_handler()
-    await handler.handle(
+    await _run_award(
         AwardPointsCommand(
             community_id=event.community_id.value,
             user_id=event.author_id.value,
@@ -74,8 +102,7 @@ async def handle_post_unliked(event: PostUnliked) -> None:
     logger.info(
         "gamification.post_unliked", post_id=str(event.post_id), author_id=str(event.author_id)
     )
-    handler = _get_deduct_handler()
-    await handler.handle(
+    await _run_deduct(
         DeductPointsCommand(
             community_id=event.community_id.value,
             user_id=event.author_id.value,
@@ -92,8 +119,7 @@ async def handle_comment_added(event: CommentAdded) -> None:
         comment_id=str(event.comment_id),
         author_id=str(event.author_id),
     )
-    handler = _get_award_handler()
-    await handler.handle(
+    await _run_award(
         AwardPointsCommand(
             community_id=event.community_id.value,
             user_id=event.author_id.value,
@@ -110,8 +136,7 @@ async def handle_comment_liked(event: CommentLiked) -> None:
         comment_id=str(event.comment_id),
         author_id=str(event.author_id),
     )
-    handler = _get_award_handler()
-    await handler.handle(
+    await _run_award(
         AwardPointsCommand(
             community_id=event.community_id.value,
             user_id=event.author_id.value,
@@ -128,8 +153,7 @@ async def handle_comment_unliked(event: CommentUnliked) -> None:
         comment_id=str(event.comment_id),
         author_id=str(event.author_id),
     )
-    handler = _get_deduct_handler()
-    await handler.handle(
+    await _run_deduct(
         DeductPointsCommand(
             community_id=event.community_id.value,
             user_id=event.author_id.value,
