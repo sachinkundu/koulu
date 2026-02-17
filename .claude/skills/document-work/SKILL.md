@@ -41,7 +41,7 @@ Run these commands and verify exact outputs:
    - `./scripts/test.sh --integration --ignore=tests/features/identity/`
    - `./scripts/test.sh --unit`
 4. Frontend (if applicable): `./scripts/verify-frontend.sh`
-5. Deployability (user-facing features): `./scripts/check-deployability.sh {feature-name}` — must show backend controllers + frontend components
+5. Deployability (user-facing features): `./scripts/check-deployability.sh {feature-name}` — must show backend controllers + frontend components **integrated into pages/routes** (not just isolated component files). If components exist but aren't imported into any page the user can navigate to, the feature is NOT deployable.
 
 If ANY check fails, work is NOT complete.
 
@@ -53,6 +53,7 @@ If ANY check fails, work is NOT complete.
 - "Tests require infrastructure" used as excuse to skip
 - Verification scripts not run
 - Any test failure or warning
+- **Frontend components exist but aren't rendered in any page/route** — isolated `.tsx` files with passing Vitest tests do NOT count as "frontend done." The user must be able to navigate to a URL and see the feature
 
 ### Warning Policy
 Fix warnings at the source. If suppression is unavoidable: use targeted filter, add comment explaining why, get explicit user approval. Never silently suppress.

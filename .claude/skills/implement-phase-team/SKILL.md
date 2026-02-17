@@ -501,3 +501,4 @@ If team mode encounters persistent issues:
 - **Don't use a single backend agent for 8+ backend tasks** — it becomes the bottleneck while frontend finishes quickly. Split into backend-domain, backend-infra, and backend-app agents
 - **Don't let backend-app start before backend-domain finishes** — app layer imports from domain interfaces
 - **Don't let two backend agents touch the same directory** — strict layer ownership prevents conflicts
+- **Don't let frontend agents build isolated components without page/route integration** — every frontend task MUST wire components into actual pages users can navigate to. If a component isn't rendered in the app, it's not done

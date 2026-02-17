@@ -305,6 +305,11 @@ If user says yes, generate `{feature}-phase-{N+1}-tasks.md` using writing-plans 
    - "5 warnings" in pytest output -> **STOP, fix root cause**
    - What to do: Fix warnings at source, don't suppress
 
+7. **Frontend components exist but aren't rendered in the app**
+   - Components built and tested in isolation but not imported into any page/route -> **STOP, feature is NOT visible to users**
+   - "LevelBadge.tsx exists with 5 passing tests" but no page renders it -> **NOT DONE**
+   - What to do: Wire components into actual pages/routes. Create new routes if needed, or integrate into existing pages. The user must be able to navigate to a URL and see the feature
+
 **If you encounter ANY red flag:**
 1. **STOP** - Do not mark work complete
 2. **DO NOT COMMIT** - Do not create git commits
@@ -334,19 +339,23 @@ After phase completion, consider if E2E tests would add value:
 
 **See:** `docs/testing/e2e-testing-design.md` for E2E testing strategy and best practices.
 
-### Step 6: Manual Testing Guide
+### Step 6: Manual Testing Guide (HARD GATE)
 
 **MANDATORY: After every phase/slice completion, provide a concise manual testing guide.**
+
+**This is a HARD GATE for user-facing features.** If you cannot write a manual testing guide with a real URL where the user can navigate to and see the feature working in the browser, the phase is NOT complete. Go back and wire components into actual pages/routes.
 
 The user wants to see what was built and how the UI looks. After all verification passes, print a guide with:
 
 1. **What was implemented** (1-3 sentence summary of user-visible changes)
 2. **How to start the app** (commands to run backend + frontend if not already running)
 3. **Step-by-step testing instructions** -- concrete actions the user can perform in the browser:
-   - Which URL to open
+   - Which URL to open (MUST be a real, navigable URL — not "component exists in isolation")
    - What to click / fill in
    - What they should see as a result
 4. **Expected behavior** for each action (so the user knows if it's working)
+
+**If user-facing and no URL exists:** STOP. The feature is not integrated. Add page/route wiring before marking complete.
 
 **Format:**
 

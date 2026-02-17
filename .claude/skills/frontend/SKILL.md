@@ -100,6 +100,18 @@ export function cn(...inputs: ClassValue[]) {
 
 ---
 
+## Integration Rule (Non-Negotiable)
+
+**Every component MUST be rendered in the app.** Building a component in `features/{context}/components/` without importing it into a page/route is NOT done. Before marking any frontend task complete:
+
+1. Component is imported and rendered in an actual page (`pages/*.tsx`) or parent component that is rendered in a page
+2. User can navigate to a URL in the browser and see the component
+3. If a new page/route is needed, it must be added to the router
+
+**Isolated components that pass Vitest but aren't visible to users = not done.**
+
+---
+
 ## Verification
 
 Run before completing any frontend task:

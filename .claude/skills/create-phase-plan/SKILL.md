@@ -302,6 +302,7 @@ What this phase achieves in 1-2 sentences.
 - [ ] Forms and validation: `list/of/files.tsx`
 - [ ] State management
 - [ ] API integration
+- [ ] **Page/route integration: components wired into actual pages users can navigate to** (new route created OR existing page updated to render the components)
 
 **IF NO FRONTEND IN THIS PHASE:**
 Explicitly state reason:
@@ -326,9 +327,13 @@ Explicitly state reason:
 
 ### Deliverable
 **User can:** {describe what user can DO via UI}
-**Example:** "User can create a post via CreatePostModal, see it in feed, and click to view details"
+**Verify by:** {exact URL where user navigates to see the feature}
+**Example:** "User can create a post via CreatePostModal, see it in feed, and click to view details — verify at http://localhost:5173/community"
 
-**NOT acceptable:** "API endpoints allow post creation" (no user-visible value)
+**NOT acceptable:**
+- "API endpoints allow post creation" (no user-visible value)
+- "Components built and tested" (isolated components not wired into pages = not done)
+- "Frontend types and hooks created" (infrastructure without rendered UI = not done)
 
 ### Dependencies
 - None (first phase)
@@ -566,6 +571,7 @@ Use multi-phase implementation when:
 - **Don't skip phase plan approval** — Always get user approval before generating granular tasks
 - **Don't put all BDD scenarios in the last phase** — Distribute incrementally
 - **Don't generate granular tasks for all phases upfront** — Only Phase 1 initially; later phases benefit from implementation lessons
+- **Don't create frontend tasks that only build isolated components** — Every frontend task MUST include wiring the component into an actual page/route. A component that isn't rendered in the app is not done. If a new component needs a new page, include route creation in the task. If it enhances an existing page, include the import/render in the existing page.
 
 ---
 

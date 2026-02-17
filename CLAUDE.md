@@ -79,7 +79,7 @@ src/{context}/
 ## Implementation Rules
 
 - When implementing phased plans, only implement tasks for phases that are already complete on the backend. Do not start work on phases that haven't been built yet unless explicitly asked.
-- Frontend REQUIRED for user-facing features. No UI = Not Done. Exceptions (require explicit approval): background jobs, internal admin APIs, migration services.
+- Frontend REQUIRED for user-facing features. No UI = Not Done. **"UI" means components rendered in actual pages/routes that users can navigate to in a browser.** Isolated components not imported into any page/route are NOT "frontend done." If you can't give the user a URL to see the feature, it's not done. Exceptions (require explicit approval): background jobs, internal admin APIs, migration services.
 - **Multi-backend agents:** When a phase has 8+ backend tasks, split into multiple parallel backend agents by layer (domain, infra, app) — never use a single backend agent as bottleneck. See MEMORY.md for file ownership boundaries and start conditions.
 - **Read summaries first:** Before implementing Phase N+1, read `docs/summaries/{context}/{feature}-phase-N-summary.md` for a quick overview of what exists. Do NOT re-read every implementation file individually.
 - **Subagents inherit environment rules:** Every subagent MUST use `pyenv activate koulu` and `./scripts/verify.sh`. Pass these instructions explicitly when dispatching agents.
