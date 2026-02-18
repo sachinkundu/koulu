@@ -1,5 +1,6 @@
 export {
   checkCourseAccess,
+  getLeaderboards,
   getLevelDefinitions,
   getMemberLevel,
   setCourseLevelRequirement,

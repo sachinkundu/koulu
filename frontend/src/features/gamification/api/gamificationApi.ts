@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 import type {
   CourseAccessResponse,
+  LeaderboardsResponse,
   LevelDefinitionsResponse,
   LevelUpdateRequest,
   MemberLevel,
@@ -63,4 +64,12 @@ export async function setCourseLevelRequirement(
     `/communities/${communityId}/courses/${courseId}/level-requirement`,
     data,
   );
+}
+
+/**
+ * Get leaderboards for the current community.
+ */
+export async function getLeaderboards(): Promise<LeaderboardsResponse> {
+  const response = await apiClient.get<LeaderboardsResponse>('/community/leaderboards');
+  return response.data;
 }

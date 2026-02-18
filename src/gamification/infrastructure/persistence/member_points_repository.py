@@ -1,13 +1,22 @@
 """SQLAlchemy implementation of IMemberPointsRepository."""
 
+from collections.abc import Sequence
+from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
+from sqlalchemy.engine import Row
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.gamification.domain.entities.member_points import MemberPoints
-from src.gamification.domain.repositories.member_points_repository import IMemberPointsRepository
+from src.gamification.domain.repositories.member_points_repository import (
+    IMemberPointsRepository,
+    LeaderboardEntry,
+    LeaderboardResult,
+)
+from src.gamification.domain.value_objects.leaderboard_period import LeaderboardPeriod
 from src.gamification.domain.value_objects.point_source import PointSource
 from src.gamification.domain.value_objects.point_transaction import PointTransaction
 from src.gamification.infrastructure.persistence.models import (
@@ -107,6 +116,142 @@ class SqlAlchemyMemberPointsRepository(IMemberPointsRepository):
             updated_at=model.updated_at,
             transactions=transactions,
         )
+
+    async def get_leaderboard(
+        self,
+        community_id: UUID,
+        period: LeaderboardPeriod,
+        limit: int,
+        current_user_id: UUID,
+    ) -> LeaderboardResult:
+        if period == LeaderboardPeriod.ALL_TIME:
+            return await self._get_alltime_leaderboard(community_id, limit, current_user_id)
+        return await self._get_period_leaderboard(community_id, period, limit, current_user_id)
+
+    async def _get_period_leaderboard(
+        self,
+        community_id: UUID,
+        period: LeaderboardPeriod,
+        limit: int,
+        current_user_id: UUID,
+    ) -> LeaderboardResult:
+        assert period.interval_hours is not None
+        cutoff = datetime.now(UTC) - timedelta(hours=period.interval_hours)
+
+        sql = text("""
+            WITH period_points AS (
+                SELECT
+                    mp.id AS mp_id,
+                    mp.user_id,
+                    mp.current_level,
+                    GREATEST(0, COALESCE(SUM(pt.points), 0)) AS net_points
+                FROM member_points mp
+                LEFT JOIN point_transactions pt
+                    ON pt.member_points_id = mp.id
+                    AND pt.created_at >= :cutoff
+                WHERE mp.community_id = :community_id
+                GROUP BY mp.id, mp.user_id, mp.current_level
+            ),
+            ranked AS (
+                SELECT
+                    pp.user_id,
+                    pp.current_level,
+                    pp.net_points,
+                    COALESCE(p.display_name, 'Member') AS display_name,
+                    p.avatar_url,
+                    ROW_NUMBER() OVER (
+                        ORDER BY pp.net_points DESC, COALESCE(p.display_name, 'Member') ASC
+                    ) AS rank
+                FROM period_points pp
+                LEFT JOIN profiles p ON p.user_id = pp.user_id
+            )
+            SELECT user_id, display_name, avatar_url, current_level, net_points, rank
+            FROM ranked
+            WHERE rank <= :limit OR user_id = :current_user_id
+            ORDER BY rank
+        """)
+
+        result = await self._session.execute(
+            sql,
+            {
+                "community_id": community_id,
+                "cutoff": cutoff,
+                "limit": limit,
+                "current_user_id": current_user_id,
+            },
+        )
+        rows = result.fetchall()
+        return self._build_leaderboard_result(rows, limit, current_user_id)
+
+    async def _get_alltime_leaderboard(
+        self,
+        community_id: UUID,
+        limit: int,
+        current_user_id: UUID,
+    ) -> LeaderboardResult:
+        sql = text("""
+            WITH ranked AS (
+                SELECT
+                    mp.user_id,
+                    mp.current_level,
+                    mp.total_points AS net_points,
+                    COALESCE(p.display_name, 'Member') AS display_name,
+                    p.avatar_url,
+                    ROW_NUMBER() OVER (
+                        ORDER BY mp.total_points DESC, COALESCE(p.display_name, 'Member') ASC
+                    ) AS rank
+                FROM member_points mp
+                LEFT JOIN profiles p ON p.user_id = mp.user_id
+                WHERE mp.community_id = :community_id
+            )
+            SELECT user_id, display_name, avatar_url, current_level, net_points, rank
+            FROM ranked
+            WHERE rank <= :limit OR user_id = :current_user_id
+            ORDER BY rank
+        """)
+
+        result = await self._session.execute(
+            sql,
+            {
+                "community_id": community_id,
+                "limit": limit,
+                "current_user_id": current_user_id,
+            },
+        )
+        rows = result.fetchall()
+        return self._build_leaderboard_result(rows, limit, current_user_id)
+
+    @staticmethod
+    def _build_leaderboard_result(
+        rows: Sequence[Row[Any]],
+        limit: int,
+        current_user_id: UUID,
+    ) -> LeaderboardResult:
+        entries: list[LeaderboardEntry] = []
+        your_rank: LeaderboardEntry | None = None
+        user_in_top = False
+
+        for row in rows:
+            entry = LeaderboardEntry(
+                rank=row.rank,
+                user_id=row.user_id,
+                display_name=row.display_name,
+                avatar_url=row.avatar_url,
+                level=row.current_level,
+                points=row.net_points,
+            )
+            if row.rank <= limit:
+                entries.append(entry)
+                if row.user_id == current_user_id:
+                    user_in_top = True
+            else:
+                your_rank = entry
+
+        if not user_in_top and your_rank is None:
+            # Current user has no member_points row at all
+            pass
+
+        return LeaderboardResult(entries=entries, your_rank=your_rank)
 
     @staticmethod
     def _source_name_to_enum(source_name: str) -> PointSource:

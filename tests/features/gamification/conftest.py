@@ -1,6 +1,7 @@
 """Pytest fixtures for Gamification BDD tests."""
 
 from collections.abc import Callable, Coroutine, Generator
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -31,6 +32,9 @@ from src.gamification.application.commands.update_level_config import (
 from src.gamification.application.queries.check_course_access import (
     CheckCourseAccessHandler,
 )
+from src.gamification.application.queries.get_leaderboards import (
+    GetLeaderboardsHandler,
+)
 from src.gamification.application.queries.get_level_definitions import (
     GetLevelDefinitionsHandler,
 )
@@ -45,6 +49,10 @@ from src.gamification.infrastructure.persistence.level_config_repository import 
 )
 from src.gamification.infrastructure.persistence.member_points_repository import (
     SqlAlchemyMemberPointsRepository,
+)
+from src.gamification.infrastructure.persistence.models import (
+    MemberPointsModel,
+    PointTransactionModel,
 )
 from src.identity.infrastructure.persistence.models import ProfileModel, UserModel
 from src.identity.infrastructure.services import Argon2PasswordHasher
@@ -215,7 +223,6 @@ async def create_member(
         role: str = "MEMBER",
     ) -> CommunityMemberModel:
         member = CommunityMemberModel(
-            id=uuid4(),
             community_id=community_id,
             user_id=user_id,
             role=role,
@@ -299,5 +306,68 @@ async def create_comment(
         db_session.add(comment)
         await db_session.flush()
         return comment
+
+    return _create
+
+
+@pytest_asyncio.fixture
+async def leaderboard_handler(
+    mp_repo: SqlAlchemyMemberPointsRepository,
+) -> GetLeaderboardsHandler:
+    """Get leaderboards query handler using test DB session."""
+    return GetLeaderboardsHandler(member_points_repo=mp_repo)
+
+
+@pytest_asyncio.fixture
+async def create_member_points(
+    db_session: AsyncSession,
+) -> Callable[..., Coroutine[Any, Any, MemberPointsModel]]:
+    """Factory fixture to create member_points records."""
+
+    async def _create(
+        community_id: UUID,
+        user_id: UUID,
+        total_points: int = 0,
+        current_level: int = 1,
+    ) -> MemberPointsModel:
+        mp = MemberPointsModel(
+            id=uuid4(),
+            community_id=community_id,
+            user_id=user_id,
+            total_points=total_points,
+            current_level=current_level,
+        )
+        db_session.add(mp)
+        await db_session.flush()
+        return mp
+
+    return _create
+
+
+@pytest_asyncio.fixture
+async def create_point_transaction(
+    db_session: AsyncSession,
+) -> Callable[..., Coroutine[Any, Any, PointTransactionModel]]:
+    """Factory fixture to create point transactions with controlled timestamps."""
+
+    async def _create(
+        member_points_id: UUID,
+        points: int,
+        *,
+        days_ago: float = 0,
+        source: str = "post_created",
+    ) -> PointTransactionModel:
+        created_at = datetime.now(UTC) - timedelta(days=days_ago)
+        txn = PointTransactionModel(
+            id=uuid4(),
+            member_points_id=member_points_id,
+            points=points,
+            source=source,
+            source_id=uuid4(),
+            created_at=created_at,
+        )
+        db_session.add(txn)
+        await db_session.flush()
+        return txn
 
     return _create

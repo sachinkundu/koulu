@@ -45,3 +45,24 @@ export interface CourseAccessResponse {
 export interface SetCourseLevelRequirementRequest {
   minimum_level: number;
 }
+
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  level: number;
+  points: number;
+}
+
+export interface LeaderboardPeriod {
+  entries: LeaderboardEntry[];
+  your_rank: LeaderboardEntry | null;
+}
+
+export interface LeaderboardsResponse {
+  seven_day: LeaderboardPeriod;
+  thirty_day: LeaderboardPeriod;
+  all_time: LeaderboardPeriod;
+  last_updated: string;
+}

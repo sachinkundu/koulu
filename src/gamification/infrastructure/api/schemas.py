@@ -1,5 +1,6 @@
 """Pydantic schemas for Gamification API."""
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -62,3 +63,30 @@ class SetCourseLevelRequirementRequest(BaseModel):
     """Request body for PUT /communities/{id}/courses/{course_id}/level-requirement."""
 
     minimum_level: int
+
+
+class LeaderboardEntrySchema(BaseModel):
+    """A single ranked member in a leaderboard."""
+
+    rank: int
+    user_id: UUID
+    display_name: str
+    avatar_url: str | None
+    level: int
+    points: int
+
+
+class LeaderboardPeriodSchema(BaseModel):
+    """One leaderboard period with entries and optional your-rank."""
+
+    entries: list[LeaderboardEntrySchema]
+    your_rank: LeaderboardEntrySchema | None
+
+
+class LeaderboardsResponse(BaseModel):
+    """Response for GET /community/leaderboards."""
+
+    seven_day: LeaderboardPeriodSchema
+    thirty_day: LeaderboardPeriodSchema
+    all_time: LeaderboardPeriodSchema
+    last_updated: datetime

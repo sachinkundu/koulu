@@ -28,6 +28,11 @@ from src.gamification.application.queries.check_course_access import (
     CheckCourseAccessHandler,
     CheckCourseAccessQuery,
 )
+from src.gamification.application.queries.get_leaderboards import (
+    GetLeaderboardsHandler,
+    GetLeaderboardsQuery,
+    LeaderboardPeriodResult,
+)
 from src.gamification.application.queries.get_level_definitions import (
     GetLevelDefinitionsHandler,
     GetLevelDefinitionsQuery,
@@ -43,6 +48,9 @@ from src.gamification.domain.exceptions import (
 )
 from src.gamification.infrastructure.api.schemas import (
     CourseAccessResponse,
+    LeaderboardEntrySchema,
+    LeaderboardPeriodSchema,
+    LeaderboardsResponse,
     LevelDefinitionSchema,
     LevelDefinitionsResponse,
     MemberLevelResponse,
@@ -51,6 +59,7 @@ from src.gamification.infrastructure.api.schemas import (
 )
 from src.gamification.interface.api.dependencies import (
     get_check_course_access_handler,
+    get_get_leaderboards_handler,
     get_get_level_definitions_handler,
     get_get_member_level_handler,
     get_set_course_level_requirement_handler,
@@ -325,4 +334,81 @@ async def check_course_access_default(
         minimum_level=result.minimum_level,
         minimum_level_name=result.minimum_level_name,
         current_level=result.current_level,
+    )
+
+
+# ============================================================================
+# Leaderboards
+# ============================================================================
+
+
+def _map_period(period_result: LeaderboardPeriodResult) -> LeaderboardPeriodSchema:
+    return LeaderboardPeriodSchema(
+        entries=[
+            LeaderboardEntrySchema(
+                rank=e.rank,
+                user_id=e.user_id,
+                display_name=e.display_name,
+                avatar_url=e.avatar_url,
+                level=e.level,
+                points=e.points,
+            )
+            for e in period_result.entries
+        ],
+        your_rank=LeaderboardEntrySchema(
+            rank=period_result.your_rank.rank,
+            user_id=period_result.your_rank.user_id,
+            display_name=period_result.your_rank.display_name,
+            avatar_url=period_result.your_rank.avatar_url,
+            level=period_result.your_rank.level,
+            points=period_result.your_rank.points,
+        )
+        if period_result.your_rank
+        else None,
+    )
+
+
+@router.get(
+    "/{community_id}/leaderboards",
+    response_model=LeaderboardsResponse,
+)
+async def get_leaderboards(
+    community_id: UUID,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[GetLeaderboardsHandler, Depends(get_get_leaderboards_handler)],
+) -> LeaderboardsResponse:
+    """Get all three leaderboards for a community."""
+    query = GetLeaderboardsQuery(
+        community_id=community_id,
+        current_user_id=current_user_id,
+    )
+    result = await handler.handle(query)
+    return LeaderboardsResponse(
+        seven_day=_map_period(result.seven_day),
+        thirty_day=_map_period(result.thirty_day),
+        all_time=_map_period(result.all_time),
+        last_updated=result.last_updated,
+    )
+
+
+@default_router.get(
+    "/leaderboards",
+    response_model=LeaderboardsResponse,
+)
+async def get_leaderboards_default(
+    community_id: DefaultCommunityIdDep,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[GetLeaderboardsHandler, Depends(get_get_leaderboards_handler)],
+) -> LeaderboardsResponse:
+    """Get all three leaderboards (auto-resolves community)."""
+    query = GetLeaderboardsQuery(
+        community_id=community_id,
+        current_user_id=current_user_id,
+    )
+    result = await handler.handle(query)
+    return LeaderboardsResponse(
+        seven_day=_map_period(result.seven_day),
+        thirty_day=_map_period(result.thirty_day),
+        all_time=_map_period(result.all_time),
+        last_updated=result.last_updated,
     )
