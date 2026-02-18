@@ -81,6 +81,7 @@ done
 # ============================================
 # Setup Test Database
 # ============================================
+print_worktree_banner
 info "Setting up test database for project: ${COMPOSE_PROJECT_NAME}"
 
 # Compute test database name using project name for isolation

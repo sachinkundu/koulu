@@ -60,12 +60,12 @@ Run Playwright end-to-end tests, debug failures, fix flaky tests, and add new E2
 
 4. **Test database exists:**
    ```bash
-   docker exec koulu-postgres psql -U koulu -d postgres -c "CREATE DATABASE koulu_e2e OWNER koulu;" 2>/dev/null || true
+   docker compose exec -T postgres psql -U koulu -d postgres -c "CREATE DATABASE koulu_e2e OWNER koulu;" 2>/dev/null || true
    ```
 
 5. **Rate limits cleared (Redis):**
    ```bash
-   docker exec koulu-redis redis-cli FLUSHALL
+   docker compose exec -T redis redis-cli FLUSHALL
    ```
    Registration is rate-limited to 5 per 15 minutes per IP. Repeated test runs will hit this limit. Always flush Redis before running E2E tests.
 
@@ -79,12 +79,12 @@ Run Playwright end-to-end tests, debug failures, fix flaky tests, and add new E2
 ## Project-Specific Setup
 
 - **Database isolation**: E2E uses `koulu_e2e` database, dev uses `koulu`. Script drops/recreates DB each run.
-- **Port isolation**: Dev Backend=8067, E2E Backend=8167, E2E Frontend=5340, Dev Frontend=5240
+- **Port isolation**: Ports are computed per-worktree by `project-env.sh`. E2E ports = dev ports + 100.
 - **Run E2E**: `./scripts/run-e2e-tests.sh` — starts its own backend + frontend, cleans up on exit
 - **Seed data**: Do NOT truncate `communities` or `categories` — they're seeded by migration `66ce48aa6407`
 - **Race condition**: FastAPI yield dependencies commit AFTER response sent; `createVerifiedUser` retries verification up to 5x
 - **Rate limiting**: `cleanTestState()` must be in every test suite's `beforeEach`; `flushRateLimits()` MUST be awaited
-- **Compose project name**: running containers use `cc_koulu`, `project-env.sh` computes `cckoulu`
+- **Compose project name**: derived from directory basename by `project-env.sh`. Each worktree gets its own containers/volumes via `KOULU_VOLUME_PREFIX`.
 
 ---
 
@@ -104,7 +104,7 @@ curl -s http://localhost:8000/health | jq .
 curl -s http://localhost:3000 | head -1
 
 # Check test database
-docker exec koulu-postgres psql -U koulu -d koulu_e2e -c "\dt"
+docker compose exec -T postgres psql -U koulu -d koulu_e2e -c "\dt"
 ```
 
 **If any service is down, start it before proceeding.**
@@ -708,7 +708,7 @@ Page shows `Registration failed` alert instead of success state. API returns `{"
 
 **Solution:**
 ```bash
-docker exec koulu-redis redis-cli FLUSHALL
+docker compose exec -T redis redis-cli FLUSHALL
 ```
 This clears all rate limit counters. Always do this before E2E test runs.
 

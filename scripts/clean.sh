@@ -19,10 +19,9 @@ success() { echo -e "${GREEN}[OK]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-echo ""
+print_worktree_banner
 echo "=========================================="
 echo "  Koulu Environment Cleanup"
-echo "  Project: ${COMPOSE_PROJECT_NAME}"
 echo "=========================================="
 echo ""
 

@@ -5,9 +5,10 @@
 # This script:
 # 1. Checks if PostgreSQL container is running
 # 2. Waits for it to be healthy
-# 3. Creates koulu_test database if it doesn't exist
+# 3. Creates project-specific test database if it doesn't exist
 #
 # For CI: Run this before pytest
+# Worktree-safe: each worktree gets its own test database.
 
 set -e
 
@@ -15,9 +16,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/project-env.sh"
 
 DB_USER="koulu"
-TEST_DB="koulu_test"
+
+# Compute project-specific test database name (matches test.sh logic)
+PROJECT_SAFE_NAME=$(echo "${COMPOSE_PROJECT_NAME}" | tr '-' '_')
+TEST_DB="koulu_test_${PROJECT_SAFE_NAME}"
 
 echo "Setting up test database..."
+print_worktree_banner
 
 # Check if the postgres service is running for this compose project
 if ! docker compose ps --status running --format '{{.Service}}' 2>/dev/null | grep -q "^postgres$"; then
@@ -51,4 +56,5 @@ fi
 
 echo ""
 echo "Test database setup complete!"
-echo "   Run tests with: pytest tests/features/"
+echo "   Database: ${TEST_DB}"
+echo "   Run tests with: ./scripts/test.sh"

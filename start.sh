@@ -23,10 +23,9 @@ success() { echo -e "${GREEN}[OK]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
-echo ""
+print_worktree_banner
 echo "=========================================="
 echo "  Koulu Development Server"
-echo "  Project: ${COMPOSE_PROJECT_NAME}"
 echo "=========================================="
 echo ""
 
@@ -85,8 +84,8 @@ echo ""
 BACKEND_PID=""
 FRONTEND_PID=""
 
-# Sticky header is 10 lines tall
-HEADER_LINE_COUNT=10
+# Sticky header is 11 lines tall (includes project/branch info line)
+HEADER_LINE_COUNT=11
 
 # Cleanup function — reset scroll region before exiting
 cleanup() {
@@ -149,9 +148,10 @@ TERM_LINES=$(tput lines 2>/dev/null || echo 24)
 # Clear screen, cursor to row 1
 echo -en "\033[2J\033[H"
 
-# Print the 10-line header
+# Print the 12-line header (updated HEADER_LINE_COUNT below)
 echo "══════════════════════════════════════════════════"
 echo -e "  ${GREEN}Koulu Development Environment${NC}"
+echo -e "  Project: ${BLUE}${COMPOSE_PROJECT_NAME}${NC}  Branch: ${BLUE}${KOULU_WORKTREE_BRANCH}${NC}"
 echo ""
 echo -e "  Frontend:     ${YELLOW}http://localhost:${KOULU_FRONTEND_PORT}${NC}"
 echo -e "  Backend API:  ${YELLOW}http://localhost:${KOULU_BACKEND_PORT}${NC}"

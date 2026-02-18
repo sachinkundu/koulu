@@ -35,10 +35,9 @@ version_gte() {
     [ "$(printf '%s\n' "$2" "$1" | sort -V | head -n1)" = "$2" ]
 }
 
-echo ""
+print_worktree_banner
 echo "=========================================="
 echo "  Koulu Development Environment Setup"
-echo "  Project: ${COMPOSE_PROJECT_NAME}"
 echo "=========================================="
 echo ""
 
@@ -266,11 +265,7 @@ echo ""
 echo "=========================================="
 echo -e "${GREEN}  Setup Complete!${NC}"
 echo "=========================================="
-echo ""
-echo "Project: ${COMPOSE_PROJECT_NAME}"
-echo "Ports:   PG=${KOULU_PG_PORT} Redis=${KOULU_REDIS_PORT} Mail=${KOULU_MAIL_SMTP_PORT}/${KOULU_MAIL_WEB_PORT}"
-echo "         Backend=${KOULU_BACKEND_PORT} Frontend=${KOULU_FRONTEND_PORT}"
-echo ""
+print_worktree_banner
 echo "To start the application, run:"
 echo ""
 echo -e "  ${BLUE}./start.sh${NC}"

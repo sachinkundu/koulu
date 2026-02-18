@@ -15,10 +15,8 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}======================================${NC}"
 echo -e "${BLUE}   Koulu E2E Test Runner${NC}"
 echo -e "${BLUE}======================================${NC}"
-echo ""
-echo "Project: ${COMPOSE_PROJECT_NAME}"
-echo "Ports:   E2E Backend=${KOULU_E2E_BACKEND_PORT} E2E Frontend=${KOULU_E2E_FRONTEND_PORT}"
-echo "         Dev Backend=${KOULU_BACKEND_PORT} Dev Frontend=${KOULU_FRONTEND_PORT}"
+print_worktree_banner
+echo "E2E Ports: Backend=${KOULU_E2E_BACKEND_PORT} Frontend=${KOULU_E2E_FRONTEND_PORT}"
 echo ""
 
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"

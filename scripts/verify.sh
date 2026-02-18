@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+source "${SCRIPT_DIR}/project-env.sh"
 
 cd "${PROJECT_ROOT}"
 
@@ -12,6 +13,7 @@ cd "${PROJECT_ROOT}"
 # ruff check, ruff format, mypy, and frontend verification are all independent.
 # Run them concurrently, collect exit codes, fail fast if any fail.
 
+print_worktree_banner
 echo "🔍 Running static checks and frontend in parallel..."
 
 TMPDIR_VERIFY=$(mktemp -d)

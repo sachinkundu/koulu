@@ -30,7 +30,7 @@ echo ""
 echo "=========================================="
 echo "Phase Completion Verification: $PHASE_NAME"
 echo "=========================================="
-echo ""
+print_worktree_banner
 
 # Track overall success
 ALL_PASSED=true
@@ -61,8 +61,8 @@ echo ""
 echo "Running BDD tests (CRITICAL: must show '0 failed')..."
 cd "$PROJECT_DIR"
 
-# Capture pytest output
-PYTEST_OUTPUT=$(pytest tests/features/ --tb=short 2>&1) || true
+# Use test.sh for proper project-specific database isolation
+PYTEST_OUTPUT=$("${SCRIPT_DIR}/test.sh" --integration --ignore=tests/features/identity/ --workers 1 --tb=short 2>&1) || true
 echo "$PYTEST_OUTPUT"
 
 # Check for "failed" in output
