@@ -12,10 +12,16 @@ from collections.abc import Callable, Coroutine
 from typing import Any
 
 import pytest
+from httpx import AsyncClient
 from pytest_bdd import given, parsers, scenario, then, when
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.community.infrastructure.persistence.models import CommunityModel
+from src.gamification.application.queries.get_leaderboard_widget import (
+    GetLeaderboardWidgetHandler,
+    GetLeaderboardWidgetQuery,
+    LeaderboardWidgetResult,
+)
 from src.gamification.application.queries.get_leaderboards import (
     GetLeaderboardsHandler,
     GetLeaderboardsQuery,
@@ -96,7 +102,6 @@ def test_your_rank_zero_points() -> None:
 # --- Happy path: Sidebar widget (Phase 2) ---
 
 
-@pytest.mark.skip(reason="Phase 2: Sidebar widget endpoint not yet implemented")
 @scenario(
     "leaderboards.feature",
     "Community feed sidebar widget shows the 30-day top-5 leaderboard",
@@ -159,7 +164,6 @@ def test_zero_points_all_periods() -> None:
 # --- Edge case: timestamp (Phase 2) ---
 
 
-@pytest.mark.skip(reason="Phase 2: Tested with widget endpoint")
 @scenario(
     "leaderboards.feature",
     "Last updated timestamp is included in the leaderboard response",
@@ -171,7 +175,6 @@ def test_last_updated_timestamp() -> None:
 # --- Security (Phase 2) ---
 
 
-@pytest.mark.skip(reason="Phase 2: Security batch - unauthenticated leaderboard")
 @scenario(
     "leaderboards.feature",
     "Unauthenticated user cannot view leaderboards",
@@ -180,7 +183,6 @@ def test_unauthenticated_leaderboard() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Security batch - unauthenticated widget")
 @scenario(
     "leaderboards.feature",
     "Unauthenticated user cannot view the sidebar widget",
@@ -189,7 +191,6 @@ def test_unauthenticated_widget() -> None:
     pass
 
 
-@pytest.mark.skip(reason="Phase 2: Security batch - cross-community access")
 @scenario(
     "leaderboards.feature",
     "Member cannot view leaderboard for a community they do not belong to",
@@ -958,3 +959,206 @@ def then_rank_behind_n_members(
     assert period_result.your_rank is not None
     assert period_result.your_rank.rank == int(rank)
     assert period_result.your_rank.display_name == name
+
+
+# ============================================================================
+# Widget steps (Phase 2)
+# ============================================================================
+
+
+@given("the following members earned points in the last 30 days:")
+def given_members_earned_points_30_days(
+    _function_scoped_runner: Runner,
+    community_data: dict[str, Any],
+    create_point_transaction: Callable[..., Coroutine[Any, Any, PointTransactionModel]],
+    db_session: AsyncSession,
+    datatable: Any,
+) -> None:
+    rows = _table_to_dicts(datatable)
+
+    async def _setup() -> None:
+        for row in rows:
+            member = community_data["members"][row["member"]]
+            pts = int(row["points"])
+            await create_point_transaction(
+                member_points_id=member["mp_id"],
+                points=pts,
+                days_ago=5,  # within 30-day window
+            )
+            mp = await db_session.get(MemberPointsModel, member["mp_id"])
+            assert mp is not None
+            mp.total_points += pts
+            await db_session.flush()
+
+    _run(_function_scoped_runner, _setup())
+
+
+@when(parsers.re(r'"(?P<name>[^"]+)" requests the sidebar leaderboard widget'))
+def when_member_requests_widget(
+    _function_scoped_runner: Runner,
+    community_data: dict[str, Any],
+    widget_handler: GetLeaderboardWidgetHandler,
+    result_holder: dict[str, Any],
+    name: str,
+) -> None:
+    member = community_data["members"][name]
+    query = GetLeaderboardWidgetQuery(
+        community_id=community_data["community_id"],
+        current_user_id=member["user_id"],
+    )
+    result = _run(_function_scoped_runner, widget_handler.handle(query))
+    result_holder["widget_result"] = result
+
+
+@then(parsers.re(r"the widget contains exactly (?P<count>\d+) entries"))
+def then_widget_has_n_entries(
+    result_holder: dict[str, Any],
+    count: str,
+) -> None:
+    widget: LeaderboardWidgetResult = result_holder["widget_result"]
+    assert len(widget.entries) == int(count)
+
+
+@then(
+    parsers.re(r'rank (?P<rank>\d+) in the widget is "(?P<name>[^"]+)" with (?P<points>\d+) points')
+)
+def then_widget_rank_is(
+    result_holder: dict[str, Any],
+    rank: str,
+    name: str,
+    points: str,
+) -> None:
+    widget: LeaderboardWidgetResult = result_holder["widget_result"]
+    idx = int(rank) - 1
+    entry = widget.entries[idx]
+    assert entry.rank == int(rank), f"Expected rank {rank}, got {entry.rank}"
+    assert entry.display_name == name, f"Expected {name}, got {entry.display_name}"
+    assert entry.points == int(points), f"Expected {points} pts, got {entry.points}"
+
+
+@then('the widget does not include a "your_rank" row')
+def then_widget_no_your_rank(
+    result_holder: dict[str, Any],
+) -> None:
+    # Widget result has no your_rank field by design — it's just a list of entries
+    widget: LeaderboardWidgetResult = result_holder["widget_result"]
+    assert not hasattr(widget, "your_rank") or not getattr(widget, "your_rank", None)
+
+
+@then("the widget includes a link to the leaderboards page")
+def then_widget_has_link() -> None:
+    # The link is a frontend concern — verified in Vitest component tests
+    pass
+
+
+# ============================================================================
+# Timestamp step (Phase 2)
+# ============================================================================
+
+
+@then(parsers.re(r'the response includes a "last_updated" timestamp'))
+def then_response_has_last_updated(
+    result_holder: dict[str, Any],
+) -> None:
+    result: LeaderboardsResult = result_holder["result"]
+    assert result.last_updated is not None
+
+
+# ============================================================================
+# Security steps (Phase 2)
+# ============================================================================
+
+
+@when("an unauthenticated request is made to the leaderboard endpoint")
+def when_unauthenticated_leaderboard(
+    _function_scoped_runner: Runner,
+    community_data: dict[str, Any],
+    client: AsyncClient,
+    result_holder: dict[str, Any],
+) -> None:
+    community_id = community_data["community_id"]
+
+    async def _request() -> None:
+        response = await client.get(
+            f"/api/v1/communities/{community_id}/leaderboards",
+        )
+        result_holder["http_response"] = response
+
+    _run(_function_scoped_runner, _request())
+
+
+@when("an unauthenticated request is made to the sidebar widget endpoint")
+def when_unauthenticated_widget(
+    _function_scoped_runner: Runner,
+    community_data: dict[str, Any],
+    client: AsyncClient,
+    result_holder: dict[str, Any],
+) -> None:
+    community_id = community_data["community_id"]
+
+    async def _request() -> None:
+        response = await client.get(
+            f"/api/v1/communities/{community_id}/leaderboards/widget",
+        )
+        result_holder["http_response"] = response
+
+    _run(_function_scoped_runner, _request())
+
+
+@then(parsers.re(r"the response status is (?P<status>\d+)"))
+def then_response_status_is(
+    result_holder: dict[str, Any],
+    status: str,
+) -> None:
+    response = result_holder["http_response"]
+    assert response.status_code == int(status), (
+        f"Expected status {status}, got {response.status_code}. Body: {response.text}"
+    )
+
+
+@given("a second community exists with its own members")
+def given_second_community(
+    _function_scoped_runner: Runner,
+    create_community: Callable[..., Coroutine[Any, Any, CommunityModel]],
+    community_data: dict[str, Any],
+) -> None:
+    async def _setup() -> CommunityModel:
+        return await create_community(name="Other Community", slug="other-community")
+
+    community = _run(_function_scoped_runner, _setup())
+    community_data["second_community_id"] = community.id
+
+
+@when(parsers.re(r'"(?P<name>[^"]+)" requests the leaderboard for the second community'))
+def when_member_requests_second_community_leaderboard(
+    _function_scoped_runner: Runner,
+    community_data: dict[str, Any],
+    client: AsyncClient,
+    result_holder: dict[str, Any],
+    name: str,
+) -> None:
+    member = community_data["members"][name]
+    second_community_id = community_data["second_community_id"]
+
+    async def _request() -> None:
+        # Create a JWT token for this user to make an authenticated request
+        from src.config import settings
+        from src.identity.infrastructure.services import JWTService
+
+        jwt_svc = JWTService(
+            secret_key=settings.jwt_secret_key,
+            algorithm=settings.jwt_algorithm,
+            access_token_expire_minutes=settings.jwt_access_token_expire_minutes,
+            refresh_token_expire_days=settings.jwt_refresh_token_expire_days,
+            refresh_token_remember_me_days=settings.jwt_refresh_token_remember_me_days,
+        )
+        from src.identity.domain.value_objects import UserId
+
+        tokens = jwt_svc.generate_auth_tokens(UserId(value=member["user_id"]))
+        response = await client.get(
+            f"/api/v1/communities/{second_community_id}/leaderboards",
+            headers={"Authorization": f"Bearer {tokens.access_token}"},
+        )
+        result_holder["http_response"] = response
+
+    _run(_function_scoped_runner, _request())

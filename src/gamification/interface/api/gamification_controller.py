@@ -1,6 +1,6 @@
 """Gamification API endpoints."""
 
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
 import structlog
@@ -28,6 +28,10 @@ from src.gamification.application.queries.check_course_access import (
     CheckCourseAccessHandler,
     CheckCourseAccessQuery,
 )
+from src.gamification.application.queries.get_leaderboard_widget import (
+    GetLeaderboardWidgetHandler,
+    GetLeaderboardWidgetQuery,
+)
 from src.gamification.application.queries.get_leaderboards import (
     GetLeaderboardsHandler,
     GetLeaderboardsQuery,
@@ -51,6 +55,7 @@ from src.gamification.infrastructure.api.schemas import (
     LeaderboardEntrySchema,
     LeaderboardPeriodSchema,
     LeaderboardsResponse,
+    LeaderboardWidgetResponse,
     LevelDefinitionSchema,
     LevelDefinitionsResponse,
     MemberLevelResponse,
@@ -59,6 +64,7 @@ from src.gamification.infrastructure.api.schemas import (
 )
 from src.gamification.interface.api.dependencies import (
     get_check_course_access_handler,
+    get_get_leaderboard_widget_handler,
     get_get_leaderboards_handler,
     get_get_level_definitions_handler,
     get_get_member_level_handler,
@@ -368,6 +374,22 @@ def _map_period(period_result: LeaderboardPeriodResult) -> LeaderboardPeriodSche
     )
 
 
+async def _require_membership(
+    member_repo: SqlAlchemyMemberRepository,
+    community_id: UUID,
+    user_id: UUID,
+) -> None:
+    """Check that user is a member of the community. Raises 403 if not."""
+    member = await member_repo.get_by_user_and_community(
+        UserId(value=user_id), CommunityId(value=community_id)
+    )
+    if member is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not a member of this community",
+        )
+
+
 @router.get(
     "/{community_id}/leaderboards",
     response_model=LeaderboardsResponse,
@@ -376,8 +398,10 @@ async def get_leaderboards(
     community_id: UUID,
     current_user_id: CurrentUserIdDep,
     handler: Annotated[GetLeaderboardsHandler, Depends(get_get_leaderboards_handler)],
+    member_repo: MemberRepositoryDep,
 ) -> LeaderboardsResponse:
     """Get all three leaderboards for a community."""
+    await _require_membership(member_repo, community_id, current_user_id)
     query = GetLeaderboardsQuery(
         community_id=community_id,
         current_user_id=current_user_id,
@@ -410,5 +434,68 @@ async def get_leaderboards_default(
         seven_day=_map_period(result.seven_day),
         thirty_day=_map_period(result.thirty_day),
         all_time=_map_period(result.all_time),
+        last_updated=result.last_updated,
+    )
+
+
+# ============================================================================
+# Leaderboard Widget
+# ============================================================================
+
+
+def _map_widget(entries: list[Any]) -> list[LeaderboardEntrySchema]:
+    return [
+        LeaderboardEntrySchema(
+            rank=e.rank,
+            user_id=e.user_id,
+            display_name=e.display_name,
+            avatar_url=e.avatar_url,
+            level=e.level,
+            points=e.points,
+        )
+        for e in entries
+    ]
+
+
+@router.get(
+    "/{community_id}/leaderboards/widget",
+    response_model=LeaderboardWidgetResponse,
+)
+async def get_leaderboard_widget(
+    community_id: UUID,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[GetLeaderboardWidgetHandler, Depends(get_get_leaderboard_widget_handler)],
+    member_repo: MemberRepositoryDep,
+) -> LeaderboardWidgetResponse:
+    """Get the compact 30-day leaderboard widget for the sidebar."""
+    await _require_membership(member_repo, community_id, current_user_id)
+    query = GetLeaderboardWidgetQuery(
+        community_id=community_id,
+        current_user_id=current_user_id,
+    )
+    result = await handler.handle(query)
+    return LeaderboardWidgetResponse(
+        entries=_map_widget(result.entries),
+        last_updated=result.last_updated,
+    )
+
+
+@default_router.get(
+    "/leaderboards/widget",
+    response_model=LeaderboardWidgetResponse,
+)
+async def get_leaderboard_widget_default(
+    community_id: DefaultCommunityIdDep,
+    current_user_id: CurrentUserIdDep,
+    handler: Annotated[GetLeaderboardWidgetHandler, Depends(get_get_leaderboard_widget_handler)],
+) -> LeaderboardWidgetResponse:
+    """Get the compact 30-day leaderboard widget (auto-resolves community)."""
+    query = GetLeaderboardWidgetQuery(
+        community_id=community_id,
+        current_user_id=current_user_id,
+    )
+    result = await handler.handle(query)
+    return LeaderboardWidgetResponse(
+        entries=_map_widget(result.entries),
         last_updated=result.last_updated,
     )

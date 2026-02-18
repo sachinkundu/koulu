@@ -50,3 +50,10 @@ class IMemberPointsRepository(ABC):
         limit: int,
         current_user_id: UUID,
     ) -> LeaderboardResult: ...
+
+    @abstractmethod
+    async def get_leaderboard_widget(
+        self,
+        community_id: UUID,
+        limit: int,
+    ) -> list[LeaderboardEntry]: ...

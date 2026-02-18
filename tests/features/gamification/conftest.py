@@ -32,6 +32,9 @@ from src.gamification.application.commands.update_level_config import (
 from src.gamification.application.queries.check_course_access import (
     CheckCourseAccessHandler,
 )
+from src.gamification.application.queries.get_leaderboard_widget import (
+    GetLeaderboardWidgetHandler,
+)
 from src.gamification.application.queries.get_leaderboards import (
     GetLeaderboardsHandler,
 )
@@ -316,6 +319,14 @@ async def leaderboard_handler(
 ) -> GetLeaderboardsHandler:
     """Get leaderboards query handler using test DB session."""
     return GetLeaderboardsHandler(member_points_repo=mp_repo)
+
+
+@pytest_asyncio.fixture
+async def widget_handler(
+    mp_repo: SqlAlchemyMemberPointsRepository,
+) -> GetLeaderboardWidgetHandler:
+    """Get leaderboard widget query handler using test DB session."""
+    return GetLeaderboardWidgetHandler(member_points_repo=mp_repo)
 
 
 @pytest_asyncio.fixture

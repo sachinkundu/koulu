@@ -90,3 +90,10 @@ class LeaderboardsResponse(BaseModel):
     thirty_day: LeaderboardPeriodSchema
     all_time: LeaderboardPeriodSchema
     last_updated: datetime
+
+
+class LeaderboardWidgetResponse(BaseModel):
+    """Response for GET /community/leaderboards/widget."""
+
+    entries: list[LeaderboardEntrySchema]
+    last_updated: datetime

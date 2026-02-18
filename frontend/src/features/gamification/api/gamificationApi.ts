@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api-client';
 import type {
   CourseAccessResponse,
+  LeaderboardWidgetResponse,
   LeaderboardsResponse,
   LevelDefinitionsResponse,
   LevelUpdateRequest,
@@ -71,5 +72,13 @@ export async function setCourseLevelRequirement(
  */
 export async function getLeaderboards(): Promise<LeaderboardsResponse> {
   const response = await apiClient.get<LeaderboardsResponse>('/community/leaderboards');
+  return response.data;
+}
+
+/**
+ * Get the compact 30-day leaderboard widget for the sidebar.
+ */
+export async function getLeaderboardWidget(): Promise<LeaderboardWidgetResponse> {
+  const response = await apiClient.get<LeaderboardWidgetResponse>('/community/leaderboards/widget');
   return response.data;
 }

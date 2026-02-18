@@ -66,3 +66,8 @@ export interface LeaderboardsResponse {
   all_time: LeaderboardPeriod;
   last_updated: string;
 }
+
+export interface LeaderboardWidgetResponse {
+  entries: LeaderboardEntry[];
+  last_updated: string;
+}

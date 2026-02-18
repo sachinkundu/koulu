@@ -11,6 +11,7 @@ from src.gamification.application.commands.set_course_level_requirement import (
 )
 from src.gamification.application.commands.update_level_config import UpdateLevelConfigHandler
 from src.gamification.application.queries.check_course_access import CheckCourseAccessHandler
+from src.gamification.application.queries.get_leaderboard_widget import GetLeaderboardWidgetHandler
 from src.gamification.application.queries.get_leaderboards import GetLeaderboardsHandler
 from src.gamification.application.queries.get_level_definitions import GetLevelDefinitionsHandler
 from src.gamification.application.queries.get_member_level import GetMemberLevelHandler
@@ -99,6 +100,13 @@ def get_get_leaderboards_handler(
 ) -> GetLeaderboardsHandler:
     """Get leaderboards query handler."""
     return GetLeaderboardsHandler(member_points_repo=mp_repo)
+
+
+def get_get_leaderboard_widget_handler(
+    mp_repo: MemberPointsRepoDep,
+) -> GetLeaderboardWidgetHandler:
+    """Get leaderboard widget query handler."""
+    return GetLeaderboardWidgetHandler(member_points_repo=mp_repo)
 
 
 def get_award_handler(

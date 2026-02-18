@@ -1,9 +1,8 @@
+import { LeaderboardSidebarWidget } from '@/features/gamification/components/LeaderboardSidebarWidget';
+
 /**
  * Right sidebar matching Skool's community info panel.
- * Shows a promo card and community stats.
- *
- * TODO: Replace hardcoded stats with real data when
- * a community stats API endpoint is available.
+ * Shows a promo card, community stats, and leaderboard widget.
  */
 export function CommunitySidebar(): JSX.Element {
   return (
@@ -68,6 +67,9 @@ export function CommunitySidebar(): JSX.Element {
           INVITE PEOPLE
         </button>
       </div>
+
+      {/* Leaderboard Widget */}
+      <LeaderboardSidebarWidget />
     </aside>
   );
 }

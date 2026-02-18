@@ -221,6 +221,68 @@ class SqlAlchemyMemberPointsRepository(IMemberPointsRepository):
         rows = result.fetchall()
         return self._build_leaderboard_result(rows, limit, current_user_id)
 
+    async def get_leaderboard_widget(
+        self,
+        community_id: UUID,
+        limit: int,
+    ) -> list[LeaderboardEntry]:
+        """Get a compact 30-day leaderboard widget (top N, no your_rank)."""
+        cutoff = datetime.now(UTC) - timedelta(hours=LeaderboardPeriod.THIRTY_DAY.interval_hours)  # type: ignore[arg-type]
+
+        sql = text("""
+            WITH period_points AS (
+                SELECT
+                    mp.id AS mp_id,
+                    mp.user_id,
+                    mp.current_level,
+                    GREATEST(0, COALESCE(SUM(pt.points), 0)) AS net_points
+                FROM member_points mp
+                LEFT JOIN point_transactions pt
+                    ON pt.member_points_id = mp.id
+                    AND pt.created_at >= :cutoff
+                WHERE mp.community_id = :community_id
+                GROUP BY mp.id, mp.user_id, mp.current_level
+            ),
+            ranked AS (
+                SELECT
+                    pp.user_id,
+                    pp.current_level,
+                    pp.net_points,
+                    COALESCE(p.display_name, 'Member') AS display_name,
+                    p.avatar_url,
+                    ROW_NUMBER() OVER (
+                        ORDER BY pp.net_points DESC, COALESCE(p.display_name, 'Member') ASC
+                    ) AS rank
+                FROM period_points pp
+                LEFT JOIN profiles p ON p.user_id = pp.user_id
+            )
+            SELECT user_id, display_name, avatar_url, current_level, net_points, rank
+            FROM ranked
+            WHERE rank <= :limit
+            ORDER BY rank
+        """)
+
+        result = await self._session.execute(
+            sql,
+            {
+                "community_id": community_id,
+                "cutoff": cutoff,
+                "limit": limit,
+            },
+        )
+        rows = result.fetchall()
+        return [
+            LeaderboardEntry(
+                rank=row.rank,
+                user_id=row.user_id,
+                display_name=row.display_name,
+                avatar_url=row.avatar_url,
+                level=row.current_level,
+                points=row.net_points,
+            )
+            for row in rows
+        ]
+
     @staticmethod
     def _build_leaderboard_result(
         rows: Sequence[Row[Any]],
