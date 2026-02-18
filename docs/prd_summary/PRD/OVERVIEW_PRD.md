@@ -683,7 +683,7 @@ Private 1-on-1 communication between members.
 ### 6.2 Phase 2
 
 **Should Have:**
-- ⚠️ Leaderboards and gamification (Points & Levels: ✅ Complete — 40/40 scenarios, frontend integrated, 6 E2E tests passing; Leaderboard ranking views: ⚠️ Phase 1 complete — /leaderboards page with 3 panels, 13/17 BDD scenarios; Phase 2 pending — sidebar widget + security)
+- ✅ Leaderboards and gamification (Points & Levels: ✅ Complete — 40/40 scenarios, frontend integrated, 6 E2E tests passing; Leaderboard ranking views: ✅ Complete — /leaderboards page + sidebar widget + security, 18/18 BDD scenarios)
 - ❌ Calendar and events
 - ❌ Direct messaging
 - ❌ Notifications (in-app)
@@ -816,7 +816,7 @@ Each feature will have a detailed PRD and BDD specification. The index below map
 | Events | `docs/features/calendar/events-prd.md` | `tests/features/calendar/events.feature` | ❌ Not started |
 | Member Directory | `docs/features/members/directory-prd.md` | `tests/features/members/directory.feature` | ✅ Complete — Browse, Search, Filter, Sort, Edge Cases & Security (23/23 scenarios) |
 | Member Map | `docs/features/members/map-prd.md` | `tests/features/members/map.feature` | ❌ Not started |
-| Leaderboards | `docs/features/gamification/leaderboards-prd.md` | `tests/features/gamification/leaderboards.feature` | ⚠️ Phase 1 Complete — /leaderboards page (13/17 BDD scenarios); Phase 2 pending (sidebar widget + security) |
+| Leaderboards | `docs/features/gamification/leaderboards-prd.md` | `tests/features/gamification/leaderboards.feature` | ✅ Complete — /leaderboards page + sidebar widget + security (18/18 BDD scenarios) |
 | Points & Levels | `docs/features/gamification/points-prd.md` | `tests/features/gamification/points.feature` | ✅ Complete (40/40 scenarios, 6 E2E tests) |
 | Direct Messages | `docs/features/messaging/dm-prd.md` | `tests/features/messaging/dm.feature` | ❌ Not started |
 | Notifications | `docs/features/notifications/notifications-prd.md` | `tests/features/notifications/notifications.feature` | ❌ Not started |
