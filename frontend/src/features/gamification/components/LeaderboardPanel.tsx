@@ -21,7 +21,7 @@ export function LeaderboardPanel({
   error = null,
 }: LeaderboardPanelProps): JSX.Element {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white">
+    <div className="rounded-lg border border-gray-200 bg-white" data-testid={`leaderboard-panel-${period}`}>
       <div className="border-b border-gray-100 px-4 py-3">
         <h3 className="text-sm font-semibold text-gray-700">{title}</h3>
       </div>

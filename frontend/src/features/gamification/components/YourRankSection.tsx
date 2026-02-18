@@ -8,7 +8,7 @@ interface YourRankSectionProps {
 
 export function YourRankSection({ entry, period }: YourRankSectionProps): JSX.Element {
   return (
-    <div>
+    <div data-testid="your-rank-section">
       <div className="flex items-center gap-2 px-4 py-2">
         <div className="h-px flex-1 bg-gray-200" />
         <span className="text-xs font-medium uppercase tracking-wide text-gray-400">

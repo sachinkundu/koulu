@@ -14,6 +14,7 @@ export function LeaderboardRow({ entry, period, highlight = false }: Leaderboard
   return (
     <div
       className={`flex items-center gap-3 px-4 py-2.5 ${highlight ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+      data-testid={`leaderboard-row-${entry.rank}`}
     >
       <div className="flex w-6 shrink-0 items-center justify-center">
         {entry.rank <= 3 ? (

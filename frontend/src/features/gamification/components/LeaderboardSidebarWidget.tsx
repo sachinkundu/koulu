@@ -11,7 +11,7 @@ export function LeaderboardSidebarWidget(): JSX.Element | null {
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white">
+    <div className="rounded-lg border border-gray-200 bg-white" data-testid="leaderboard-sidebar-widget">
       <div className="border-b border-gray-100 px-4 py-3">
         <h3 className="text-sm font-semibold text-gray-700">Leaderboard (30-day)</h3>
       </div>
@@ -60,6 +60,7 @@ export function LeaderboardSidebarWidget(): JSX.Element | null {
         <Link
           to="/leaderboards"
           className="block text-center text-xs font-medium text-blue-600 hover:text-blue-700"
+          data-testid="see-all-leaderboards-link"
         >
           See all leaderboards
         </Link>
