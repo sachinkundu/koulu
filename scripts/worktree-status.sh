@@ -49,33 +49,51 @@ git worktree list --porcelain | while read -r line; do
             if [ -n "${WT_PATH:-}" ]; then
                 WT_NAME="$(basename "$WT_PATH")"
 
-                # Compute ports for this worktree (same logic as project-env.sh)
-                WT_OFFSET=$(echo -n "$WT_PATH" | cksum | awk '{print $1 % 100}')
-                WT_PG_PORT=$(( 5432 + WT_OFFSET ))
-                WT_BE_PORT=$(( 8000 + WT_OFFSET ))
-                WT_FE_PORT=$(( 5173 + WT_OFFSET ))
-                PORTS="${WT_PG_PORT}/${WT_BE_PORT}/${WT_FE_PORT}"
+                # Read PORT_OFFSET from worktree's .env (must be explicit)
+                if [ -f "${WT_PATH}/.env" ] && grep -q '^PORT_OFFSET=' "${WT_PATH}/.env" 2>/dev/null; then
+                    WT_OFFSET=$(grep '^PORT_OFFSET=' "${WT_PATH}/.env" | cut -d= -f2)
+                else
+                    WT_OFFSET=""
+                fi
+
+                if [ -n "$WT_OFFSET" ]; then
+                    WT_PG_PORT=$(( 5432 + WT_OFFSET ))
+                    WT_BE_PORT=$(( 8000 + WT_OFFSET ))
+                    WT_FE_PORT=$(( 5173 + WT_OFFSET ))
+                    PORTS="${WT_PG_PORT}/${WT_BE_PORT}/${WT_FE_PORT}"
+                    PORTS_COLOR=""
+                else
+                    PORTS="no PORT_OFFSET"
+                    PORTS_COLOR="${RED}"
+                fi
 
                 # Check Docker status — derive compose project name
                 WT_PROJECT="$(echo "$WT_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')"
                 # Check if postgres container exists and is running
                 CONTAINER_NAME="${WT_PROJECT}_postgres"
                 if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${CONTAINER_NAME}$"; then
-                    DOCKER_STATUS="${GREEN}running${NC}"
+                    DOCKER_STATUS="running"
+                    DOCKER_COLOR="${GREEN}"
                 elif docker ps -a --format '{{.Names}}' 2>/dev/null | grep -q "^${CONTAINER_NAME}$"; then
-                    DOCKER_STATUS="${YELLOW}stopped${NC}"
+                    DOCKER_STATUS="stopped"
+                    DOCKER_COLOR="${YELLOW}"
                 else
-                    DOCKER_STATUS="${DIM}none${NC}"
+                    DOCKER_STATUS="none"
+                    DOCKER_COLOR="${DIM}"
                 fi
 
                 # Highlight main worktree
                 if [ "$WT_PATH" = "$MAIN_ROOT" ]; then
-                    WT_DISPLAY="${GREEN}${WT_NAME} (main)${NC}"
+                    WT_NAME_DISPLAY="${WT_NAME} (main)"
+                    WT_COLOR="${GREEN}"
                 else
-                    WT_DISPLAY="${WT_NAME}"
+                    WT_NAME_DISPLAY="${WT_NAME}"
+                    WT_COLOR=""
                 fi
 
-                printf "  %-40b %-30s %-22s %-20b\n" "$WT_DISPLAY" "${WT_BRANCH:-detached}" "$PORTS" "$DOCKER_STATUS"
+                # Print with color wrapping outside %-width so padding is correct
+                printf "  ${WT_COLOR}%-28s${NC} %-30s ${PORTS_COLOR}%-22s${NC} ${DOCKER_COLOR}%-10s${NC}\n" \
+                    "$WT_NAME_DISPLAY" "${WT_BRANCH:-detached}" "$PORTS" "$DOCKER_STATUS"
             fi
             WT_PATH=""
             WT_BRANCH=""
@@ -86,26 +104,42 @@ done
 # Handle last entry (git worktree list --porcelain may not end with empty line)
 if [ -n "${WT_PATH:-}" ]; then
     WT_NAME="$(basename "$WT_PATH")"
-    WT_OFFSET=$(echo -n "$WT_PATH" | cksum | awk '{print $1 % 100}')
-    WT_PG_PORT=$(( 5432 + WT_OFFSET ))
-    WT_BE_PORT=$(( 8000 + WT_OFFSET ))
-    WT_FE_PORT=$(( 5173 + WT_OFFSET ))
-    PORTS="${WT_PG_PORT}/${WT_BE_PORT}/${WT_FE_PORT}"
+    if [ -f "${WT_PATH}/.env" ] && grep -q '^PORT_OFFSET=' "${WT_PATH}/.env" 2>/dev/null; then
+        WT_OFFSET=$(grep '^PORT_OFFSET=' "${WT_PATH}/.env" | cut -d= -f2)
+    else
+        WT_OFFSET=""
+    fi
+    if [ -n "$WT_OFFSET" ]; then
+        WT_PG_PORT=$(( 5432 + WT_OFFSET ))
+        WT_BE_PORT=$(( 8000 + WT_OFFSET ))
+        WT_FE_PORT=$(( 5173 + WT_OFFSET ))
+        PORTS="${WT_PG_PORT}/${WT_BE_PORT}/${WT_FE_PORT}"
+        PORTS_COLOR=""
+    else
+        PORTS="no PORT_OFFSET"
+        PORTS_COLOR="${RED}"
+    fi
     WT_PROJECT="$(echo "$WT_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')"
     CONTAINER_NAME="${WT_PROJECT}_postgres"
     if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${CONTAINER_NAME}$"; then
-        DOCKER_STATUS="${GREEN}running${NC}"
+        DOCKER_STATUS="running"
+        DOCKER_COLOR="${GREEN}"
     elif docker ps -a --format '{{.Names}}' 2>/dev/null | grep -q "^${CONTAINER_NAME}$"; then
-        DOCKER_STATUS="${YELLOW}stopped${NC}"
+        DOCKER_STATUS="stopped"
+        DOCKER_COLOR="${YELLOW}"
     else
-        DOCKER_STATUS="${DIM}none${NC}"
+        DOCKER_STATUS="none"
+        DOCKER_COLOR="${DIM}"
     fi
     if [ "$WT_PATH" = "$MAIN_ROOT" ]; then
-        WT_DISPLAY="${GREEN}${WT_NAME} (main)${NC}"
+        WT_NAME_DISPLAY="${WT_NAME} (main)"
+        WT_COLOR="${GREEN}"
     else
-        WT_DISPLAY="${WT_NAME}"
+        WT_NAME_DISPLAY="${WT_NAME}"
+        WT_COLOR=""
     fi
-    printf "  %-40b %-30s %-22s %-20b\n" "$WT_DISPLAY" "${WT_BRANCH:-detached}" "$PORTS" "$DOCKER_STATUS"
+    printf "  ${WT_COLOR}%-28s${NC} %-30s ${PORTS_COLOR}%-22s${NC} ${DOCKER_COLOR}%-10s${NC}\n" \
+        "$WT_NAME_DISPLAY" "${WT_BRANCH:-detached}" "$PORTS" "$DOCKER_STATUS"
 fi
 
 echo ""

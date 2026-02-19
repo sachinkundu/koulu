@@ -33,8 +33,29 @@ export KOULU_VOLUME_PREFIX="${KOULU_VOLUME_PREFIX:-${COMPOSE_PROJECT_NAME}}"
 # Current git branch (for display in banners)
 export KOULU_WORKTREE_BRANCH="$(git -C "$PROJECT_ROOT" branch --show-current 2>/dev/null || echo 'unknown')"
 
-# Deterministic port offset from a hash of the absolute path (0–99)
-PORT_OFFSET=$(echo -n "$PROJECT_ROOT" | cksum | awk '{print $1 % 100}')
+# Port offset: MUST be set explicitly in .env — no implicit fallback.
+# Each worktree/checkout sets PORT_OFFSET in .env to avoid collisions.
+# Run ./setup.sh to generate .env with a PORT_OFFSET if you don't have one.
+if [ -f "${PROJECT_ROOT}/.env" ] && grep -q '^PORT_OFFSET=' "${PROJECT_ROOT}/.env" 2>/dev/null; then
+    PORT_OFFSET=$(grep '^PORT_OFFSET=' "${PROJECT_ROOT}/.env" | cut -d= -f2)
+else
+    echo ""
+    echo -e "\033[0;31m══════════════════════════════════════════════════════════════\033[0m"
+    echo -e "\033[0;31m  ERROR: PORT_OFFSET not set in ${PROJECT_ROOT}/.env\033[0m"
+    echo -e "\033[0;31m══════════════════════════════════════════════════════════════\033[0m"
+    echo ""
+    echo "  Every worktree/checkout needs an explicit PORT_OFFSET in .env"
+    echo "  to avoid port collisions between environments."
+    echo ""
+    echo "  Fix: add a line like this to ${PROJECT_ROOT}/.env:"
+    echo ""
+    echo "    PORT_OFFSET=100"
+    echo ""
+    echo "  Or run ./setup.sh to generate .env automatically."
+    echo ""
+    return 1 2>/dev/null || exit 1
+fi
+export PORT_OFFSET
 
 # Compute per-project host ports (infrastructure)
 export KOULU_PG_PORT=${KOULU_PG_PORT:-$(( 5432 + PORT_OFFSET ))}

@@ -73,9 +73,29 @@ check_compose_service "mailhog" || ALL_OK=false
 echo ""
 
 if [ "$ALL_OK" = false ]; then
-    echo -e "${RED}Docker services not running!${NC}"
-    echo "  Fix: docker compose up -d"
-    exit 1
+    echo -e "${YELLOW}Docker services not running — starting them...${NC}"
+    docker compose up -d postgres redis mailhog 2>&1 | tail -5
+
+    # Verify services started
+    echo ""
+    echo -e "${YELLOW}Verifying services...${NC}"
+    for i in $(seq 1 15); do
+        ALL_UP=true
+        docker compose ps --status running --format '{{.Service}}' 2>/dev/null | grep -q "^postgres$" || ALL_UP=false
+        docker compose ps --status running --format '{{.Service}}' 2>/dev/null | grep -q "^redis$" || ALL_UP=false
+        docker compose ps --status running --format '{{.Service}}' 2>/dev/null | grep -q "^mailhog$" || ALL_UP=false
+        if [ "$ALL_UP" = true ]; then
+            echo -e "${GREEN}All Docker services running${NC}"
+            break
+        fi
+        sleep 1
+        if [ "$i" -eq 15 ]; then
+            echo -e "${RED}Docker services failed to start within 15s${NC}"
+            echo "  If another worktree is using the same ports, stop it first or check project-env.sh port assignments."
+            docker compose ps
+            exit 1
+        fi
+    done
 fi
 
 # ============================================================================
